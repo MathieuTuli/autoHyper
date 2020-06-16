@@ -20,23 +20,29 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-"""
 
-'''Some helper functions for PyTorch, including:
+Some helper functions for PyTorch, including:
     - get_mean_and_std: calculate the mean and std value of dataset.
     - msr_init: net parameter initialization.
     - progress_bar: progress bar mimic xlua.progress.
-'''
-
-
-
-
-import os
-import sys
+"""
 import time
-import math
-import torch.nn as nn
+import sys
+import os
+
 import torch.nn.init as init
+import torch.nn as nn
+import torch
+
+
+def safe_float_cast(str_number: str) -> float:
+    try:
+        number = float(str_number)
+    except ValueError:
+        number = float('nan')
+    return number
+
+
 def get_mean_and_std(dataset):
     '''Compute the mean and std value of dataset.'''
     dataloader = torch.utils.data.DataLoader(
