@@ -75,7 +75,7 @@ def get_optimizer_scheduler(net_parameters: Any,
         optimizer = AdaBound(net_parameters, lr=init_lr)
     # below = untested
     elif optim_method == 'AdaMax':
-        optimizer = AdaMax(net_parameters, lr=init_lr)
+        optimizer = Adamax(net_parameters, lr=init_lr)
     elif optim_method == 'AdaMod':
         optimizer = AdaMod(net_parameters, lr=init_lr)
     elif optim_method == 'AdaShift':
