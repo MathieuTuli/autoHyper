@@ -77,7 +77,7 @@ class SLS(torch.optim.Optimizer):
         batch_step_size = self.state['step_size']
 
         # get loss and compute gradients
-        loss = closure_deterministic()
+        loss, outputs = closure_deterministic()
         loss.backward()
 
         # increment # forward-backward calls
@@ -113,7 +113,7 @@ class SLS(torch.optim.Optimizer):
                             params, step_size, params_current, grad_current)
 
                         # compute the loss at the next step; no need to compute gradients.
-                        loss_next = closure_deterministic()
+                        loss_next, outputs = closure_deterministic()
                         self.state['n_forwards'] += 1
 
                         # =================================================
@@ -156,4 +156,4 @@ class SLS(torch.optim.Optimizer):
             self.state['step_size'] = step_size
             self.state['step'] += 1
 
-        return loss
+        return loss, outputs

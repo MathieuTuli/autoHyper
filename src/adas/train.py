@@ -334,13 +334,14 @@ def epoch_iteration(train_loader, epoch: int,
         if config['lr_scheduler'] == 'CosineAnnealingWarmRestarts':
             scheduler.step(epoch + batch_idx / len(train_loader))
         optimizer.zero_grad()
-        outputs = net(inputs)
         if config['optim_method'] == 'SLS':
             def closure():
+                outputs = net(inputs)
                 loss = criterion(outputs, targets)
-                return loss
-            loss = optimizer.step(closure=closure)
+                return loss, outputs
+            loss, outputs = optimizer.step(closure=closure)
         else:
+            outputs = net(inputs)
             loss = criterion(outputs, targets)
             loss.backward()
             if adas is not None:
