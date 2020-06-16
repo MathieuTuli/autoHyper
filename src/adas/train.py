@@ -227,7 +227,7 @@ def main(args: APNamespace):
             best_acc = checkpoint['acc']
             start_epoch = checkpoint['epoch']
             if adas is not None:
-                adas.historical_io_metrics = \
+                metrics.historical_metrics = \
                     checkpoint['historical_io_metrics']
 
         # model_parameters = filter(lambda p: p.requires_grad,
@@ -308,7 +308,7 @@ def test_main(test_loader, epoch: int, device) -> Tuple[float, float]:
             'epoch': epoch + 1,
         }
         if adas is not None:
-            state['historical_io_metrics'] = adas.historical_io_metrics
+            state['historical_io_metrics'] = metrics.historical_metrics
         torch.save(state, str(checkpoint_path / 'ckpt.pth'))
         # if checkpoint_path.is_dir():
         #     torch.save(state, str(checkpoint_path / 'ckpt.pth'))
@@ -358,6 +358,7 @@ def epoch_iteration(train_loader, epoch: int,
                            str(epoch)] = train_loss / (batch_idx + 1)
 
     io_metrics = metrics.evaluate(epoch)
+    print(metrics.historical_metrics)
     performance_statistics['in_S_epoch_' +
                            str(epoch)] = io_metrics.input_channel_S
     performance_statistics['out_S_epoch_' +
@@ -375,7 +376,7 @@ def epoch_iteration(train_loader, epoch: int,
     performance_statistics['out_condition_epoch_' +
                            str(epoch)] = io_metrics.output_channel_condition
     if adas is not None:
-        lrmetrics = adas.step(epoch, io_metrics)
+        lrmetrics = adas.step(epoch, metrics)
         performance_statistics['rank_velocity_epoch_' +
                                str(epoch)] = lrmetrics.rank_velocity
         performance_statistics['learning_rate_' +
