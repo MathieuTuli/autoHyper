@@ -43,24 +43,20 @@ from .utils import safe_float_cast
 
 
 class GPU:
-    def __init__(self,
-                 ID, uuid, load, memoryTotal,
-                 memoryUsed, memoryFree, driver,
-                 gpu_name, serial, display_mode,
-                 display_active, temp_gpu) -> None:
+    def __init__(self, ID: int) -> None:
         self.id = ID
-        self.uuid = uuid
-        self.load = load
-        self.memoryUtil = float(memoryUsed)/float(memoryTotal)
-        self.memoryTotal = memoryTotal
-        self.memoryUsed = memoryUsed
-        self.memoryFree = memoryFree
-        self.driver = driver
-        self.name = gpu_name
-        self.serial = serial
-        self.display_mode = display_mode
-        self.display_active = display_active
-        self.temperature = temp_gpu
+        self.uuid = None
+        self.load = 0.
+        self.mem_total = 0.
+        self.mem_used = 0.
+        self.mem_util = 0.
+        self.memoryFree = 0.
+        self.driver = None
+        self.name = None
+        self.serial = None
+        self.display_mode = None
+        self.display_active = None
+        self.temperature = 0.
 
     def update(self) -> None:
         if platform.system() == "Windows":
@@ -119,10 +115,10 @@ class GPU:
             if device_id == self.id:
                 self.uuid = uuid
                 self.load = gpu_util
-                self.memoryUtil = float(mem_used)/float(mem_total)
-                self.memoryTotal = mem_total
-                self.memoryUsed = mem_used
-                self.memoryFree = mem_free
+                self.mem_util = float(mem_used)/float(mem_total)
+                self.mem_total = mem_total
+                self.mem_used = mem_used
+                self.mem_free = mem_free
                 self.driver = driver
                 self.name = gpu_name
                 self.serial = serial
