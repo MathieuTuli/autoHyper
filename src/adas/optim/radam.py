@@ -17,12 +17,14 @@ specific language governing permissions and limitations
 under the License.
 @CREDIT: https://github.com/jettify/pytorch-optimizer/tree/master/torch_optimizer
 """
+from typing import Tuple, Union, Iterable, Dict, Any, Optional, Callable
 
 import math
-import torch
-from torch.optim.optimizer import Optimizer
 
-from .types import Betas2, OptFloat, OptLossClosure, Params
+from torch.optim.optimizer import Optimizer
+from torch import Tensor
+
+import torch
 
 
 __all__ = ('RAdam',)
@@ -59,9 +61,9 @@ class RAdam(Optimizer):
 
     def __init__(
         self,
-        params: Params,
+        params: Union[Iterable[Tensor], Iterable[Dict[str, Any]]],
         lr: float = 1e-3,
-        betas: Betas2 = (0.9, 0.999),
+        betas: Tuple[float, float] = (0.95, 0),
         eps: float = 1e-8,
         weight_decay: float = 0,
     ) -> None:
@@ -96,7 +98,8 @@ class RAdam(Optimizer):
     def __setstate__(self, state):
         super(RAdam, self).__setstate__(state)
 
-    def step(self, closure: OptLossClosure = None) -> OptFloat:
+    def step(self,
+             closure: Optional[Callable[[], float]] = None) -> Optional[float]:
         r"""Performs a single optimization step.
 
         Arguments:

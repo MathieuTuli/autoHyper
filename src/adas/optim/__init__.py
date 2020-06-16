@@ -25,18 +25,18 @@ from typing import Any
 
 import torch
 
-# from .novograd import NovoGrad
+from .novograd import NovoGrad
 from .adabound import AdaBound
 from .adashift import AdaShift
 from .nosadam import NosAdam
 from .laprop import LaProp
-# from .adamod import AdaMod
+from .adamod import AdaMod
 from .nadam import NAdam
 from .padam import PAdam
-# from .radam import RAdam
+from .radam import RAdam
 from .sgd import SGDVec
 from .sps import SPS
-# from .sls import SLS
+from .sls import SLS
 from .lrd import LRD
 
 
@@ -68,31 +68,29 @@ def get_optimizer_scheduler(net_parameters: Any,
         optimizer = AdaBound(net_parameters, lr=init_lr)
     # below = untested
     elif optim_method == 'AdaMax':
-        optimizer = torch.optim.AdaMax(net_parameters, lr=init_lr)
-    # elif optim_method == 'AdaMod':
-    #     optimizer = AdaMod(net_parameters, lr=init_lr)
+        optimizer = torch.optim.Adamax(net_parameters, lr=init_lr)
+    elif optim_method == 'AdaMod':
+        optimizer = AdaMod(net_parameters, lr=init_lr)
     elif optim_method == 'AdaShift':
         optimizer = AdaShift(net_parameters, lr=init_lr)
     elif optim_method == 'NAdam':
         optimizer = NAdam(net_parameters, lr=init_lr)
     elif optim_method == 'NosAdam':
         optimizer = NosAdam(net_parameters, lr=init_lr)
-    # elif optim_method == 'NovoGrad':
-    #     optimizer = NovoGrad(net_parameters, lr=init_lr)
+    elif optim_method == 'NovoGrad':
+        optimizer = NovoGrad(net_parameters, lr=init_lr)
     elif optim_method == 'PAdam':
         optimizer = PAdam(net_parameters, lr=init_lr)
     elif optim_method == 'RAdam':
-        #     optimizer = RAdam(net_parameters, lr=init_lr)
-        # elif optim_method == 'SPS':
-        optimizer = SPS(net_parameters, lr=init_lr)
-    # elif optim_method == 'SLS':
-    #     optimizer = SLS(net_parameters, lr=init_lr)
-    elif optim_method == 'SparseAdaM':
-        optimizer = torch.optim.SparseAdam(net_parameters, lr=init_lr)
+        optimizer = RAdam(net_parameters, lr=init_lr)
+    elif optim_method == 'SPS':
+        optimizer = SPS(net_parameters, init_step_size=init_lr)
+    elif optim_method == 'SLS':
+        optimizer = SLS(net_parameters, init_step_size=init_lr)
     elif optim_method == 'LaProp':
         optimizer = LaProp(net_parameters, lr=init_lr)
     elif optim_method == 'LearningRateDropout':
-        scheduler = LRD(net_parameters, lr=init_lr,
+        optimizer = LRD(net_parameters, lr=init_lr,
                         lr_dropout_rate=0.5)
     else:
         print(f"Adas: Warning: Unknown optimizer {optim_method}")

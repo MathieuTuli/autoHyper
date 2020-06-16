@@ -13,7 +13,8 @@ import torch
 import copy
 import time
 
-from . import utils as ut
+from . import utils
+
 
 class SLS(torch.optim.Optimizer):
     """Implements stochastic line search
@@ -57,7 +58,7 @@ class SLS(torch.optim.Optimizer):
                         eta_max=eta_max,
                         bound_step_size=bound_step_size,
                         line_search_fn=line_search_fn)
-        super().__init__(params, defaults)       
+        super().__init__(params, defaults)
 
         self.state['step'] = 0
         self.state['step_size'] = init_step_size
@@ -68,8 +69,9 @@ class SLS(torch.optim.Optimizer):
     def step(self, closure):
         # deterministic closure
         seed = time.time()
+
         def closure_deterministic():
-            with ut.random_seed_torch(int(seed)):
+            with utils.random_seed_torch(int(seed)):
                 return closure()
 
         batch_step_size = self.state['step_size']
@@ -88,15 +90,15 @@ class SLS(torch.optim.Optimizer):
 
             # save the current parameters:
             params_current = copy.deepcopy(params)
-            grad_current = ut.get_grad_list(params)
+            grad_current = utils.get_grad_list(params)
 
-            grad_norm = ut.compute_grad_norm(grad_current)
+            grad_norm = utils.compute_grad_norm(grad_current)
 
-            step_size = ut.reset_step(step_size=batch_step_size,
-                                    n_batches_per_epoch=group['n_batches_per_epoch'],
-                                    gamma=group['gamma'],
-                                    reset_option=group['reset_option'],
-                                    init_step_size=group['init_step_size'])
+            step_size = utils.reset_step(step_size=batch_step_size,
+                                         n_batches_per_epoch=group['n_batches_per_epoch'],
+                                         gamma=group['gamma'],
+                                         reset_option=group['reset_option'],
+                                         init_step_size=group['init_step_size'])
 
             # only do the check if the gradient norm is big enough
             with torch.no_grad():
@@ -107,7 +109,8 @@ class SLS(torch.optim.Optimizer):
 
                     for e in range(100):
                         # try a prospective step
-                        ut.try_sgd_update(params, step_size, params_current, grad_current)
+                        utils.try_sgd_update(
+                            params, step_size, params_current, grad_current)
 
                         # compute the loss at the next step; no need to compute gradients.
                         loss_next = closure_deterministic()
@@ -116,37 +119,38 @@ class SLS(torch.optim.Optimizer):
                         # =================================================
                         # Line search
                         if group['line_search_fn'] == "armijo":
-                            armijo_results = ut.check_armijo_conditions(step_size=step_size,
-                                                        step_size_old=step_size_old,
-                                                        loss=loss,
-                                                        grad_norm=grad_norm,
-                                                        loss_next=loss_next,
-                                                        c=group['c'],
-                                                        beta_b=group['beta_b'])
+                            armijo_results = utils.check_armijo_conditions(step_size=step_size,
+                                                                           step_size_old=step_size_old,
+                                                                           loss=loss,
+                                                                           grad_norm=grad_norm,
+                                                                           loss_next=loss_next,
+                                                                           c=group['c'],
+                                                                           beta_b=group['beta_b'])
                             found, step_size, step_size_old = armijo_results
                             if found == 1:
                                 break
-                        
+
                         elif group['line_search_fn'] == "goldstein":
-                            goldstein_results = ut.check_goldstein_conditions(step_size=step_size,
-                                                                    loss=loss,
-                                                                    grad_norm=grad_norm,
-                                                                    loss_next=loss_next,
-                                                                    c=group['c'],
-                                                                    beta_b=group['beta_b'],
-                                                                    beta_f=group['beta_f'],
-                                                                    bound_step_size=group['bound_step_size'],
-                                                                    eta_max=group['eta_max'])
+                            goldstein_results = utils.check_goldstein_conditions(step_size=step_size,
+                                                                                 loss=loss,
+                                                                                 grad_norm=grad_norm,
+                                                                                 loss_next=loss_next,
+                                                                                 c=group['c'],
+                                                                                 beta_b=group['beta_b'],
+                                                                                 beta_f=group['beta_f'],
+                                                                                 bound_step_size=group['bound_step_size'],
+                                                                                 eta_max=group['eta_max'])
 
                             found = goldstein_results["found"]
                             step_size = goldstein_results["step_size"]
 
                             if found == 3:
                                 break
-                
+
                     # if line search exceeds max_epochs
                     if found == 0:
-                        ut.try_sgd_update(params, 1e-6, params_current, grad_current)
+                        utils.try_sgd_update(
+                            params, 1e-6, params_current, grad_current)
 
             # save the new step-size
             self.state['step_size'] = step_size
