@@ -153,7 +153,8 @@ def main(args: APNamespace):
     print(f"    {'config':<20}: {args.config:<40}")
     print(f"    {'data':<20}: {str(Path(args.root) / args.data):<40}")
     print(f"    {'output':<20}: {str(Path(args.root) / args.output):<40}")
-    print(f"    {'checkpoint':<20}: {str(Path(args.root) / args.checkpoint):<40}")
+    print(f"    {'checkpoint':<20}: " +
+          f"{str(Path(args.root) / args.checkpoint):<40}")
     print(f"    {'root':<20}: {args.root:<40}")
     print(f"    {'resume':<20}: {'True' if args.resume else 'False':<20}")
     print("\nAdas: Train: Config")
@@ -162,6 +163,7 @@ def main(args: APNamespace):
     for k, v in config.items():
         print(f"    {k:<20} {v:<20}")
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    print(f"AdaS: Pytorch device is set to {device}")
     global best_acc
     best_acc = 0  # best test accuracy
     start_epoch = 0  # start from epoch 0 or last checkpoint epoch
@@ -199,7 +201,6 @@ def main(args: APNamespace):
         global criterion
         criterion = get_loss(config['loss'])
 
-        # TODO config
         optimizer, scheduler = get_optimizer_scheduler(
             net_parameters=net.parameters(),
             init_lr=float(config['init_lr']),
