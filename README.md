@@ -1,6 +1,20 @@
 # Adas: Adaptive Scheduling of Stochastic Gradients #
 [Paper](https://arxiv.org/abs/2006.06587)
-## Status ##
+Fork from [AdaS](https://github.com/mahdihosseini/AdaS). Additional features included:
+- Additional optimizers
+  - AdaMax
+  - AdaMod
+  - AdaShift
+  - NAdam
+  - NosAdam
+  - NovoGrad
+  - PAdam
+  - RAdam
+  - SPS
+  - SLS
+  - LaProp
+  - LearningRateDropout
+## Status #
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![maintenance](https://img.shields.io/badge/maintained%3F-yes-brightgreen.svg)](https://GitHub.com/Naereen/StrapDown.js/graphs/commit-activity)
 [![python](https://img.shields.io/badge/python-v3.7-blue)](https://www.python.org/downloads/release/python-370/)
