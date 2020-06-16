@@ -29,6 +29,7 @@ from .novograd import NovoGrad
 from .adabound import AdaBound
 from .adashift import AdaShift
 from .nosadam import NosAdam
+from .laprop import LaProp
 from .adamod import AdaMod
 from .nadam import NAdam
 from .padam import PAdam
@@ -88,6 +89,8 @@ def get_optimizer_scheduler(net_parameters: Any,
         optimizer = SLS(net_parameters, lr=init_lr)
     elif optim_method == 'SparseAdaM':
         optimizer = torch.optim.SparseAdam(net_parameters, lr=init_lr)
+    elif optim_method == 'LaProp':
+        optimizer = LaProp(net_parameters, lr=init_lr)
     elif optim_method == 'LearningRateDropout':
         scheduler = LRD(net_parameters, lr=init_lr,
                         lr_dropout_rate=0.5)
