@@ -37,8 +37,9 @@ import yaml
 
 # from .test import main as test_main
 # from .utils import progress_bar
-from early_stop import EarlyStop
 from optim import get_optimizer_scheduler
+from early_stop import EarlyStop
+from profiler import Profiler
 from metrics import Metrics
 from models import get_net
 from data import get_data
@@ -173,6 +174,17 @@ def main(args: APNamespace):
               "{early_stop}, training till completion.")
 
     for trial in range(config['n_trials']):
+        if config['lr_scheduler'] == 'AdaS':
+            filename = \
+                f"stats_{config['optim_method']}_AdaS_trial={trial}_" +\
+                f"beta={config['beta']}_initlr={config['init_lr']}_" +\
+                f"net={config['network']}_dataset={config['dataset']}.csv"
+        else:
+            filename = \
+                f"stats_{config['optim_method']}_{config['lr_scheduler']}_" +\
+                f"trial={trial}_initlr={config['init_lr']}" +\
+                f"net={config['network']}_dataset={config['dataset']}.csv"
+        Profiler.filename = output_path / filename
         device
         # Data
         # logging.info("Adas: Preparing Data")
@@ -320,6 +332,7 @@ def test_main(test_loader, epoch: int, device) -> Tuple[float, float]:
     return test_loss / (batch_idx + 1), acc
 
 
+@Profiler
 def epoch_iteration(train_loader, epoch: int,
                     device, optimizer, scheduler) -> Tuple[float, float]:
     # logging.info(f"Adas: Train: Epoch: {epoch}")
