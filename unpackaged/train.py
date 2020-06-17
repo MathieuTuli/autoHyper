@@ -122,6 +122,7 @@ def get_loss(loss: str) -> torch.nn.Module:
         None
 
 
+@profile
 def main(args: APNamespace):
     root_path = Path(args.root).expanduser()
     config_path = Path(args.config).expanduser()
