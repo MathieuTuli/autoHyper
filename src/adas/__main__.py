@@ -25,7 +25,7 @@ from argparse import ArgumentParser
 
 # import logging
 
-from yaml import load
+
 # from .components import LogLevel
 from .train import args as train_args, main as train_main
 
@@ -70,6 +70,7 @@ args = parser.parse_args()
 # logging.info(f"AdaS: Log Level set to {str(args.log_level)}")
 
 # logging.info("AdaS: Main")
+
 if str(args.command) == 'train':
     train_main(args)
 else:

@@ -38,6 +38,7 @@ import yaml
 # from .utils import progress_bar
 from .optim import get_optimizer_scheduler
 from .early_stop import EarlyStop
+from .profiler import Profiler
 from .metrics import Metrics
 from .models import get_net
 from .data import get_data
@@ -121,7 +122,6 @@ def get_loss(loss: str) -> torch.nn.Module:
         None
 
 
-@profile
 def main(args: APNamespace):
     root_path = Path(args.root).expanduser()
     config_path = Path(args.config).expanduser()
@@ -274,6 +274,7 @@ def main(args: APNamespace):
             if early_stop(train_loss):
                 print("AdaS: Early stop activated.")
                 break
+    return
 
 
 def test_main(test_loader, epoch: int, device) -> Tuple[float, float]:
@@ -320,6 +321,7 @@ def test_main(test_loader, epoch: int, device) -> Tuple[float, float]:
     return test_loss / (batch_idx + 1), acc
 
 
+@Profiler
 def epoch_iteration(train_loader, epoch: int,
                     device, optimizer, scheduler) -> Tuple[float, float]:
     # logging.info(f"Adas: Train: Epoch: {epoch}")
