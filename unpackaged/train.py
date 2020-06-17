@@ -335,14 +335,23 @@ def epoch_iteration(train_loader, epoch: int,
         if config['lr_scheduler'] == 'CosineAnnealingWarmRestarts':
             scheduler.step(epoch + batch_idx / len(train_loader))
         optimizer.zero_grad()
-        outputs = net(inputs)
-        loss = criterion(outputs, targets)
-        loss.backward()
-        if adas is not None:
-            optimizer.step(metrics.layers_index_todo,
-                           adas.lr_vector)
+        if config['optim_method'] == 'SLS':
+            def closure():
+                outputs = net(inputs)
+                loss = criterion(outputs, targets)
+                return loss, outputs
+            loss, outputs = optimizer.step(closure=closure)
         else:
-            optimizer.step()
+            outputs = net(inputs)
+            loss = criterion(outputs, targets)
+            loss.backward()
+            if adas is not None:
+                optimizer.step(metrics.layers_index_todo,
+                               adas.lr_vector)
+            elif config['optim_method'] == 'SPS':
+                optimizer.step(loss=loss)
+            else:
+                optimizer.step()
 
         train_loss += loss.item()
         _, predicted = outputs.max(1)
