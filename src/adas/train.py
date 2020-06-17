@@ -146,7 +146,6 @@ def main(args: APNamespace):
                   "checkpoint dir")
             raise ValueError
         checkpoint_path.mkdir(exist_ok=True, parents=True)
-
     with config_path.open() as f:
         config = yaml.load(f)
     print("Adas: Argument Parser Options")
@@ -173,6 +172,17 @@ def main(args: APNamespace):
               "{early_stop}, training till completion.")
 
     for trial in range(config['n_trials']):
+        if config['lr_scheduler'] == 'AdaS':
+            filename = \
+                f"stats_{config['optim_method']}_AdaS_trial={trial}_" +\
+                f"beta={config['beta']}_initlr={config['init_lr']}_" +\
+                f"net={config['network']}_dataset={config['dataset']}.csv"
+        else:
+            filename = \
+                f"stats_{config['optim_method']}_{config['lr_scheduler']}_" +\
+                f"trial={trial}_initlr={config['init_lr']}" +\
+                f"net={config['network']}_dataset={config['dataset']}.csv"
+        Profiler.filename = output_path / filename
         device
         # Data
         # logging.info("Adas: Preparing Data")

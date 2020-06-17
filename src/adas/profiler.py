@@ -14,18 +14,22 @@ from .gpu import GPU
 
 
 class Profiler:
-    gpu_id: int = 0
-    root: Path = Path('.')
+    base_mem_used = GPU(0).mem_used
+    filename: Path = Path('stats.csv')
 
     def __init__(self, function):
-        self.gpu = GPU(Profiler.gpu_id)
-        self.stream = (Profiler.root / 'stats.csv').open('w+')
+        self.gpu = GPU(0)
+        self.stream = None
         self.pr = cProfile.Profile()
         self.function = function
         self.statistics = List[Statistics]
+        self.header_written = False
 
     def __call__(self, train_loader, epoch: int,
                  device, optimizer, scheduler) -> Tuple[float, float]:
+        if self.stream is None:
+            self.stream = Profiler.filename.open('w+')
+            print(f"AdaS: Profiler: Writing csv to {Profiler.filename}")
         self.gpu.update()
         self.pr.enable()
         result = memory_usage(proc=(
@@ -39,7 +43,7 @@ class Profiler:
         ps.print_stats("epoch_iteration|step|trial_iteration|test_main")
         stats_list = pstats_to_dict(s.getvalue())
         header = 'epoch,epoch_gpu_mem_used,epoch_ram_used'
-        content = f'{epoch},{self.gpu.mem_used},{result[0]}'
+        content = f'{epoch},{self.gpu.mem_used - Profiler.base_mem_used},{result[0]}'
         for stat in stats_list:
             header += f",{stat['name']}_n_calls"
             header += f",{stat['name']}_tot_time"
@@ -53,7 +57,9 @@ class Profiler:
             content += f",{stat['per_call2']}"
         header += '\n'
         content += '\n'
-        self.stream.write(header)
+        if not self.header_written:
+            self.stream.write(header)
+            self.header_written = True
         self.stream.write(content)
         return result[1]
 
