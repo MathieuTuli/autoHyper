@@ -178,13 +178,6 @@ class Metrics():
                     output_channel_rank.append(0)
                     output_channel_S.append(0)
                     output_channel_condition.append(0)
-            del layer_tensor
-            del mode_3_unfold
-            del mode_4_unfold
-            del U_approx
-            del S_approx
-            del V_approx
-            del low_rank_eigen
         false_indices_3 = [i for i in range(len(factorized_index_3))
                            if factorized_index_3[i] is False]
         false_indices_4 = [i for i in range(len(factorized_index_4))
