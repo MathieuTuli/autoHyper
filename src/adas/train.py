@@ -249,12 +249,11 @@ def main(args: APNamespace):
         for epoch in epochs:
             start_time = time.time()
             # print(f"AdaS: Epoch {epoch}/{epochs[-1]} Started.")
-            train_loss, train_accuracy = epoch_iteration(
-                train_loader, epoch, device, optimizer, scheduler)
+            train_loss, train_accuracy, test_loss, test_accuracy = epoch_iteration(
+                train_loader, test_loader, epoch, device, optimizer, scheduler)
             end_time = time.time()
             if config['lr_scheduler'] == 'StepLR':
                 scheduler.step()
-            test_loss, test_accuracy = test_main(test_loader, epoch, device)
             total_time = time.time()
             print(
                 f"AdaS: Trial {trial}/{config['n_trials'] - 1} | " +
@@ -327,12 +326,14 @@ def test_main(test_loader, epoch: int, device) -> Tuple[float, float]:
         # else:
         #     torch.save(state, str(checkpoint_path))
         best_acc = acc
-    performance_statistics['acc_epoch_' + str(epoch)] = acc / 100
+    performance_statistics['test_acc_epoch_' + str(epoch)] = acc / 100
+    performance_statistics['test_loss_epoch' +
+                           str(epoch)] = test_loss / (batch_idx + 1)
     return test_loss / (batch_idx + 1), acc
 
 
 @Profiler
-def epoch_iteration(train_loader, epoch: int,
+def epoch_iteration(train_loader, test_loader, epoch: int,
                     device, optimizer, scheduler) -> Tuple[float, float]:
     # logging.info(f"Adas: Train: Epoch: {epoch}")
     global net, performance_statistics, metrics, adas, config
@@ -376,7 +377,9 @@ def epoch_iteration(train_loader, epoch: int,
         #              'Loss: %.3f | Acc: %.3f%% (%d/%d)'
         #              % (train_loss / (batch_idx + 1),
         #                  100. * correct / total, correct, total))
-    performance_statistics['Train_loss_epoch_' +
+    performance_statistics['train_acc_epoch' +
+                           str(epoch)] = float(correct / total)
+    performance_statistics['train_loss_epoch_' +
                            str(epoch)] = train_loss / (batch_idx + 1)
 
     io_metrics = metrics.evaluate(epoch)
@@ -402,7 +405,11 @@ def epoch_iteration(train_loader, epoch: int,
                                str(epoch)] = lrmetrics.rank_velocity
         performance_statistics['learning_rate_' +
                                str(epoch)] = lrmetrics.r_conv
-    return train_loss / (batch_idx + 1), 100. * correct / total
+    else:
+        performance_statistics['learning_rate_' +
+                               str(epoch)] = optimizer.param_groups[0]['lr']
+    test_loss, test_accuracy = test_main(test_loader, epoch, device)
+    return train_loss / (batch_idx + 1), 100. * correct / total, test_loss, test_accuracy
 
 
 if __name__ == "__main__":
