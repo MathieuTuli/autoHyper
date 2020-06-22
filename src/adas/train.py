@@ -406,8 +406,12 @@ def epoch_iteration(train_loader, test_loader, epoch: int,
         performance_statistics['learning_rate_' +
                                str(epoch)] = lrmetrics.r_conv
     else:
-        performance_statistics['learning_rate_' +
-                               str(epoch)] = optimizer.param_groups[0]['lr']
+        if config['optim_method'] == 'SLS':
+            performance_statistics['learning_rate_' +
+                                   str(epoch)] = optimizer.state['step_size']
+        else:
+            performance_statistics['learning_rate_' +
+                                   str(epoch)] = optimizer.param_groups[0]['lr']
     test_loss, test_accuracy = test_main(test_loader, epoch, device)
     return train_loss / (batch_idx + 1), 100. * correct / total, test_loss, test_accuracy
 
