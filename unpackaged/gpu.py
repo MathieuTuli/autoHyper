@@ -70,9 +70,9 @@ class GPU:
             # try to find it from system drive with default installation path
             nvidia_smi = spawn.find_executable('nvidia-smi')
             if nvidia_smi is None:
-                nvidia_smi = "%s\\Program Files\\NVIDIA " +\
-                    "Corporation\\NVSMI\\nvidia-smi.exe" % \
-                    os.environ['systemdrive']
+                nvidia_smi = f"{os.environ['systemdrive']}\\Program Files\\NVIDIA " +\
+                    "Corporation\\NVSMI\\nvidia-smi.exe"
+
         else:
             nvidia_smi = "nvidia-smi"
 

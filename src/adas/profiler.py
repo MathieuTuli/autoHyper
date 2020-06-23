@@ -43,8 +43,8 @@ class Profiler:
         ps.print_stats(
             "epoch_iteration|step|trial_iteration|test_main|evaluate")
         stats_list = pstats_to_dict(s.getvalue())
-        header = 'epoch,epoch_gpu_mem_used,epoch_ram_used'
-        content = f'{epoch},{self.gpu.mem_used - Profiler.base_mem_used},{result[0]}'
+        header = 'epoch,epoch_gpu_mem_used,epoch_gpu_temp,epoch_ram_used'
+        content = f'{epoch},{self.gpu.mem_used - Profiler.base_mem_used},{self.gpu.temperature},{result[0]}'
         for stat in stats_list:
             header += f",{stat['name']}_n_calls"
             header += f",{stat['name']}_tot_time"
