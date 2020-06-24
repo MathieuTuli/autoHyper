@@ -218,6 +218,14 @@ After cloning the repository, simply run
 python setup.py build
 python setup.py install
 ```
+or
+```console
+pip install .
+```
+If you will be making changes and wish to not have to reinstall the package each time, run 
+```console
+pip install -e .
+```
 
 #### Unpackaged Python ####
 
