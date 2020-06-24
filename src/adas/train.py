@@ -183,7 +183,6 @@ def main(args: APNamespace):
                 f"trial={trial}_initlr={config['init_lr']}" +\
                 f"net={config['network']}_dataset={config['dataset']}.csv"
         Profiler.filename = output_path / filename
-        device
         # Data
         # logging.info("Adas: Preparing Data")
         train_loader, test_loader = get_data(
@@ -406,7 +405,7 @@ def epoch_iteration(train_loader, test_loader, epoch: int,
         performance_statistics['learning_rate_' +
                                str(epoch)] = lrmetrics.r_conv
     else:
-        if config['optim_method'] == 'SLS':
+        if config['optim_method'] == 'SLS' or config['optim_method'] == 'SPS':
             performance_statistics['learning_rate_' +
                                    str(epoch)] = optimizer.state['step_size']
         else:

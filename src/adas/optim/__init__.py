@@ -63,6 +63,11 @@ def get_optimizer_scheduler(net_parameters: Any,
             optimizer = SGD(
                 net_parameters, lr=init_lr,
                 momentum=0.9, weight_decay=5e-4)
+    elif optim_method == 'NAG':
+        optimizer = SGD(
+            net_parameters, lr=init_lr,
+            momentum=0.9, weight_decay=5e-4,
+            nesterov=True)
     elif optim_method == 'AdaM':
         optimizer = Adam(net_parameters, lr=init_lr)
     elif optim_method == 'AdaGrad':
