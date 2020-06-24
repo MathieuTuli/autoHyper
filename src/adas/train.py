@@ -402,14 +402,14 @@ def epoch_iteration(train_loader, test_loader, epoch: int,
         lrmetrics = adas.step(epoch, metrics)
         performance_statistics['rank_velocity_epoch_' +
                                str(epoch)] = lrmetrics.rank_velocity
-        performance_statistics['learning_rate_' +
+        performance_statistics['learning_rate_epoch_' +
                                str(epoch)] = lrmetrics.r_conv
     else:
         if config['optim_method'] == 'SLS' or config['optim_method'] == 'SPS':
-            performance_statistics['learning_rate_' +
+            performance_statistics['learning_rate_epoch_' +
                                    str(epoch)] = optimizer.state['step_size']
         else:
-            performance_statistics['learning_rate_' +
+            performance_statistics['learning_rate_epoch_' +
                                    str(epoch)] = optimizer.param_groups[0]['lr']
     test_loss, test_accuracy = test_main(test_loader, epoch, device)
     return train_loss / (batch_idx + 1), 100. * correct / total, test_loss, test_accuracy
