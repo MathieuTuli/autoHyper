@@ -2,19 +2,15 @@
 [Paper](https://arxiv.org/abs/2006.06587)
 Fork from [AdaS](https://github.com/mahdihosseini/AdaS). Additional features included:
 - Additional optimizers
-  - AdaMax
-  - AdaMod
-  - AdaShift
-  - NAdam
-  - NosAdam
-  - NovoGrad
-  - PAdam
-  - RAdam
-  - SPS
-  - SLS
-  - LaProp
-  - LearningRateDropout
-## Status #
+  - AdaMax | AdaMod | AdaShift | NAdam | NosAdam | NovoGrad | PAdam | RAdam | SPS | SLS | LaProp | LearningRateDropout
+- LR Range Test Feature
+  - An automatic learning rate setting feature. The learning rate is set based on how well the knowledge gain is initialized in the network. We show that this leads to optimal performance.
+- Fully configurable hyperparameters for the various optimizers
+  - The user may now specify the specific hyperparameters for each optimizer in the `config.yaml` file (see ...)
+- CPU only mode
+- Profiling
+  - We also provide profiling including RAM usage, GPU Memory usage, GPU Temperatures, and runtimes of various bottleneck functions
+## Status ##
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![maintenance](https://img.shields.io/badge/maintained%3F-yes-brightgreen.svg)](https://GitHub.com/Naereen/StrapDown.js/graphs/commit-activity)
 [![python](https://img.shields.io/badge/python-v3.7-blue)](https://www.python.org/downloads/release/python-370/)
