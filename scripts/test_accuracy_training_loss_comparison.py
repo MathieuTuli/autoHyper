@@ -26,7 +26,7 @@ import pandas as pd
 import numpy as np
 import os
 
-evaluation_directory = '/home/mat/archive/training/AdaS/adaptive-learning-survey/other'
+evaluation_directory = '/home/mat/archive/training/AdaS/lr-range-test/'
 # datasets = ['CIFAR10', 'CIFAR100']
 # networks = ['VGG16', 'ResNet34']
 datasets = ['']
@@ -43,9 +43,14 @@ line_style = ['-', '-', '-', '-', '-', '--',
 # legend_string = [r'AdaS: $ \beta = 0.800$', r'AdaS: $ \beta = 0.850$',
 #                  r'AdaS: $ \beta = 0.900$', r'AdaS: $ \beta = 0.950$',
 #                  r'AdaS: $ \beta = 0.975$', 'SLS']
-evaluating_folders = ['AdaBound/.adas-output']
-export_string = ['AdaBound']
-legend_string = ['AdaBound']
+
+evaluating_folders = ['AdaM-000687/.adas-output', 'AdaM-001/.adas-output',
+                      'AdaM-0025/.adas-output', 'AdaM-005/.adas-output']
+export_string = ['AdaM-0.000687', 'AdaM-0.001', 'AdaM-0.0025', 'AdaM-0.005']
+legend_string = ['AdaM-0.000687', 'AdaM-0.001', 'AdaM-0.0025', 'AdaM-0.005']
+# evaluating_folders = ['AdaBound/.adas-output']
+# export_string = ['AdaBound']
+# legend_string = ['AdaBound']
 acc_min = [0.82, 0.85, 0.60, 0.63]
 acc_max = [0.945, 0.96, 0.74, 0.78]
 loss_min = [5e-4, 5e-4, 1e-3, 1e-3]

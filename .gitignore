@@ -2,6 +2,7 @@
 *checkpoint*
 *xlsx*
 *.png*
+scripts/*
 
 # Stock Python things
 /venv
