@@ -184,8 +184,10 @@ def main(args: APNamespace):
     counter = -1
     exit_counter = 0
     values = dict()
-    per_non_zero_thresh = 0.9
+    per_non_zero_thresh = 0.93
     prev_validity_kg = True
+    best_acc = 0.
+    increase_factor = 10
     while True:
         counter += 1
         # Data
@@ -268,21 +270,22 @@ def main(args: APNamespace):
             metric.output_channel_S,
             0).astype(np.float16)) for
             metric in metrics.historical_metrics])
-        invalid_kg = any([np.any(np.array(metric.input_channel_S) > 1.) or
-                          np.any(np.array(metric.output_channel_S) > 1.) for
-                          metric in metrics.historical_metrics])
+        # invalid_kg = any([np.any(np.array(metric.input_channel_S) > 1.) or
+        #                   np.any(np.array(metric.output_channel_S) > 1.) for
+        #                   metric in metrics.historical_metrics])
+        if np.greater(test_accuracy, best_acc):
+            best_acc = test_accuracy
 
         per_non_zero = 1. - np.mean([per_in_S_zero, per_out_S_zero])
         prev_learning_rate = learning_rate
-        if invalid_kg:
-            learning_rate /= 10
-        elif np.less_equal(per_non_zero, per_non_zero_thresh) \
-                and prev_validity_kg:
-            learning_rate *= 10
+        # if invalid_kg:
+        #     learning_rate /= 10
+        if np.less_equal(per_non_zero, per_non_zero_thresh):
+            learning_rate *= increase_factor
         else:
-            per_non_zero_thresh = per_non_zero
+            increase_factor = 1.3
             learning_rate /= 2
-        prev_validity_kg = not invalid_kg
+        # prev_validity_kg = not invalid_kg
         # if np.less(per_non_zero, 0.5):
         #     learning_rate *= 5
         # elif np.less(per_non_zero, 0.6):
@@ -307,18 +310,22 @@ def main(args: APNamespace):
         #     for k, v in values.items():
         #         f.write(f"LR: {k} | Perc. Non Zero: {v}\n")
         # break
-        values[prev_learning_rate] = per_non_zero
+        values[prev_learning_rate] = [per_non_zero, test_accuracy]
         print(f"AdaS: LR Range Test Iteration {counter} | " +
               f"Learning Rate: {prev_learning_rate} | " +
-              f"Valid KG: {not invalid_kg} | " +
+              # f"Valid KG: {not invalid_kg} | " +
               f"Percentage Non Zero: {per_non_zero} | " +
               f"Next Learning Rate: {learning_rate}")
         with (output_path / 'lr_and_per_non_zero.txt').open('+w') as f:
-            for k, v in values.items():
-                f.write(f"LR: {k} | Perc. Non Zero: {v}\n")
-        if counter >= 10:
-            print("AdaS: LR Range Test did 10 iterations, breaking")
+            for lr, (pnz, acc) in values.items():
+                f.write(f"LR: {lr} | Perc. Non Zero: {pnz}\n")
+        if counter >= 15:
+            print("AdaS: LR Range Test did 15 iterations, breaking")
             break
+        print("AdaS: LR Range Test Complete")
+        print(f"    {'LR':<20} {'Perc. Non Zero':<20} {'Test Accuracy':<20}")
+        for lr, (pnz, acc) in values.items():
+            print(f"    {lr:<20} {pnz:<20} {acc:<20}")
 
 
 def test_main(test_loader, epoch: int, device) -> Tuple[float, float]:

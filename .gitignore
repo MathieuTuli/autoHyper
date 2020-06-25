@@ -3,6 +3,8 @@
 *xlsx*
 *.png*
 scripts/*
+src/adas/config.yaml
+unpackaged/config.yaml
 
 # Stock Python things
 /venv

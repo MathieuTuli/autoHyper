@@ -132,7 +132,7 @@ def main(args: APNamespace):
     data_path = root_path / Path(args.data).expanduser()
     output_path = root_path / Path(args.output).expanduser()
     # global checkpoint_path, config
-    checkpoint_path = root_path / Path(args.checkpoint).expanduser()
+    GLOBALS.CHECKPOINT_PATH = root_path / Path(args.checkpoint).expanduser()
 
     if not config_path.exists():
         # logging.critical(f"AdaS: Config path {config_path} does not exist")
@@ -144,12 +144,12 @@ def main(args: APNamespace):
     if not output_path.exists():
         print(f"AdaS: Output dir {output_path} does not exist, building")
         output_path.mkdir(exist_ok=True, parents=True)
-    if not checkpoint_path.exists():
+    if not GLOBALS.CHECKPOINT_PATH.exists():
         if args.resume:
             print(f"AdaS: Cannot resume from checkpoint without specifying " +
                   "checkpoint dir")
             raise ValueError
-        checkpoint_path.mkdir(exist_ok=True, parents=True)
+        GLOBALS.CHECKPOINT_PATH.mkdir(exist_ok=True, parents=True)
     with config_path.open() as f:
         GLOBALS.CONFIG = yaml.load(f)
     print("Adas: Argument Parser Options")
@@ -208,7 +208,7 @@ def main(args: APNamespace):
             dataset=GLOBALS.CONFIG['dataset'],
             mini_batch_size=GLOBALS.CONFIG['mini_batch_size'])
         # global performance_statistics, net, metrics, adas
-        performance_statistics = {}
+        GLOBALS.PERFORMANCE_STATISTICS = {}
 
         # logging.info("AdaS: Building Model")
         GLOBALS.NET = get_net(
@@ -219,12 +219,12 @@ def main(args: APNamespace):
         GLOBALS.METRICS = Metrics(list(GLOBALS.NET.parameters()),
                                   p=GLOBALS.CONFIG['p'])
         if GLOBALS.CONFIG['lr_scheduler'] == 'AdaS':
-            adas = AdaS(parameters=list(GLOBALS.NET.parameters()),
-                        beta=GLOBALS.CONFIG['beta'],
-                        zeta=GLOBALS.CONFIG['zeta'],
-                        init_lr=learning_rate,
-                        min_lr=float(GLOBALS.CONFIG['min_lr']),
-                        p=GLOBALS.CONFIG['p'])
+            GLOBALS.ADAS = AdaS(parameters=list(GLOBALS.NET.parameters()),
+                                beta=GLOBALS.CONFIG['beta'],
+                                zeta=GLOBALS.CONFIG['zeta'],
+                                init_lr=learning_rate,
+                                min_lr=float(GLOBALS.CONFIG['min_lr']),
+                                p=GLOBALS.CONFIG['p'])
 
         GLOBALS.NET = GLOBALS.NET.to(device)
 
@@ -249,7 +249,7 @@ def main(args: APNamespace):
         if args.resume:
             # Load checkpoint.
             print("Adas: Resuming from checkpoint...")
-            checkpoint = torch.load(str(checkpoint_path / 'ckpt.pth'))
+            checkpoint = torch.load(str(GLOBALS.CHECKPOINT_PATH / 'ckpt.pth'))
             # if checkpoint_path.is_dir():
             #     checkpoint = torch.load(str(checkpoint_path / 'ckpt.pth'))
             # else:
@@ -257,7 +257,7 @@ def main(args: APNamespace):
             GLOBALS.NET.load_state_dict(checkpoint['net'])
             GLOBALS.BEST_ACC = checkpoint['acc']
             start_epoch = checkpoint['epoch']
-            if adas is not None:
+            if GLOBALS.ADAS is not None:
                 GLOBALS.METRICS.historical_metrics = \
                     checkpoint['historical_io_metrics']
 
@@ -289,7 +289,7 @@ def main(args: APNamespace):
                     train_accuracy) +
                 "Test Loss: {:.4f}% | Test Acc. {:.4f}%".format(test_loss,
                                                                 test_accuracy))
-            df = pd.DataFrame(data=performance_statistics)
+            df = pd.DataFrame(data=GLOBALS.PERFORMANCE_STATISTICS)
             if GLOBALS.CONFIG['lr_scheduler'] == 'AdaS':
                 xlsx_name = \
                     f"{GLOBALS.CONFIG['optim_method']}_AdaS_trial={trial}_" +\
