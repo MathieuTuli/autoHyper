@@ -78,6 +78,8 @@ def get_optimizer_scheduler(net_parameters: Any,
         optimizer = Adadelta(net_parameters, lr=init_lr)
     elif optim_method == 'AdaBound':
         optimizer = AdaBound(net_parameters, lr=init_lr)
+    elif optim_method == 'AMSBound':
+        optimizer = AdaBound(net_parameters, lr=init_lr, amsbound=True)
     # below = untested
     elif optim_method == 'AdaMax':
         optimizer = Adamax(net_parameters, lr=init_lr)
