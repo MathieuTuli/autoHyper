@@ -26,7 +26,7 @@ import pandas as pd
 import numpy as np
 import os
 
-evaluation_directory = '/home/mat/archive/training/AdaS/lr-range-test/'
+evaluation_directory = '/home/mat/archive/training/AdaS/lr-range-test/grid-search-experiment-v2'
 # datasets = ['CIFAR10', 'CIFAR100']
 # networks = ['VGG16', 'ResNet34']
 datasets = ['']
@@ -44,10 +44,21 @@ line_style = ['-', '-', '-', '-', '-', '--',
 #                  r'AdaS: $ \beta = 0.900$', r'AdaS: $ \beta = 0.950$',
 #                  r'AdaS: $ \beta = 0.975$', 'SLS']
 
-evaluating_folders = ['AdaM-000687/.adas-output', 'AdaM-001/.adas-output',
-                      'AdaM-0025/.adas-output', 'AdaM-005/.adas-output']
-export_string = ['AdaM-0.000687', 'AdaM-0.001', 'AdaM-0.0025', 'AdaM-0.005']
-legend_string = ['AdaM-0.000687', 'AdaM-0.001', 'AdaM-0.0025', 'AdaM-0.005']
+evaluating_folders = ['AdaM-001/.adas-output', 'AdaM-0015/.adas-output',
+                      'AdaM-002/.adas-output', 'AdaM-0025/.adas-output',
+                      'AdaM-003/.adas-output', 'AdaM-0035/.adas-output',
+                      'AdaM-004/.adas-output', 'AdaM-0045/.adas-output',
+                      'AdaM-005/.adas-output']
+export_string = ['AdaM-001', 'AdaM-0015', 'AdaM-002', 'AdaM-0025',
+                 'AdaM-003', 'AdaM-0035', 'AdaM-004', 'AdaM-0045',
+                 'AdaM-005']
+legend_string = ['AdaM-0.001', 'AdaM-0.0015', 'AdaM-0.002', 'AdaM-0.0025',
+                 'AdaM-0.003', 'AdaM-0.0035', 'AdaM-0.004', 'AdaM-0.0045',
+                 'AdaM-0.005']
+# export_string = ['AdaM-0.0016', 'AdaM-0.001',
+#                  'AdaM-0.0025', 'AdaM-0.0019', 'AdaM-0.0022']
+# legend_string = ['AdaM-0.0016', 'AdaM-0.001',
+#                  'AdaM-0.0025', 'AdaM-0.0019', 'AdaM-0.0022']
 # evaluating_folders = ['AdaBound/.adas-output']
 # export_string = ['AdaBound']
 # legend_string = ['AdaBound']
