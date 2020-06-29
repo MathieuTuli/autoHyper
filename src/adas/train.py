@@ -114,12 +114,12 @@ def args(sub_parser: _SubParsersAction):
         '-r', '--resume', action='store_true',
         dest='resume',
         help="Flag: resume training from checkpoint")
-    sub_parser.set_defaults(verbose=False)
+    sub_parser.set_defaults(resume=False)
     sub_parser.add_argument(
         '--cpu', action='store_true',
         dest='cpu',
         help="Flag: CPU bound training")
-    sub_parser.set_defaults(verbose=False)
+    sub_parser.set_defaults(cpu=False)
 
 
 def get_loss(loss: str) -> torch.nn.Module:
@@ -267,50 +267,59 @@ def main(args: APNamespace):
         # params = sum([np.prod(p.size()) for p in model_parameters])
         # print(params)
         epochs = range(start_epoch, start_epoch + GLOBALS.CONFIG['max_epoch'])
-        for epoch in epochs:
-            start_time = time.time()
-            # print(f"AdaS: Epoch {epoch}/{epochs[-1]} Started.")
-            train_loss, train_accuracy, test_loss, test_accuracy = \
-                epoch_iteration(
-                    train_loader, test_loader,
-                    epoch, device, optimizer, scheduler)
-            end_time = time.time()
-            if GLOBALS.CONFIG['lr_scheduler'] == 'StepLR':
-                scheduler.step()
-            total_time = time.time()
-            print(
-                f"AdaS: Trial {trial}/{GLOBALS.CONFIG['n_trials'] - 1} | " +
-                f"Epoch {epoch}/{epochs[-1]} Ended | " +
-                "Total Time: {:.3f}s | ".format(total_time - start_time) +
-                "Epoch Time: {:.3f}s | ".format(end_time - start_time) +
-                "~Time Left: {:.3f}s | ".format(
-                    (total_time - start_time) * (epochs[-1] - epoch)),
-                "Train Loss: {:.4f}% | Train Acc. {:.4f}% | ".format(
-                    train_loss,
-                    train_accuracy) +
-                "Test Loss: {:.4f}% | Test Acc. {:.4f}%".format(test_loss,
-                                                                test_accuracy))
-            df = pd.DataFrame(data=GLOBALS.PERFORMANCE_STATISTICS)
-            if GLOBALS.CONFIG['lr_scheduler'] == 'AdaS':
-                xlsx_name = \
-                    f"{GLOBALS.CONFIG['optim_method']}_AdaS_trial={trial}_" +\
-                    f"beta={GLOBALS.CONFIG['beta']}_initlr=" +\
-                    f"{GLOBALS.CONFIG['init_lr']}_" +\
-                    f"net={GLOBALS.CONFIG['network']}_dataset=" +\
-                    f"{GLOBALS.CONFIG['dataset']}.xlsx"
-            else:
-                xlsx_name = \
-                    f"{GLOBALS.CONFIG['optim_method']}_" +\
-                    f"{GLOBALS.CONFIG['lr_scheduler']}_" +\
-                    f"trial={trial}_initlr={GLOBALS.CONFIG['init_lr']}" +\
-                    f"net={GLOBALS.CONFIG['network']}_dataset=" +\
-                    f"{GLOBALS.CONFIG['dataset']}.xlsx"
+        run_epochs(trial, epochs, train_loader, test_loader,
+                   device, optimizer, scheduler, output_path)
 
-            df.to_excel(str(output_path / xlsx_name))
-            if GLOBALS.EARLY_STOP(train_loss):
-                print("AdaS: Early stop activated.")
-                break
+        # Needed to reset profiler file stream
+        Profiler.stream = None
     return
+
+
+def run_epochs(trial, epochs, train_loader, test_loader,
+               device, optimizer, scheduler, output_path):
+    for epoch in epochs:
+        start_time = time.time()
+        # print(f"AdaS: Epoch {epoch}/{epochs[-1]} Started.")
+        train_loss, train_accuracy, test_loss, test_accuracy = \
+            epoch_iteration(
+                train_loader, test_loader,
+                epoch, device, optimizer, scheduler)
+        end_time = time.time()
+        if GLOBALS.CONFIG['lr_scheduler'] == 'StepLR':
+            scheduler.step()
+        total_time = time.time()
+        print(
+            f"AdaS: Trial {trial}/{GLOBALS.CONFIG['n_trials'] - 1} | " +
+            f"Epoch {epoch}/{epochs[-1]} Ended | " +
+            "Total Time: {:.3f}s | ".format(total_time - start_time) +
+            "Epoch Time: {:.3f}s | ".format(end_time - start_time) +
+            "~Time Left: {:.3f}s | ".format(
+                (total_time - start_time) * (epochs[-1] - epoch)),
+            "Train Loss: {:.4f}% | Train Acc. {:.4f}% | ".format(
+                train_loss,
+                train_accuracy) +
+            "Test Loss: {:.4f}% | Test Acc. {:.4f}%".format(test_loss,
+                                                            test_accuracy))
+        df = pd.DataFrame(data=GLOBALS.PERFORMANCE_STATISTICS)
+        if GLOBALS.CONFIG['lr_scheduler'] == 'AdaS':
+            xlsx_name = \
+                f"{GLOBALS.CONFIG['optim_method']}_AdaS_trial={trial}_" +\
+                f"beta={GLOBALS.CONFIG['beta']}_initlr=" +\
+                f"{GLOBALS.CONFIG['init_lr']}_" +\
+                f"net={GLOBALS.CONFIG['network']}_dataset=" +\
+                f"{GLOBALS.CONFIG['dataset']}.xlsx"
+        else:
+            xlsx_name = \
+                f"{GLOBALS.CONFIG['optim_method']}_" +\
+                f"{GLOBALS.CONFIG['lr_scheduler']}_" +\
+                f"trial={trial}_initlr={GLOBALS.CONFIG['init_lr']}" +\
+                f"net={GLOBALS.CONFIG['network']}_dataset=" +\
+                f"{GLOBALS.CONFIG['dataset']}.xlsx"
+
+        df.to_excel(str(output_path / xlsx_name))
+        if GLOBALS.EARLY_STOP(train_loss):
+            print("AdaS: Early stop activated.")
+            break
 
 
 @Profiler
