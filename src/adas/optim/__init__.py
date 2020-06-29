@@ -51,7 +51,7 @@ from .lrd import LRD
 def get_optimizer_scheduler(
         net_parameters: Any,
         train_loader_len: int,
-        config: Dict[Union[float, str, int]]) -> torch.nn.Module:
+        config: Dict[str, Union[float, str, int]]) -> torch.nn.Module:
     # init_lr: float, optim_method: str,
     # lr_scheduler: str,
     # train_loader_len: int,
@@ -60,7 +60,7 @@ def get_optimizer_scheduler(
     lr_scheduler = config['lr_scheduler']
     init_lr = config['init_lr']
     min_lr = config['min_lr']
-    max_epochs = config['max_epochs']
+    max_epochs = config['max_epoch']
     adas_p = config['p']
     beta = config['beta']
     zeta = config['zeta']

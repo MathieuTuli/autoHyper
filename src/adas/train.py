@@ -36,6 +36,7 @@ import yaml
 
 from .optim import get_optimizer_scheduler
 from .early_stop import EarlyStop
+from .utils import parse_config
 from .profiler import Profiler
 from .metrics import Metrics
 from .models import get_net
@@ -124,7 +125,7 @@ def main(args: APNamespace):
             raise ValueError
         GLOBALS.CHECKPOINT_PATH.mkdir(exist_ok=True, parents=True)
     with config_path.open() as f:
-        GLOBALS.CONFIG = yaml.load(f)
+        GLOBALS.CONFIG = parse_config(yaml.load(f))
     print("Adas: Argument Parser Options")
     print("-"*45)
     print(f"    {'config':<20}: {args.config:<40}")
@@ -207,11 +208,12 @@ def main(args: APNamespace):
 
         optimizer, scheduler = get_optimizer_scheduler(
             net_parameters=GLOBALS.NET.parameters(),
-            init_lr=learning_rate,
-            optim_method=GLOBALS.CONFIG['optim_method'],
-            lr_scheduler=GLOBALS.CONFIG['lr_scheduler'],
+            # init_lr=learning_rate,
+            # optim_method=GLOBALS.CONFIG['optim_method'],
+            # lr_scheduler=GLOBALS.CONFIG['lr_scheduler'],
             train_loader_len=len(train_loader),
-            max_epochs=int(GLOBALS.CONFIG['max_epoch']))
+            config=GLOBALS.CONFIG)
+        # max_epochs=int(GLOBALS.CONFIG['max_epoch']))
         GLOBALS.EARLY_STOP = EarlyStop(
             patience=int(GLOBALS.CONFIG['early_stop_patience']),
             threshold=float(GLOBALS.CONFIG['early_stop_threshold']))

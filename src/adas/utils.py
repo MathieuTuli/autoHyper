@@ -57,3 +57,81 @@ def pstats_to_dict(stats: pstats.Stats) -> List[Dict[str, Union[str, float]]]:
                 f"{name[0].split('/')[-1]}_line(function)_{name[1]}"
             formatted_stats.append(stats_dict)
     return formatted_stats
+
+
+def smart_string_to_float(
+    string: str,
+        e: str = 'could not convert string to float') -> float:
+    try:
+        ret = float(string)
+        return ret
+    except ValueError:
+        raise ValueError(e)
+
+
+def smart_string_to_int(
+    string: str,
+        e: str = 'could not convert string to int') -> int:
+    try:
+        ret = int(string)
+        return ret
+    except ValueError:
+        raise ValueError(e)
+    return float('inf')
+
+
+def parse_config(
+    config: Dict[str, Union[str, float, int]]) -> Dict[
+        str, Union[str, float, int]]:
+    valid_dataset = ['CIFAR10', 'CIFAR100']
+    if config['dataset'] not in valid_dataset:
+        raise ValueError(
+            f"config.yaml: unknown dataset {config['dataset']}. " +
+            f"Must be one of {valid_dataset}")
+    valid_models = [
+        'VGG16', 'ResNet34', 'PreActResNet18',
+        'GoogLeNet', 'densenet_cifar', 'ResNeXt29_2x64d', 'MobileNet',
+        'MobileNetV2', 'DPN92', 'ShuffleNetG2', 'SENet18', 'ShuffleNetV2',
+        'EfficientNetB0']
+    if config['network'] not in valid_models:
+        raise ValueError(
+            f"config.yaml: unknown model {config['network']}." +
+            f"Must be one of {valid_models}")
+
+    if config['lr_scheduler'] == 'AdaS' and config['optim_method'] != 'SGD':
+        raise ValueError(
+            'config.yaml: AdaS can only be used with SGD')
+
+    config['n_trials'] = smart_string_to_int(
+        config['n_trials'],
+        e='config.yaml: n_trials must be an int')
+    config['beta'] = smart_string_to_float(
+        config['beta'],
+        e='config.yaml: beta must be a float')
+    config['init_lr'] = smart_string_to_float(
+        config['init_lr'],
+        e='config.yaml: init_lr must be a float')
+    config['max_epoch'] = smart_string_to_int(
+        config['max_epoch'],
+        e='config.yaml: max_epoch must be an int')
+    config['early_stop_threshold'] = smart_string_to_float(
+        config['early_stop_threshold'],
+        e='config.yaml: early_stop_threshold must be a float')
+    config['early_stop_patience'] = smart_string_to_int(
+        config['early_stop_patience'],
+        e='config.yaml: early_stop_patience must be an int')
+    config['mini_batch_size'] = smart_string_to_int(
+        config['mini_batch_size'],
+        e='config.yaml: mini_batch_size must be an int')
+    config['min_lr'] = smart_string_to_float(
+        config['min_lr'],
+        e='config.yaml: min_lr must be a float')
+    config['zeta'] = smart_string_to_float(
+        config['zeta'],
+        e='config.yaml: zeta must be a float')
+    config['p'] = smart_string_to_int(
+        config['p'],
+        e='config.yaml: p must be an int')
+    if config['loss'] != 'cross_entropy':
+        raise ValueError('config.yaml: loss must be cross_entropy')
+    return config
