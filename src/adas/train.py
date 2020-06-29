@@ -162,6 +162,7 @@ def main(args: APNamespace):
           f"{str(Path(args.root) / args.checkpoint):<40}")
     print(f"    {'root':<20}: {args.root:<40}")
     print(f"    {'resume':<20}: {'True' if args.resume else 'False':<20}")
+    print(f"    {'cpu':<20}: {'True' if args.cpu else 'False':<20}")
     print("\nAdas: Train: Config")
     print(f"    {'Key':<20} {'Value':<20}")
     print("-"*45)
