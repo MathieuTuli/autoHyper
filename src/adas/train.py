@@ -41,19 +41,11 @@ from .metrics import Metrics
 from .models import get_net
 from .test import test_main
 from .data import get_data
+from .optim.sls import SLS
+from .optim.sps import SPS
 from .AdaS import AdaS
 
-from . import __globals__ as GLOBALS
-
-# net = None
-# performance_statistics = None
-# criterion = None
-# best_acc = 0
-# metrics = None
-# adas = None
-# checkpoint_path = None
-# early_stop = None
-# config = None
+from . import global_vars as GLOBALS
 
 
 def args(sub_parser: _SubParsersAction):
@@ -70,26 +62,6 @@ def args(sub_parser: _SubParsersAction):
     #     help="Set flask debug mode")
     # sub_parser.set_defaults(verbose=False)
     # sub_parser.set_defaults(very_verbose=False)
-    # sub_parser.add_argument(
-    #     '--beta', dest='beta',
-    #     default=0.8, type=float,
-    #     help="set beta hyper-parameter")
-    # sub_parser.add_argument(
-    #     '--zeta', dest='zeta',
-    #     default=1.0, type=float,
-    #     help="set zeta hyper-parameter")
-    # sub_parser.add_argument(
-    #     '-p', dest='p',
-    #     default=2, type=int,
-    #     help="set power (p) hyper-parameter")
-    # sub_parser.add_argument(
-    #     '--init-lr', dest='init_lr',
-    #     default=3e-2, type=float,
-    #     help="set initial learning rate")
-    # sub_parser.add_argument(
-    #     '--min-lr', dest='min_lr',
-    #     default=3e-2, type=float,
-    #     help="set minimum learning rate")
     sub_parser.add_argument(
         '--config', dest='config',
         default='config.yaml', type=str,
@@ -220,13 +192,13 @@ def main(args: APNamespace):
             else 1000 if GLOBALS.CONFIG['dataset'] == 'ImageNet' else 10)
         GLOBALS.METRICS = Metrics(list(GLOBALS.NET.parameters()),
                                   p=GLOBALS.CONFIG['p'])
-        if GLOBALS.CONFIG['lr_scheduler'] == 'AdaS':
-            GLOBALS.ADAS = AdaS(parameters=list(GLOBALS.NET.parameters()),
-                                beta=GLOBALS.CONFIG['beta'],
-                                zeta=GLOBALS.CONFIG['zeta'],
-                                init_lr=learning_rate,
-                                min_lr=float(GLOBALS.CONFIG['min_lr']),
-                                p=GLOBALS.CONFIG['p'])
+        # if GLOBALS.CONFIG['lr_scheduler'] == 'AdaS':
+        #     GLOBALS.ADAS = AdaS(parameters=list(GLOBALS.NET.parameters()),
+        #                         beta=GLOBALS.CONFIG['beta'],
+        #                         zeta=GLOBALS.CONFIG['zeta'],
+        #                         init_lr=learning_rate,
+        #                         min_lr=float(GLOBALS.CONFIG['min_lr']),
+        #                         p=GLOBALS.CONFIG['p'])
 
         GLOBALS.NET = GLOBALS.NET.to(device)
 
@@ -259,7 +231,8 @@ def main(args: APNamespace):
             GLOBALS.NET.load_state_dict(checkpoint['net'])
             GLOBALS.BEST_ACC = checkpoint['acc']
             start_epoch = checkpoint['epoch']
-            if GLOBALS.ADAS is not None:
+            # if GLOBALS.ADAS is not None:
+            if isinstance(scheduler, AdaS):
                 GLOBALS.METRICS.historical_metrics = \
                     checkpoint['historical_io_metrics']
 
@@ -339,7 +312,8 @@ def epoch_iteration(train_loader, test_loader, epoch: int,
         if GLOBALS.CONFIG['lr_scheduler'] == 'CosineAnnealingWarmRestarts':
             scheduler.step(epoch + batch_idx / len(train_loader))
         optimizer.zero_grad()
-        if GLOBALS.CONFIG['optim_method'] == 'SLS':
+        # if GLOBALS.CONFIG['optim_method'] == 'SLS':
+        if isinstance(optimizer, SLS):
             def closure():
                 outputs = GLOBALS.NET(inputs)
                 loss = GLOBALS.CRITERION(outputs, targets)
@@ -349,10 +323,14 @@ def epoch_iteration(train_loader, test_loader, epoch: int,
             outputs = GLOBALS.NET(inputs)
             loss = GLOBALS.CRITERION(outputs, targets)
             loss.backward()
-            if GLOBALS.ADAS is not None:
+            # if GLOBALS.ADAS is not None:
+            #     optimizer.step(GLOBALS.METRICS.layers_index_todo,
+            #                    GLOBALS.ADAS.lr_vector)
+            if isinstance(scheduler, AdaS):
                 optimizer.step(GLOBALS.METRICS.layers_index_todo,
-                               GLOBALS.ADAS.lr_vector)
-            elif GLOBALS.CONFIG['optim_method'] == 'SPS':
+                               scheduler.lr_vector)
+            # elif GLOBALS.CONFIG['optim_method'] == 'SPS':
+            elif isinstance(optimizer, SPS):
                 optimizer.step(loss=loss)
             else:
                 optimizer.step()
@@ -391,15 +369,17 @@ def epoch_iteration(train_loader, test_loader, epoch: int,
 
     GLOBALS.PERFORMANCE_STATISTICS[f'out_condition_epoch_{epoch}'] = \
         io_metrics.output_channel_condition
-    if GLOBALS.ADAS is not None:
-        lrmetrics = GLOBALS.ADAS.step(epoch, GLOBALS.METRICS)
+    # if GLOBALS.ADAS is not None:
+    if isinstance(scheduler, AdaS):
+        lrmetrics = scheduler.step(epoch, GLOBALS.METRICS)
         GLOBALS.PERFORMANCE_STATISTICS[f'rank_velocity_epoch_{epoch}'] = \
             lrmetrics.rank_velocity
         GLOBALS.PERFORMANCE_STATISTICS[f'learning_rate_epoch_{epoch}'] = \
             lrmetrics.r_conv
     else:
-        if GLOBALS.CONFIG['optim_method'] == 'SLS' or \
-                GLOBALS.CONFIG['optim_method'] == 'SPS':
+        # if GLOBALS.CONFIG['optim_method'] == 'SLS' or \
+        #         GLOBALS.CONFIG['optim_method'] == 'SPS':
+        if isinstance(optimizer, SLS) or isinstance(optimizer, SPS):
             GLOBALS.PERFORMANCE_STATISTICS[f'learning_rate_epoch_{epoch}'] = \
                 optimizer.state['step_size']
         else:

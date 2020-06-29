@@ -21,7 +21,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-from typing import Any
+from typing import Any, Dict, Union
 
 import torch
 
@@ -39,6 +39,7 @@ from .adamax import Adamax
 from .nadam import NAdam
 from .padam import PAdam
 from .radam import RAdam
+from ..AdaS import AdaS
 from .sgd import SGDVec
 from .adam import Adam
 from .sgd import SGD
@@ -47,11 +48,23 @@ from .sls import SLS
 from .lrd import LRD
 
 
-def get_optimizer_scheduler(net_parameters: Any,
-                            init_lr: float, optim_method: str,
-                            lr_scheduler: str,
-                            train_loader_len: int,
-                            max_epochs: int) -> torch.nn.Module:
+def get_optimizer_scheduler(
+        net_parameters: Any,
+        train_loader_len: int,
+        config: Dict[Union[float, str, int]]) -> torch.nn.Module:
+    # init_lr: float, optim_method: str,
+    # lr_scheduler: str,
+    # train_loader_len: int,
+    # max_epochs: int) -> torch.nn.Module:
+    optim_method = config['optim_method']
+    lr_scheduler = config['lr_scheduler']
+    init_lr = config['init_lr']
+    min_lr = config['min_lr']
+    max_epochs = config['max_epochs']
+    adas_p = config['p']
+    beta = config['beta']
+    zeta = config['zeta']
+
     optimizer = None
     scheduler = None
     if optim_method == 'SGD':
@@ -120,6 +133,13 @@ def get_optimizer_scheduler(net_parameters: Any,
         scheduler = OneCycleLR(
             optimizer, max_lr=init_lr,
             steps_per_epoch=train_loader_len, epochs=max_epochs)
-    elif lr_scheduler != 'AdaS':
+    elif lr_scheduler == 'AdaS':
+        scheduler = AdaS(parameters=net_parameters,
+                         beta=beta,
+                         zeta=zeta,
+                         init_lr=init_lr,
+                         min_lr=min_lr,
+                         p=adas_p)
+    elif lr_scheduler not in ['None', '']:
         print(f"Adas: Warning: Unknown LR scheduler {lr_scheduler}")
     return (optimizer, scheduler)

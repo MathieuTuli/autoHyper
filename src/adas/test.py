@@ -2,7 +2,7 @@ from typing import Tuple
 
 import torch
 
-from . import __globals__ as GLOBALS
+from . import global_vars as GLOBALS
 
 
 def test_main(test_loader, epoch: int, device) -> Tuple[float, float]:
