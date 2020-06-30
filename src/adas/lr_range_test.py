@@ -22,7 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 from argparse import Namespace as APNamespace, _SubParsersAction
-from typing import Tuple
+from typing import Tuple, List
 from pathlib import Path
 
 # import logging
@@ -34,30 +34,24 @@ import numpy as np
 import torch
 import yaml
 
-# from .test import main as test_main
-# from .utils import progress_bar
-from adas.optim import get_optimizer_scheduler
-from adas.early_stop import EarlyStop
-from adas.profiler import Profiler
-from adas.metrics import Metrics
-from adas.models import get_net
-from adas.data import get_data
-from adas.AdaS import AdaS
+from .optim import get_optimizer_scheduler
+from .early_stop import EarlyStop
+from .utils import parse_config
+from .profiler import Profiler
+from .metrics import Metrics
+from .models import get_net
+from .test import test_main
+from .data import get_data
+from .optim.sls import SLS
+from .optim.sps import SPS
+from .AdaS import AdaS
 
-
-net = None
-performance_statistics = None
-criterion = None
-metrics = None
-adas = None
-early_stop = None
-config = None
-counter = 0
+from . import global_vars as GLOBALS
 
 
 def args(sub_parser: _SubParsersAction):
     # print("\n---------------------------------")
-    # print("AdaS LR Range Test Args")
+    # print("AdaS Train Args")
     # print("---------------------------------\n")
     # sub_parser.add_argument(
     #     '-vv', '--very-verbose', action='store_true',
@@ -69,26 +63,6 @@ def args(sub_parser: _SubParsersAction):
     #     help="Set flask debug mode")
     # sub_parser.set_defaults(verbose=False)
     # sub_parser.set_defaults(very_verbose=False)
-    # sub_parser.add_argument(
-    #     '--beta', dest='beta',
-    #     default=0.8, type=float,
-    #     help="set beta hyper-parameter")
-    # sub_parser.add_argument(
-    #     '--zeta', dest='zeta',
-    #     default=1.0, type=float,
-    #     help="set zeta hyper-parameter")
-    # sub_parser.add_argument(
-    #     '-p', dest='p',
-    #     default=2, type=int,
-    #     help="set power (p) hyper-parameter")
-    # sub_parser.add_argument(
-    #     '--init-lr', dest='init_lr',
-    #     default=3e-2, type=float,
-    #     help="set initial learning rate")
-    # sub_parser.add_argument(
-    #     '--min-lr', dest='min_lr',
-    #     default=3e-2, type=float,
-    #     help="set minimum learning rate")
     sub_parser.add_argument(
         '--config', dest='config',
         default='config.yaml', type=str,
@@ -102,10 +76,23 @@ def args(sub_parser: _SubParsersAction):
         default='.adas-output', type=str,
         help="Set output directory path: Default = '.adas-output'")
     sub_parser.add_argument(
+        '--checkpoint', dest='checkpoint',
+        default='.adas-checkpoint', type=str,
+        help="Set checkpoint directory path: Default = '.adas-checkpoint")
+    sub_parser.add_argument(
         '--root', dest='root',
         default='.', type=str,
         help="Set root path of project that parents all others: Default = '.'")
-    sub_parser.set_defaults(verbose=False)
+    sub_parser.add_argument(
+        '-r', '--resume', action='store_true',
+        dest='resume',
+        help="Flag: resume training from checkpoint")
+    sub_parser.set_defaults(resume=False)
+    sub_parser.add_argument(
+        '--cpu', action='store_true',
+        dest='cpu',
+        help="Flag: CPU bound training")
+    sub_parser.set_defaults(cpu=False)
 
 
 def get_loss(loss: str) -> torch.nn.Module:
@@ -118,7 +105,8 @@ def main(args: APNamespace):
     config_path = Path(args.config).expanduser()
     data_path = root_path / Path(args.data).expanduser()
     output_path = root_path / Path(args.output).expanduser()
-    global config
+    # global checkpoint_path, config
+    GLOBALS.CHECKPOINT_PATH = root_path / Path(args.checkpoint).expanduser()
 
     if not config_path.exists():
         # logging.critical(f"AdaS: Config path {config_path} does not exist")
@@ -130,232 +118,183 @@ def main(args: APNamespace):
     if not output_path.exists():
         print(f"AdaS: Output dir {output_path} does not exist, building")
         output_path.mkdir(exist_ok=True, parents=True)
+    if not GLOBALS.CHECKPOINT_PATH.exists():
+        if args.resume:
+            print(f"AdaS: Cannot resume from checkpoint without specifying " +
+                  "checkpoint dir")
+            raise ValueError
+        GLOBALS.CHECKPOINT_PATH.mkdir(exist_ok=True, parents=True)
     with config_path.open() as f:
-        config = yaml.load(f)
+        GLOBALS.CONFIG = parse_config(yaml.load(f))
     print("Adas: Argument Parser Options")
     print("-"*45)
     print(f"    {'config':<20}: {args.config:<40}")
     print(f"    {'data':<20}: {str(Path(args.root) / args.data):<40}")
     print(f"    {'output':<20}: {str(Path(args.root) / args.output):<40}")
+    print(f"    {'checkpoint':<20}: " +
+          f"{str(Path(args.root) / args.checkpoint):<40}")
     print(f"    {'root':<20}: {args.root:<40}")
-    print("\nAdas: LR Range Test: Config")
+    print(f"    {'resume':<20}: {'True' if args.resume else 'False':<20}")
+    print(f"    {'cpu':<20}: {'True' if args.cpu else 'False':<20}")
+    print("\nAdas: Train: Config")
     print(f"    {'Key':<20} {'Value':<20}")
     print("-"*45)
-    for k, v in config.items():
+    for k, v in GLOBALS.CONFIG.items():
         print(f"    {k:<20} {v:<20}")
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    device = 'cuda' if torch.cuda.is_available() and not args.cpu else 'cpu'
     print(f"AdaS: Pytorch device is set to {device}")
+    # global best_acc
+    GLOBALS.BEST_ACC = 0  # best test accuracy
     start_epoch = 0  # start from epoch 0 or last checkpoint epoch
-    if np.less(float(config['early_stop_threshold']), 0):
-        print("AdaS: Notice: early stop will not be used as it was set to " +
-              "{early_stop}, training till completion.")
+    if np.less(float(GLOBALS.CONFIG['early_stop_threshold']), 0):
+        print(
+            "AdaS: Notice: early stop will not be used as it was set to " +
+            f"{GLOBALS.CONFIG['early_stop_threshold']}, training till " +
+            "completion")
 
-    learning_rate = config['init_lr']
-    if config['lr_scheduler'] == 'AdaS':
+    # if config['init_lr'] == 'auto':
+    #     learning_rate = lr_range_test(
+    #         root=output_path,
+    #         config=config
+    #         learning_rate=learning_rate)
+    if GLOBALS.CONFIG['lr_scheduler'] == 'AdaS':
         filename = \
-            f"stats_{config['optim_method']}_AdaS_LR_Range_test_" +\
-            f"beta={config['beta']}_initlr={config['init_lr']}_" +\
-            f"net={config['network']}_dataset={config['dataset']}.csv"
+            f"stats_{GLOBALS.CONFIG['optim_method']}_AdaS_LR_Range_test_" +\
+            f"beta={GLOBALS.CONFIG['beta']}_initlr={GLOBALS.CONFIG['init_lr']}_" +\
+            f"net={GLOBALS.CONFIG['network']}_dataset={GLOBALS.CONFIG['dataset']}.csv"
     else:
         filename = \
-            f"stats_{config['optim_method']}_{config['lr_scheduler']}_" +\
-            f"LR_Range_Test_initlr={config['init_lr']}" +\
-            f"net={config['network']}_dataset={config['dataset']}.csv"
-    if config['lr_scheduler'] == 'AdaS':
-        xlsx_name = \
-            f"{config['optim_method']}_AdaS_LR_Range_Test_" +\
-            f"beta={config['beta']}_initlr={learning_rate}_" +\
-            f"net={config['network']}_dataset=" +\
-            f"{config['dataset']}.xlsx"
-    else:
-        xlsx_name = \
-            f"{config['optim_method']}_{config['lr_scheduler']}" +\
-            f"_LR_Range_Test_initlr={learning_rate}" +\
-            f"net={config['network']}_dataset=" +\
-            f"{config['dataset']}.xlsx"
+            f"stats_{GLOBALS.CONFIG['optim_method']}_{GLOBALS.CONFIG['lr_scheduler']}_" +\
+            f"LR_Range_Test_initlr={GLOBALS.CONFIG['init_lr']}" +\
+            f"net={GLOBALS.CONFIG['network']}_dataset={GLOBALS.CONFIG['dataset']}.csv"
     Profiler.filename = output_path / filename
-    global performance_statistics
-    performance_statistics = {}
 
-    per_zero_thresh_low = 0.5  # float(config['per_zero_thresh'])
-    per_zero_thresh_high = 0.9  # float(config['per_zero_thresh'])
-
-    global counter
-    counter = -1
-    exit_counter = 0
-    values = dict()
-    per_non_zero_thresh = 0.93
-    prev_validity_kg = True
-    best_acc = 0.
-    increase_factor = 10
-    while True:
-        counter += 1
+    # ###### LR RANGE STUFF #######
+    learning_rates = np.geomspace(0.00001, 0.1, 9)
+    non_zero_history = list()
+    lr_idx = 0
+    min_delta = 0.05
+    ##############################
+    while lr_idx < len(learning_rates):
         # Data
         # logging.info("Adas: Preparing Data")
+        GLOBALS.CONFIG['init_lr'] = learning_rates[lr_idx]
         train_loader, test_loader = get_data(
             root=data_path,
-            dataset=config['dataset'],
-            mini_batch_size=config['mini_batch_size'])
-        global net, metrics, adas
+            dataset=GLOBALS.CONFIG['dataset'],
+            mini_batch_size=GLOBALS.CONFIG['mini_batch_size'])
+        # global performance_statistics, net, metrics, adas
+        GLOBALS.PERFORMANCE_STATISTICS = {}
 
         # logging.info("AdaS: Building Model")
-        net = get_net(config['network'], num_classes=10 if config['dataset'] ==
-                      'CIFAR10' else 100 if config['dataset'] == 'CIFAR100'
-                      else 1000 if config['dataset'] == 'ImageNet' else 10)
-        if config['lr_scheduler'] == 'AdaS':
-            adas = AdaS(parameters=list(net.parameters()),
-                        beta=config['beta'],
-                        zeta=config['zeta'],
-                        init_lr=learning_rate,
-                        min_lr=float(config['min_lr']),
-                        p=config['p'])
+        GLOBALS.NET = get_net(
+            GLOBALS.CONFIG['network'], num_classes=10 if
+            GLOBALS.CONFIG['dataset'] == 'CIFAR10' else 100 if
+            GLOBALS.CONFIG['dataset'] == 'CIFAR100'
+            else 1000 if GLOBALS.CONFIG['dataset'] == 'ImageNet' else 10)
+        GLOBALS.METRICS = Metrics(list(GLOBALS.NET.parameters()),
+                                  p=GLOBALS.CONFIG['p'])
 
-        net = net.to(device)
+        GLOBALS.NET = GLOBALS.NET.to(device)
 
-        global criterion
-        criterion = get_loss(config['loss'])
+        # global criterion
+        GLOBALS.CRITERION = get_loss(GLOBALS.CONFIG['loss'])
 
         optimizer, scheduler = get_optimizer_scheduler(
-            net_parameters=net.parameters(),
-            init_lr=learning_rate,
-            optim_method=config['optim_method'],
-            lr_scheduler=config['lr_scheduler'],
+            net_parameters=GLOBALS.NET.parameters(),
+            # init_lr=learning_rate,
+            # optim_method=GLOBALS.CONFIG['optim_method'],
+            # lr_scheduler=GLOBALS.CONFIG['lr_scheduler'],
             train_loader_len=len(train_loader),
-            max_epochs=int(config['max_epoch']))
-        early_stop = EarlyStop(patience=int(config['early_stop_patience']),
-                               threshold=float(config['early_stop_threshold']))
+            config=GLOBALS.CONFIG)
+        # max_epochs=int(GLOBALS.CONFIG['max_epoch']))
+        GLOBALS.EARLY_STOP = EarlyStop(
+            patience=int(GLOBALS.CONFIG['early_stop_patience']),
+            threshold=float(GLOBALS.CONFIG['early_stop_threshold']))
 
         if device == 'cuda':
-            net = torch.nn.DataParallel(net)
+            GLOBALS.NET = torch.nn.DataParallel(GLOBALS.NET)
             cudnn.benchmark = True
 
-        epochs = range(0, 3)
-        metrics = Metrics(list(net.parameters()),
-                          p=config['p'])
-        for epoch in epochs:
-            start_time = time.time()
-            # print(f"AdaS: Epoch {epoch}/{epochs[-1]} Started.")
-            train_loss, train_accuracy = epoch_iteration(
-                train_loader, epoch, device, optimizer, scheduler)
-            end_time = time.time()
-            if config['lr_scheduler'] == 'StepLR':
-                scheduler.step()
-            test_loss, test_accuracy = test_main(
-                test_loader, epoch, device)
-            total_time = time.time()
-            print(
-                f"AdaS: LR Range Test " +
-                f"Epoch {epoch}/{epochs[-1]} Ended | " +
-                "Total Time: {:.3f}s | ".format(total_time - start_time) +
-                "Epoch Time: {:.3f}s | ".format(end_time - start_time) +
-                "~Time Left: {:.3f}s | ".format(
-                    (total_time - start_time) * (epochs[-1] - epoch)),
-                "Train Loss: {:.4f}% | Train Acc. {:.4f}% | ".format(
-                    train_loss,
-                    train_accuracy) +
-                "Test Loss: {:.4f}% | Test Acc. {:.4f}%".format(
-                    test_loss,
-                    test_accuracy))
-            df = pd.DataFrame(data=performance_statistics)
+        epochs = range(0, 5)
+        run_epochs(0, epochs, train_loader, test_loader,
+                   device, optimizer, scheduler, output_path)
+        Profiler.stream = None
 
-            df.to_excel(str(output_path / xlsx_name))
-            if early_stop(train_loss):
-                print("AdaS: Early stop activated.")
-                break
-        per_in_S_zero = np.mean([np.mean(np.isclose(
-            metric.input_channel_S,
-            0).astype(np.float16)) for
-            metric in metrics.historical_metrics])
-        per_out_S_zero = np.mean([np.mean(np.isclose(
-            metric.output_channel_S,
-            0).astype(np.float16)) for
-            metric in metrics.historical_metrics])
-        # invalid_kg = any([np.any(np.array(metric.input_channel_S) > 1.) or
-        #                   np.any(np.array(metric.output_channel_S) > 1.) for
-        #                   metric in metrics.historical_metrics])
-        if np.greater(test_accuracy, best_acc):
-            best_acc = test_accuracy
+        # ###### LR RANGE STUFF #######
+        non_zero_history[lr_idx] = compute_non_zero()
+        if lr_idx > 0:
+            delta = np.subtract(
+                non_zero_history[lr_idx], non_zero_history[lr_idx - 1])
+            if np.less(np.abs(delta) > min_delta):
+                if np.less(delta,
+            else:
+                ...
+        lr_idx += 1
+    return
 
-        per_non_zero = 1. - np.mean([per_in_S_zero, per_out_S_zero])
-        prev_learning_rate = learning_rate
-        # if invalid_kg:
-        #     learning_rate /= 10
-        if np.less_equal(per_non_zero, per_non_zero_thresh):
-            learning_rate *= increase_factor
+
+def compute_non_zero(int, non_zero_history: List[float]):
+    per_S_zero = np.mean([np.mean(np.isclose(
+        metric.input_channel_S + metric.output_channel_S,
+        0).astype(np.float16)) for
+        metric in GLOBALS.METRICS.historical_metrics])
+    per_non_zero = 1. - per_S_zero
+
+
+def run_epochs(trial, epochs, train_loader, test_loader,
+               device, optimizer, scheduler, output_path):
+    for epoch in epochs:
+        start_time = time.time()
+        # print(f"AdaS: Epoch {epoch}/{epochs[-1]} Started.")
+        train_loss, train_accuracy, test_loss, test_accuracy = \
+            epoch_iteration(
+                train_loader, test_loader,
+                epoch, device, optimizer, scheduler)
+        end_time = time.time()
+        if GLOBALS.CONFIG['lr_scheduler'] == 'StepLR':
+            scheduler.step()
+        total_time = time.time()
+        print(
+            f"AdaS: Trial {trial}/{GLOBALS.CONFIG['n_trials'] - 1} | " +
+            f"Epoch {epoch}/{epochs[-1]} Ended | " +
+            "Total Time: {:.3f}s | ".format(total_time - start_time) +
+            "Epoch Time: {:.3f}s | ".format(end_time - start_time) +
+            "~Time Left: {:.3f}s | ".format(
+                (total_time - start_time) * (epochs[-1] - epoch)),
+            "Train Loss: {:.4f}% | Train Acc. {:.4f}% | ".format(
+                train_loss,
+                train_accuracy) +
+            "Test Loss: {:.4f}% | Test Acc. {:.4f}%".format(test_loss,
+                                                            test_accuracy))
+        df = pd.DataFrame(data=GLOBALS.PERFORMANCE_STATISTICS)
+        if GLOBALS.CONFIG['lr_scheduler'] == 'AdaS':
+            xlsx_name = \
+                f"{GLOBALS.CONFIG['optim_method']}_AdaS_trial={trial}_" +\
+                f"beta={GLOBALS.CONFIG['beta']}_initlr=" +\
+                f"{GLOBALS.CONFIG['init_lr']}_" +\
+                f"net={GLOBALS.CONFIG['network']}_dataset=" +\
+                f"{GLOBALS.CONFIG['dataset']}.xlsx"
         else:
-            increase_factor = 1.3
-            learning_rate /= 2
-        # prev_validity_kg = not invalid_kg
-        # if np.less(per_non_zero, 0.5):
-        #     learning_rate *= 5
-        # elif np.less(per_non_zero, 0.6):
-        #     learning_rate *= 5
-        # elif np.less(per_non_zero, 0.7):
-        #     learning_rate *= 5
-        # elif np.less(per_non_zero, 0.8):
-        #     learning_rate *= 0.5
-        # elif np.less(per_non_zero, 0.89):
-        #     learning_rate *= 0.5
-        # elif np.less(per_non_zero, 0.9):
-        #     learning_rate *= 0.9
-        # elif np.less(per_non_zero, 0.95):
-        #     learning_rate *= 0.95
-        # else:
-        # values[prev_learning_rate] = per_non_zero
-        # print(f"AdaS: LR Range Test Iteration {counter} | " +
-        #       f"Learning Rate: {prev_learning_rate} | " +
-        #       f"Percentage Non Zero: {per_non_zero} | " +
-        #       f"Next Learning Rate: {learning_rate}")
-        # with (output_path / 'lr_and_per_non_zero.txt').open('+w') as f:
-        #     for k, v in values.items():
-        #         f.write(f"LR: {k} | Perc. Non Zero: {v}\n")
-        # break
-        values[prev_learning_rate] = [per_non_zero, test_accuracy]
-        print(f"AdaS: LR Range Test Iteration {counter} | " +
-              f"Learning Rate: {prev_learning_rate} | " +
-              # f"Valid KG: {not invalid_kg} | " +
-              f"Percentage Non Zero: {per_non_zero} | " +
-              f"Next Learning Rate: {learning_rate}")
-        with (output_path / 'lr_and_per_non_zero.txt').open('+w') as f:
-            for lr, (pnz, acc) in values.items():
-                f.write(f"LR: {lr} | Perc. Non Zero: {pnz}\n")
-        if counter >= 15:
-            print("AdaS: LR Range Test did 15 iterations, breaking")
+            xlsx_name = \
+                f"{GLOBALS.CONFIG['optim_method']}_" +\
+                f"{GLOBALS.CONFIG['lr_scheduler']}_" +\
+                f"trial={trial}_initlr={GLOBALS.CONFIG['init_lr']}" +\
+                f"net={GLOBALS.CONFIG['network']}_dataset=" +\
+                f"{GLOBALS.CONFIG['dataset']}.xlsx"
+
+        df.to_excel(str(output_path / xlsx_name))
+        if GLOBALS.EARLY_STOP(train_loss):
+            print("AdaS: Early stop activated.")
             break
-        print("AdaS: LR Range Test Complete")
-        print(f"    {'LR':<20} {'Perc. Non Zero':<20} {'Test Accuracy':<20}")
-        for lr, (pnz, acc) in values.items():
-            print(f"    {lr:<20} {pnz:<20} {acc:<20}")
 
 
-def test_main(test_loader, epoch: int, device) -> Tuple[float, float]:
-    global performance_statistics, net, criterion, counter
-    net.eval()
-    test_loss = 0
-    correct = 0
-    total = 0
-    with torch.no_grad():
-        for batch_idx, (inputs, targets) in enumerate(test_loader):
-            inputs, targets = inputs.to(device), targets.to(device)
-            outputs = net(inputs)
-            loss = criterion(outputs, targets)
-
-            test_loss += loss.item()
-            _, predicted = outputs.max(1)
-            total += targets.size(0)
-            correct += predicted.eq(targets).sum().item()
-
-    acc = 100. * correct / total
-    performance_statistics[f'lrrt_{counter}_acc_epoch_' +
-                           str(epoch)] = acc / 100
-    return test_loss / (batch_idx + 1), acc
-
-
-def epoch_iteration(train_loader, epoch: int,
+@Profiler
+def epoch_iteration(train_loader, test_loader, epoch: int,
                     device, optimizer, scheduler) -> Tuple[float, float]:
     # logging.info(f"Adas: Train: Epoch: {epoch}")
-    global net, performance_statistics, metrics, adas, config, counter
-    net.train()
+    # global net, performance_statistics, metrics, adas, config
+    GLOBALS.NET.train()
     train_loss = 0
     correct = 0
     total = 0
@@ -363,23 +302,28 @@ def epoch_iteration(train_loader, epoch: int,
     """train CNN architecture"""
     for batch_idx, (inputs, targets) in enumerate(train_loader):
         inputs, targets = inputs.to(device), targets.to(device)
-        if config['lr_scheduler'] == 'CosineAnnealingWarmRestarts':
+        if GLOBALS.CONFIG['lr_scheduler'] == 'CosineAnnealingWarmRestarts':
             scheduler.step(epoch + batch_idx / len(train_loader))
         optimizer.zero_grad()
-        if config['optim_method'] == 'SLS':
+        # if GLOBALS.CONFIG['optim_method'] == 'SLS':
+        if isinstance(optimizer, SLS):
             def closure():
-                outputs = net(inputs)
-                loss = criterion(outputs, targets)
+                outputs = GLOBALS.NET(inputs)
+                loss = GLOBALS.CRITERION(outputs, targets)
                 return loss, outputs
             loss, outputs = optimizer.step(closure=closure)
         else:
-            outputs = net(inputs)
-            loss = criterion(outputs, targets)
+            outputs = GLOBALS.NET(inputs)
+            loss = GLOBALS.CRITERION(outputs, targets)
             loss.backward()
-            if adas is not None:
-                optimizer.step(metrics.layers_index_todo,
-                               adas.lr_vector)
-            elif config['optim_method'] == 'SPS':
+            # if GLOBALS.ADAS is not None:
+            #     optimizer.step(GLOBALS.METRICS.layers_index_todo,
+            #                    GLOBALS.ADAS.lr_vector)
+            if isinstance(scheduler, AdaS):
+                optimizer.step(GLOBALS.METRICS.layers_index_todo,
+                               scheduler.lr_vector)
+            # elif GLOBALS.CONFIG['optim_method'] == 'SPS':
+            elif isinstance(optimizer, SPS):
                 optimizer.step(loss=loss)
             else:
                 optimizer.step()
@@ -388,47 +332,55 @@ def epoch_iteration(train_loader, epoch: int,
         _, predicted = outputs.max(1)
         total += targets.size(0)
         correct += predicted.eq(targets).sum().item()
-        if config['lr_scheduler'] == 'OneCycleLR':
+        if GLOBALS.CONFIG['lr_scheduler'] == 'OneCycleLR':
             scheduler.step()
 
         # progress_bar(batch_idx, len(train_loader),
         #              'Loss: %.3f | Acc: %.3f%% (%d/%d)'
         #              % (train_loss / (batch_idx + 1),
         #                  100. * correct / total, correct, total))
-    performance_statistics[f'lrrt_{counter}_Train_loss_epoch_' +
-                           str(epoch)] = train_loss / (batch_idx + 1)
+    GLOBALS.PERFORMANCE_STATISTICS[f'train_acc_epoch_{epoch}'] = \
+        float(correct / total)
+    GLOBALS.PERFORMANCE_STATISTICS[f'train_loss_epoch_{epoch}'] = \
+        train_loss / (batch_idx + 1)
 
-    io_metrics = metrics.evaluate(epoch)
-    performance_statistics[f'lrrt_{counter}_in_S_epoch_' +
-                           str(epoch)] = io_metrics.input_channel_S
-    performance_statistics[f'lrrt_{counter}_out_S_epoch_' +
-                           str(epoch)] = io_metrics.output_channel_S
-    performance_statistics[f'lrrt_{counter}_fc_S_epoch_' +
-                           str(epoch)] = io_metrics.fc_S
-    performance_statistics[f'lrrt_{counter}_in_rank_epoch_' +
-                           str(epoch)] = io_metrics.input_channel_rank
-    performance_statistics[f'lrrt_{counter}_out_rank_epoch_' +
-                           str(epoch)] = io_metrics.output_channel_rank
-    performance_statistics[f'lrrt_{counter}_fc_rank_epoch_' +
-                           str(epoch)] = io_metrics.fc_rank
-    performance_statistics[f'lrrt_{counter}_in_condition_epoch_' +
-                           str(epoch)] = io_metrics.input_channel_condition
-    performance_statistics[f'lrrt_{counter}_out_condition_epoch_' +
-                           str(epoch)] = io_metrics.output_channel_condition
-    if adas is not None:
-        lrmetrics = adas.step(epoch, metrics)
-        performance_statistics[f'lrrt_{counter}_rank_velocity_epoch_' +
-                               str(epoch)] = lrmetrics.rank_velocity
-        performance_statistics[f'lrrt_{counter}_learning_rate_epoch_' +
-                               str(epoch)] = lrmetrics.r_conv
+    io_metrics = GLOBALS.METRICS.evaluate(epoch)
+    GLOBALS.PERFORMANCE_STATISTICS[f'in_S_epoch_{epoch}'] = \
+        io_metrics.input_channel_S
+    GLOBALS.PERFORMANCE_STATISTICS[f'out_S_epoch_{epoch}'] = \
+        io_metrics.output_channel_S
+    GLOBALS.PERFORMANCE_STATISTICS[f'fc_S_epoch_{epoch}'] = \
+        io_metrics.fc_S
+    GLOBALS.PERFORMANCE_STATISTICS[f'in_rank_epoch_{epoch}'] = \
+        io_metrics.input_channel_rank
+    GLOBALS.PERFORMANCE_STATISTICS[f'out_rank_epoch_{epoch}'] = \
+        io_metrics.output_channel_rank
+    GLOBALS.PERFORMANCE_STATISTICS[f'fc_rank_epoch_{epoch}'] = \
+        io_metrics.fc_rank
+    GLOBALS.PERFORMANCE_STATISTICS[f'in_condition_epoch_{epoch}'] = \
+        io_metrics.input_channel_condition
+
+    GLOBALS.PERFORMANCE_STATISTICS[f'out_condition_epoch_{epoch}'] = \
+        io_metrics.output_channel_condition
+    # if GLOBALS.ADAS is not None:
+    if isinstance(scheduler, AdaS):
+        lrmetrics = scheduler.step(epoch, GLOBALS.METRICS)
+        GLOBALS.PERFORMANCE_STATISTICS[f'rank_velocity_epoch_{epoch}'] = \
+            lrmetrics.rank_velocity
+        GLOBALS.PERFORMANCE_STATISTICS[f'learning_rate_epoch_{epoch}'] = \
+            lrmetrics.r_conv
     else:
-        if config['optim_method'] == 'SLS' or config['optim_method'] == 'SPS':
-            performance_statistics[f'lrr_{counter}_learning_rate_epoch_' +
-                                   str(epoch)] = optimizer.state['step_size']
+        # if GLOBALS.CONFIG['optim_method'] == 'SLS' or \
+        #         GLOBALS.CONFIG['optim_method'] == 'SPS':
+        if isinstance(optimizer, SLS) or isinstance(optimizer, SPS):
+            GLOBALS.PERFORMANCE_STATISTICS[f'learning_rate_epoch_{epoch}'] = \
+                optimizer.state['step_size']
         else:
-            performance_statistics[f'lrrt_{counter}_learning_rate_epoch_' +
-                                   str(epoch)] = optimizer.param_groups[0]['lr']
-    return train_loss / (batch_idx + 1), 100. * correct / total
+            GLOBALS.PERFORMANCE_STATISTICS[f'learning_rate_epoch_{epoch}'] = \
+                optimizer.param_groups[0]['lr']
+    test_loss, test_accuracy = test_main(test_loader, epoch, device)
+    return (train_loss / (batch_idx + 1), 100. * correct / total,
+            test_loss, test_accuracy)
 
 
 if __name__ == "__main__":

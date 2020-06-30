@@ -152,15 +152,12 @@ def main(args: APNamespace):
             f"{GLOBALS.CONFIG['early_stop_threshold']}, training till " +
             "completion")
 
-    try:
-        learning_rate = float(GLOBALS.CONFIG['init_lr'])
-    except ValueError:
-        ...
-        # if config['init_lr'] == 'auto':
-        #     learning_rate = lr_range_test(
-        #         root=output_path,
-        #         config=config
-        #         learning_rate=learning_rate)
+    learning_rate = GLOBALS.CONFIG['init_lr']
+    # if config['init_lr'] == 'auto':
+    #     learning_rate = lr_range_test(
+    #         root=output_path,
+    #         config=config
+    #         learning_rate=learning_rate)
     for trial in range(GLOBALS.CONFIG['n_trials']):
         if GLOBALS.CONFIG['lr_scheduler'] == 'AdaS':
             filename = \
