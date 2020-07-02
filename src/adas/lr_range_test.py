@@ -170,10 +170,14 @@ def main(args: APNamespace):
     Profiler.filename = output_path / filename
 
     # ###### LR RANGE STUFF #######
-    learning_rates = np.geomspace(0.00001, 0.1, 9)
+    min_lr = 0.00001
+    max_lr = 0.1
+    learning_rates = np.geomspace(min_lr, max_lr, 9)
     non_zero_history = list()
     lr_idx = 0
     min_delta = 0.05
+    non_zero_thresh = 0.89
+    exit_counter = 0
     ##############################
     while lr_idx < len(learning_rates):
         # Data
@@ -222,15 +226,46 @@ def main(args: APNamespace):
         Profiler.stream = None
 
         # ###### LR RANGE STUFF #######
-        non_zero_history[lr_idx] = compute_non_zero()
-        if lr_idx > 0:
-            delta = np.subtract(
-                non_zero_history[lr_idx], non_zero_history[lr_idx - 1])
-            if np.less(np.abs(delta) > min_delta):
-                if np.less(delta,
-            else:
-                ...
+        non_zero_history[lr_idx] = cur_non_zero = compute_non_zero()
+        print(f"LR Range Test: Cur Space: {learning_rates}")
+        print(f"LR Range Test: Cur lr: {learning_rates[lr_idx]}")
+        print(f"LR Range Test: Cur %: {cur_non_zero}")
+        # TODO minimum on min_lr?
+        if lr_idx == 0:
+            if np.greater(cur_non_zero, non_zero_thresh):
+                min_lr /= 10
+                learning_rates = np.geomspace(min_lr, max_lr, 9)
+                print("LR Range Test: Crossed thresh early, new range: " +
+                      f"{learning_rates}")
+                # lr_idx = 0 ; redundant
+                continue
+        else:
+            if np.isclose(cur_non_zero, 1.0):
+                min_lr = min(learning_rates(lr_idx - 2), 0)
+                max_lr = learning_rates[lr_idx - 1] if \
+                    learning_rates[lr_idx - 1] != min_lr else \
+                    (min_lr + learning_rates[lr_idx]) / 2.
+                learning_rates = np.geomspace(min_lr, max_lr, 9)
+                print("LR Range Test: Reached 100% non zero, new range: " +
+                      f"{learning_rates}")
+                lr_idx = 0
+                continue
+            if np.greater(cur_non_zero, non_zero_thresh):
+                exit_counter += 1
+                delta = np.subtract(
+                    cur_non_zero, non_zero_history[lr_idx - 1])
+                if np.less(np.abs(delta) > min_delta):
+                    min_lr = learning_rates[lr_idx - 1]
+                    max_lr = learning_rates[lr_idx]
+                    learning_rates = np.geomspace(min_lr, max_lr, 9)
+                    print("LR Range Test: Hit Plateau, new range: " +
+                          f"{learning_rates}")
+                    lr_idx = 0
+                    continue
+        if exit_counter > 5:
+            break
         lr_idx += 1
+    print(f"LR Range Test Complete: Final LR Range is {min_lr}-{max_lr}")
     return
 
 
