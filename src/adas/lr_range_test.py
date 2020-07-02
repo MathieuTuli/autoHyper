@@ -170,19 +170,34 @@ def main(args: APNamespace):
     Profiler.filename = output_path / filename
 
     # ###### LR RANGE STUFF #######
-    min_lr = 0.00001
+    min_lr = 1e-5
     max_lr = 0.1
     learning_rates = np.geomspace(min_lr, max_lr, 9)
     non_zero_history = list()
     lr_idx = 0
     min_delta = 0.05
-    non_zero_thresh = 0.89
+    non_zero_thresh = 0.90
     exit_counter = 0
+    lr_delta = 5e-5
+    output_history = list()
+    first_run = True
     ##############################
-    while lr_idx < len(learning_rates):
+    # while lr_idx < len(learning_rates):
+    while True:
+        if lr_idx == len(learning_rates):
+            min_lr = learning_rates[-2]
+            max_lr = learning_rates[-1] * 1.5
+            learning_rates = np.geomspace(min_lr, max_lr, 9)
+            non_zero_history = list()
+            continue
+        if np.less(np.abs(np.subtract(min_lr, max_lr)), lr_delta):
+            print(
+                f"LR Range Test Complete: LR Delta: Final LR Range is {min_lr}-{max_lr}")
+            break
         # Data
         # logging.info("Adas: Preparing Data")
         GLOBALS.CONFIG['init_lr'] = learning_rates[lr_idx]
+        print(f"Using LR: {GLOBALS.CONFIG['init_lr']}")
         train_loader, test_loader = get_data(
             root=data_path,
             dataset=GLOBALS.CONFIG['dataset'],
@@ -220,61 +235,83 @@ def main(args: APNamespace):
             GLOBALS.NET = torch.nn.DataParallel(GLOBALS.NET)
             cudnn.benchmark = True
 
-        epochs = range(0, 5)
+        epochs = range(0, 3)
         run_epochs(0, epochs, train_loader, test_loader,
                    device, optimizer, scheduler, output_path)
         Profiler.stream = None
 
         # ###### LR RANGE STUFF #######
-        non_zero_history[lr_idx] = cur_non_zero = compute_non_zero()
+        cur_non_zero = compute_non_zero()
+        non_zero_history.append(cur_non_zero)
         print(f"LR Range Test: Cur Space: {learning_rates}")
         print(f"LR Range Test: Cur lr: {learning_rates[lr_idx]}")
         print(f"LR Range Test: Cur %: {cur_non_zero}")
         # TODO minimum on min_lr?
         if lr_idx == 0:
-            if np.greater(cur_non_zero, non_zero_thresh):
+            if first_run and np.greater(cur_non_zero, non_zero_thresh):
                 min_lr /= 10
                 learning_rates = np.geomspace(min_lr, max_lr, 9)
+                non_zero_history = list()
                 print("LR Range Test: Crossed thresh early, new range: " +
                       f"{learning_rates}")
                 # lr_idx = 0 ; redundant
+                output_history.append((learning_rates[lr_idx],
+                                       cur_non_zero, 'early-cross'))
                 continue
         else:
+            first_run = False
             if np.isclose(cur_non_zero, 1.0):
-                min_lr = min(learning_rates(lr_idx - 2), 0)
+                min_lr = learning_rates[max(lr_idx - 2, 0)]
                 max_lr = learning_rates[lr_idx - 1] if \
                     learning_rates[lr_idx - 1] != min_lr else \
                     (min_lr + learning_rates[lr_idx]) / 2.
                 learning_rates = np.geomspace(min_lr, max_lr, 9)
+                non_zero_history = list()
                 print("LR Range Test: Reached 100% non zero, new range: " +
                       f"{learning_rates}")
                 lr_idx = 0
+                output_history.append((learning_rates[lr_idx],
+                                       cur_non_zero, 'reach-100'))
                 continue
             if np.greater(cur_non_zero, non_zero_thresh):
-                exit_counter += 1
                 delta = np.subtract(
                     cur_non_zero, non_zero_history[lr_idx - 1])
-                if np.less(np.abs(delta) > min_delta):
-                    min_lr = learning_rates[lr_idx - 1]
+                if np.less(np.abs(delta), min_delta) and \
+                        np.greater(non_zero_history[lr_idx - 1],
+                                   non_zero_thresh):
+                    exit_counter += 1
+                    min_lr = learning_rates[max(lr_idx - 2, 0)]
                     max_lr = learning_rates[lr_idx]
                     learning_rates = np.geomspace(min_lr, max_lr, 9)
+                    non_zero_history = list()
                     print("LR Range Test: Hit Plateau, new range: " +
                           f"{learning_rates}")
+                    output_history.append((learning_rates[lr_idx],
+                                           cur_non_zero, 'plateau'))
                     lr_idx = 0
+                    if exit_counter > 5:
+                        break
                     continue
+        output_history.append((learning_rates[lr_idx],
+                               cur_non_zero, 'nothing'))
         if exit_counter > 5:
+            print(
+                f"LR Range Test Complete: Exit Counter: Final LR Range is {min_lr}-{max_lr}")
             break
         lr_idx += 1
-    print(f"LR Range Test Complete: Final LR Range is {min_lr}-{max_lr}")
+    with (output_path / 'lrrt.csv').open('w+') as f:
+        f.write('lr,non_zero,msg\n')
+        for (lr, non_zero, msg) in output_history.items():
+            f.write(f'{lr},{non_zero},{msg}\n')
     return
 
 
-def compute_non_zero(int, non_zero_history: List[float]):
+def compute_non_zero():
     per_S_zero = np.mean([np.mean(np.isclose(
         metric.input_channel_S + metric.output_channel_S,
         0).astype(np.float16)) for
         metric in GLOBALS.METRICS.historical_metrics])
-    per_non_zero = 1. - per_S_zero
+    return 1. - per_S_zero
 
 
 def run_epochs(trial, epochs, train_loader, test_loader,
@@ -283,9 +320,9 @@ def run_epochs(trial, epochs, train_loader, test_loader,
         start_time = time.time()
         # print(f"AdaS: Epoch {epoch}/{epochs[-1]} Started.")
         train_loss, train_accuracy, test_loss, test_accuracy = \
-            epoch_iteration(
-                train_loader, test_loader,
-                epoch, device, optimizer, scheduler)
+            epoch_iteration(trial,
+                            train_loader, test_loader,
+                            epoch, device, optimizer, scheduler)
         end_time = time.time()
         if GLOBALS.CONFIG['lr_scheduler'] == 'StepLR':
             scheduler.step()
@@ -325,7 +362,7 @@ def run_epochs(trial, epochs, train_loader, test_loader,
 
 
 @Profiler
-def epoch_iteration(train_loader, test_loader, epoch: int,
+def epoch_iteration(trial, train_loader, test_loader, epoch: int,
                     device, optimizer, scheduler) -> Tuple[float, float]:
     # logging.info(f"Adas: Train: Epoch: {epoch}")
     # global net, performance_statistics, metrics, adas, config
