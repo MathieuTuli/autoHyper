@@ -254,9 +254,9 @@ def run_epochs(trial, epochs, train_loader, test_loader,
         start_time = time.time()
         # print(f"AdaS: Epoch {epoch}/{epochs[-1]} Started.")
         train_loss, train_accuracy, test_loss, test_accuracy = \
-            epoch_iteration(
-                train_loader, test_loader,
-                epoch, device, optimizer, scheduler)
+            epoch_iteration(trial,
+                            train_loader, test_loader,
+                            epoch, device, optimizer, scheduler)
         end_time = time.time()
         if GLOBALS.CONFIG['lr_scheduler'] == 'StepLR':
             scheduler.step()
@@ -296,7 +296,7 @@ def run_epochs(trial, epochs, train_loader, test_loader,
 
 
 @Profiler
-def epoch_iteration(train_loader, test_loader, epoch: int,
+def epoch_iteration(trial, train_loader, test_loader, epoch: int,
                     device, optimizer, scheduler) -> Tuple[float, float]:
     # logging.info(f"Adas: Train: Epoch: {epoch}")
     # global net, performance_statistics, metrics, adas, config

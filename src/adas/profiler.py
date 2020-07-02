@@ -24,17 +24,19 @@ class Profiler:
         self.function = function
         self.statistics = List[Statistics]
         self.header_written = False
+        self.trial = -1
 
-    def __call__(self, train_loader, test_loader, epoch: int,
+    def __call__(self, trial, train_loader, test_loader, epoch: int,
                  device, optimizer, scheduler) -> Tuple[float, float]:
-        if self.stream is None:
+        if self.stream is None or self.trial != trial:
             self.stream = Profiler.filename.open('w+')
             print(f"AdaS: Profiler: Writing csv to {Profiler.filename}")
+        self.trial = trial
         self.gpu.update()
         self.pr.enable()
         result = memory_usage(proc=(
             self.function,
-            (train_loader, test_loader, epoch, device, optimizer, scheduler)),
+            (trial, train_loader, test_loader, epoch, device, optimizer, scheduler)),
             max_usage=True, retval=True)
         self.pr.disable()
         s = io.StringIO()
