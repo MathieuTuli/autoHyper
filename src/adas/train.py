@@ -35,6 +35,7 @@ import torch
 import yaml
 
 from .optim import get_optimizer_scheduler
+from .lr_range_test import auto_lr
 from .early_stop import EarlyStop
 from .utils import parse_config
 from .profiler import Profiler
@@ -139,9 +140,12 @@ def main(args: APNamespace):
     print("\nAdas: Train: Config")
     print(f"    {'Key':<20} {'Value':<20}")
     print("-"*45)
+    device = 'cuda' if torch.cuda.is_available() and not args.cpu else 'cpu'
+    if GLOBALS.CONFIG['init_lr'] == 'auto':
+        GLOBALS.CONFIG['init_lr'] = auto_lr(
+            data_path=data_path, output_path=output_path, device=device)
     for k, v in GLOBALS.CONFIG.items():
         print(f"    {k:<20} {v:<20}")
-    device = 'cuda' if torch.cuda.is_available() and not args.cpu else 'cpu'
     print(f"AdaS: Pytorch device is set to {device}")
     # global best_acc
     GLOBALS.BEST_ACC = 0  # best test accuracy

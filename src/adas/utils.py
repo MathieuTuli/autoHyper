@@ -108,9 +108,10 @@ def parse_config(
     config['beta'] = smart_string_to_float(
         config['beta'],
         e='config.yaml: beta must be a float')
-    config['init_lr'] = smart_string_to_float(
-        config['init_lr'],
-        e='config.yaml: init_lr must be a float')
+    if not isinstance(config['init_lr'], str):
+        config['init_lr'] = smart_string_to_float(
+            config['init_lr'],
+            e='config.yaml: init_lr must be a float')
     config['max_epoch'] = smart_string_to_int(
         config['max_epoch'],
         e='config.yaml: max_epoch must be an int')

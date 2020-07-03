@@ -1,7 +1,7 @@
 """
 MIT License
 
-Copyright (c) 2020 Mahdi S. Hosseini
+Copyright (c) 2020 Mathieu Tuli
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -21,141 +21,117 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+from pathlib import Path
 import matplotlib.pyplot as plt
+import matplotlib
 import pandas as pd
 import numpy as np
 import os
 
-evaluation_directory = '/home/mat/archive/training/AdaS/lr-range-test/grid-search-experiment-v2'
-# datasets = ['CIFAR10', 'CIFAR100']
-# networks = ['VGG16', 'ResNet34']
-datasets = ['']
-networks = ['']
+LIMIT_EPOCHS = False
+FONTSIZE = 9
+evaluation_directory = '/home/mat/playgrounds/new-test'
+evaluation_directory = '/home/mat/archive/training/AdaS/adaptive-learning-survey/005-trial/'
+evaluation_directory = '/home/mat/archive/training/AdaS/lr-range-test/correctness-check/'
+
+EPOCHS = 250
+optimizers = list()
+global optimizer
+for optimizer_folder in Path(evaluation_directory).iterdir():
+    if optimizer_folder.is_dir():
+        folder = str(optimizer_folder).split('/')[-1]
+        optimizers.append(folder)
+
+# fig = plt.figure()
+# x = np.linspace(np.min(learning_rates), np.max(learning_rates),
+#                 len(learning_rates))
+x = np.array(optimizers)
+y = np.arange(EPOCHS)
+train_acc = np.zeros((len(y), len(x)))
+train_loss = np.zeros((len(y), len(x)))
+test_acc = np.zeros((len(y), len(x)))
+test_loss = np.zeros((len(y), len(x)))
+i = -1
+for optimizer_folder in Path(evaluation_directory).iterdir():
+    files = list()
+    if not optimizer_folder.is_dir():
+        continue
+    i += 1
+    for excel_file in (optimizer_folder / '.adas-output').iterdir():
+        if '.csv' == excel_file.suffix:
+            continue
+        files.append(str(excel_file))
+    train_acc_data = np.empty((EPOCHS, len(files)))
+    train_acc_data[:] = np.nan
+    train_loss_data = np.empty((EPOCHS, len(files)))
+    train_loss_data[:] = np.nan
+    test_acc_data = np.empty((EPOCHS, len(files)))
+    test_acc_data[:] = np.nan
+    test_loss_data = np.empty((EPOCHS, len(files)))
+    test_loss_data[:] = np.nan
+    for j, f in enumerate(files):
+        df = pd.read_excel(str(f)).T
+        adas_offset = 1 if 'AdaS' in str(f).split('/')[-1] else 0
+        adas_offset = 0 if 'AdaShift' in str(f).split('/')[-1] else adas_offset
+
+        train_acc_vec = np.asarray(df.iloc[1::13 + adas_offset, :])[:EPOCHS, :]
+        train_loss_vec = np.asarray(
+            df.iloc[2::13 + adas_offset, :])[:EPOCHS, :]
+        test_acc_vec = np.asarray(
+            df.iloc[12 + adas_offset::13 + adas_offset, :])[:EPOCHS, :]
+        test_loss_vec = np.asarray(
+            df.iloc[13 + adas_offset::13 + adas_offset, :])[:EPOCHS, :]
+        train_acc_data[:len(train_acc_vec), j] = train_acc_vec[:, 0]
+        train_loss_data[:len(train_loss_vec), j] = train_loss_vec[:, 0]
+        test_acc_data[:len(test_acc_vec), j] = test_acc_vec[:, 0]
+        test_loss_data[:len(test_loss_vec), j] = test_loss_vec[:, 0]
+    print(f.split('/')[-1])
+    # print(train_acc_data.mean(1)[-1])
+    # print(train_acc_data.std(1)[-1])
+    # print(train_loss_data.mean(1)[-1])
+    # print(train_loss_data.std(1)[-1])
+    nan_locs = np.where(np.isnan(test_acc_data))
+    len_ = len(test_acc_data) if len(
+        nan_locs[1]) == 0 else nan_locs[0][0]
+    print(test_acc_data[:len_, :].mean(1)[-1])
+    print(test_acc_data[:len_, :].std(1)[-1])
+    # print(test_loss_data.mean(1)[-1])
+    # print(test_loss_data.std(1)[-1])
+    train_acc[:, i] = train_acc_data.mean(1)
+    train_loss[:, i] = train_loss_data.mean(1)
+    test_acc[:, i] = test_acc_data.mean(1)
+    test_loss[:, i] = test_loss_data.mean(1)
+
+if LIMIT_EPOCHS:
+    y = y[:10]
+
 color_codes = [(1, 0, 0), (0.8, 0, 0), (0.6, 0, 0), (0.4, 0, 0),
                (0.3, 0, 0), 'steelblue', 'b', 'g', 'c', 'm', 'y', 'orange']
-line_style = ['-', '-', '-', '-', '-', '--',
-              '--', '--', '--', '--', '--', '--']
-# evaluating_folders = ['AdaS-08/.adas-output', 'AdaS-085/.adas-output',
-#                       'AdaS-09/.adas-output', 'AdaS-095/.adas-output',
-#                       'AdaS-0975/.adas-output', 'SLS/.adas-output']
-# export_string = ['AdaS_beta_0.800', 'AdaS_beta_0.850', 'AdaS_beta_0.900',
-#                  'AdaS_beta_0.950', 'AdaS_beta_0.975', 'SLS']
-# legend_string = [r'AdaS: $ \beta = 0.800$', r'AdaS: $ \beta = 0.850$',
-#                  r'AdaS: $ \beta = 0.900$', r'AdaS: $ \beta = 0.950$',
-#                  r'AdaS: $ \beta = 0.975$', 'SLS']
-
-evaluating_folders = ['AdaM-001/.adas-output', 'AdaM-0015/.adas-output',
-                      'AdaM-002/.adas-output', 'AdaM-0025/.adas-output',
-                      'AdaM-003/.adas-output', 'AdaM-0035/.adas-output',
-                      'AdaM-004/.adas-output', 'AdaM-0045/.adas-output',
-                      'AdaM-005/.adas-output']
-export_string = ['AdaM-001', 'AdaM-0015', 'AdaM-002', 'AdaM-0025',
-                 'AdaM-003', 'AdaM-0035', 'AdaM-004', 'AdaM-0045',
-                 'AdaM-005']
-legend_string = ['AdaM-0.001', 'AdaM-0.0015', 'AdaM-0.002', 'AdaM-0.0025',
-                 'AdaM-0.003', 'AdaM-0.0035', 'AdaM-0.004', 'AdaM-0.0045',
-                 'AdaM-0.005']
-# export_string = ['AdaM-0.0016', 'AdaM-0.001',
-#                  'AdaM-0.0025', 'AdaM-0.0019', 'AdaM-0.0022']
-# legend_string = ['AdaM-0.0016', 'AdaM-0.001',
-#                  'AdaM-0.0025', 'AdaM-0.0019', 'AdaM-0.0022']
-# evaluating_folders = ['AdaBound/.adas-output']
-# export_string = ['AdaBound']
-# legend_string = ['AdaBound']
+line_style = ['-', '--', 'dotted']
 acc_min = [0.82, 0.85, 0.60, 0.63]
 acc_max = [0.945, 0.96, 0.74, 0.78]
 loss_min = [5e-4, 5e-4, 1e-3, 1e-3]
 loss_max = [10, 10, 10, 10]
-
-for iteration_dataset in range(len(datasets)):
-    for iteration_network in range(len(networks)):
-        print(networks)
-        plt.figure(1, figsize=(5, 5))
-        for iteration_folder in range(len(evaluating_folders)):
-            print(iteration_folder)
-            file_path = evaluation_directory + '/' + \
-                datasets[iteration_dataset] + '/' + networks[iteration_network] + \
-                '/' + evaluating_folders[iteration_folder]
-            file_dir = os.listdir(file_path)
-            acc_data = np.empty(
-                (250, len([f for f in file_dir if 'xlsx' in f])))
-            acc_data[:] = np.nan
-            idx = 0
-            for iteration_file in range(len(file_dir)):
-                file_call = file_path + '/' + file_dir[iteration_file]
-                if 'png' in file_call or 'csv' in file_call:
-                    continue
-                print(file_call)
-                df = pd.read_excel(file_call)
-                df = df.T
-                if "AdaS" in evaluating_folders[iteration_folder]:
-                    acc_data_vec = np.asarray(df.iloc[13::14, 1])
-                else:
-                    acc_data_vec = np.asarray(df.iloc[12::13, 1])
-                acc_data[0:len(acc_data_vec), idx] = acc_data_vec[:250]
-                idx += 1
-            plt.plot(np.array(range(1, acc_data.shape[0] + 1)), acc_data.mean(
-                1), linestyle=line_style[iteration_folder],
-                color=color_codes[iteration_folder])
-        plt.ylim((acc_min[iteration_dataset * 2 + iteration_network],
-                  acc_max[iteration_dataset * 2 + iteration_network]))
-        plt.xlim((1, 250))
-        plt.ylabel('Test Accuracy', fontsize=16)
-        plt.xlabel('Epoch - (t)', fontsize=16)
-        plt.xticks(fontsize=14)
-        plt.yticks(fontsize=14)
-        plt.gca().legend(legend_string, prop={"size": 9}, loc="lower right",
-                         bbox_to_anchor=(
-            0.98, 0.02), borderaxespad=0., ncol=2)
-        plt.grid(True)
-        export_name = 'test_accuracy_comparison_' + \
-            '.png'
-        plt.savefig(export_name, dpi=300, bbox_inches='tight')
-        plt.close()
-
-for iteration_dataset in range(len(datasets)):
-    for iteration_network in range(len(networks)):
-        plt.figure(1, figsize=(5, 5))
-        for iteration_folder in range(len(evaluating_folders)):
-            file_path = evaluation_directory + '/' + \
-                datasets[iteration_dataset] + '/' + networks[iteration_network] + \
-                '/' + evaluating_folders[iteration_folder]
-            file_dir = os.listdir(file_path)
-            error_data = np.empty(
-                (250, len([f for f in file_dir if 'xlsx' in f])))
-            error_data[:] = np.nan
-            idx = 0
-            for iteration_file in range(len(file_dir)):
-                file_call = file_path + '/' + file_dir[iteration_file]
-                if 'png' in file_call or 'csv' in file_call:
-                    continue
-                print(file_call)
-                df = pd.read_excel(file_call)
-                df = df.T
-                if "AdaS" in evaluating_folders[iteration_folder]:
-                    error_data_vec = np.asarray(df.iloc[2::14, 1])
-                else:
-                    error_data_vec = np.asarray(df.iloc[2::13, 1])
-                error_data[0:len(error_data_vec),
-                           idx] = error_data_vec[:250]
-                idx += 1
-            plt.plot(np.array(range(1, error_data.shape[0] + 1)),
-                     error_data.mean(
-                1), linestyle=line_style[iteration_folder],
-                color=color_codes[iteration_folder])
-        plt.ylim((loss_min[iteration_dataset * 2 + iteration_network],
-                  loss_max[iteration_dataset * 2 + iteration_network]))
-        plt.xlim((1, 250))
-        plt.yscale('log', basey=10)
-        plt.ylabel('Training Loss', fontsize=16)
-        plt.xlabel('Epoch - (t)', fontsize=16)
-        plt.xticks(fontsize=14)
-        plt.yticks(fontsize=14)
-        plt.gca().legend(legend_string, prop={"size": 9}, loc="upper right",
-                         bbox_to_anchor=(
-            0.98, 0.98), borderaxespad=0., ncol=2)
-        plt.grid(True)
-        export_name = 'training_loss_comparison_' + \
-            '.png'
-        plt.savefig(export_name, dpi=300, bbox_inches='tight')
-        plt.close()
+for (name, data) in [('train_acc', train_acc), ('train_loss', train_loss),
+                     ('test_acc', test_acc), ('test_loss', test_loss)]:
+    for i, optimizer in enumerate(x):
+        idx = i % len(color_codes)
+        plt.plot(np.array(range(1, data.shape[0] + 1)),
+                 data[:, i], linestyle=line_style[int(i / len(color_codes))],
+                 color=color_codes[idx])
+    plt.gca().legend([f'{optimizer}' for optimizer in x],
+                     prop={"size": 9}, loc="lower right",
+                     bbox_to_anchor=(
+        0.98, 0.02), borderaxespad=0., ncol=2)
+    plt.xlabel('Epoch', size=9)
+    plt.xlim((1, EPOCHS))
+    if 'loss' in name:
+        plt.ylim(5e-4, 10)
+    elif 'train_acc' == name:
+        plt.ylim(0.82, 1.)
+    else:
+        plt.ylim(0.7, 0.96)
+    plt.ylabel(f'{name}', size=9)
+    plt.savefig(f'comparison_{name}.png',
+                dpi=300, bbox_inces='tight')
+    plt.close()
