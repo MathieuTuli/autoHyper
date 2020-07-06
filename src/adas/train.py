@@ -182,7 +182,8 @@ def main(args: APNamespace):
         train_loader, test_loader = get_data(
             root=data_path,
             dataset=GLOBALS.CONFIG['dataset'],
-            mini_batch_size=GLOBALS.CONFIG['mini_batch_size'])
+            mini_batch_size=GLOBALS.CONFIG['mini_batch_size'],
+            num_workers=GLOBALS.CONFIG['num_workers'])
         # global performance_statistics, net, metrics, adas
         GLOBALS.PERFORMANCE_STATISTICS = {}
 
@@ -209,6 +210,7 @@ def main(args: APNamespace):
 
         optimizer, scheduler = get_optimizer_scheduler(
             net_parameters=GLOBALS.NET.parameters(),
+            listed_params=list(GLOBALS.NET.parameters()),
             # init_lr=learning_rate,
             # optim_method=GLOBALS.CONFIG['optim_method'],
             # lr_scheduler=GLOBALS.CONFIG['lr_scheduler'],

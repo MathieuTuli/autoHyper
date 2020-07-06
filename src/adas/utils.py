@@ -133,6 +133,9 @@ def parse_config(
     config['p'] = smart_string_to_int(
         config['p'],
         e='config.yaml: p must be an int')
+    config['num_workers'] = smart_string_to_int(
+        config['num_workers'],
+        e='config.yaml: num_works must be an int')
     if config['loss'] != 'cross_entropy':
         raise ValueError('config.yaml: loss must be cross_entropy')
     return config

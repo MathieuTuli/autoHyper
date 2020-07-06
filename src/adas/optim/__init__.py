@@ -21,7 +21,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-from typing import Any, Dict, Union
+from typing import Any, Dict, Union, List
 
 import torch
 
@@ -50,6 +50,7 @@ from .lrd import LRD
 
 def get_optimizer_scheduler(
         net_parameters: Any,
+        listed_params: List[Any],
         train_loader_len: int,
         config: Dict[str, Union[float, str, int]]) -> torch.nn.Module:
     # init_lr: float, optim_method: str,
@@ -134,7 +135,7 @@ def get_optimizer_scheduler(
             optimizer, max_lr=init_lr,
             steps_per_epoch=train_loader_len, epochs=max_epochs)
     elif lr_scheduler == 'AdaS':
-        scheduler = AdaS(parameters=net_parameters,
+        scheduler = AdaS(parameters=listed_params,
                          beta=beta,
                          zeta=zeta,
                          init_lr=init_lr,

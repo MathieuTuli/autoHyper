@@ -33,6 +33,9 @@ FONTSIZE = 9
 evaluation_directory = '/home/mat/playgrounds/new-test'
 evaluation_directory = '/home/mat/archive/training/AdaS/adaptive-learning-survey/005-trial/'
 evaluation_directory = '/home/mat/archive/training/AdaS/lr-range-test/correctness-check/'
+evaluation_directory = '/home/mat/archive/training/AdaS/lr-range-test/autolr'
+evaluation_directory = '/home/mat/archive/training/AdaS/adaptive-learning-survey/paper-based-trial/iteration-2/'
+evaluation_directory = '/home/mat/work/U-of-T/summer-research/mml/lr-range-feature/draft/versus'
 
 EPOCHS = 250
 optimizers = list()
