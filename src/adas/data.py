@@ -29,7 +29,7 @@ import torchvision
 import torch
 
 
-def get_data(root: Path, dataset: str, mini_batch_size: int
+def get_data(root: Path, dataset: str, mini_batch_size: int,
              num_workers: int = 4):
     train_loader = None
     test_loader = None
