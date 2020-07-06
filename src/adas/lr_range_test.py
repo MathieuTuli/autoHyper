@@ -225,7 +225,7 @@ def main(args: APNamespace):
 
         optimizer, scheduler = get_optimizer_scheduler(
             net_parameters=GLOBALS.NET.parameters(),
-            listed_params=(GLOBALS.NET.parameters()),
+            listed_params=list(GLOBALS.NET.parameters()),
             # init_lr=learning_rate,
             # optim_method=GLOBALS.CONFIG['optim_method'],
             # lr_scheduler=GLOBALS.CONFIG['lr_scheduler'],
@@ -527,7 +527,7 @@ def auto_lr(data_path: Path, output_path: Path, device: str):
 
         optimizer, scheduler = get_optimizer_scheduler(
             net_parameters=GLOBALS.NET.parameters(),
-            listed_params=(GLOBALS.NET.parameters()),
+            listed_params=list(GLOBALS.NET.parameters()),
             # init_lr=learning_rate,
             # optim_method=GLOBALS.CONFIG['optim_method'],
             # lr_scheduler=GLOBALS.CONFIG['lr_scheduler'],
