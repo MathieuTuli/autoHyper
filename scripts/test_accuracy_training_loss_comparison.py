@@ -21,6 +21,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+import random
 from pathlib import Path
 import matplotlib.pyplot as plt
 import matplotlib
@@ -40,10 +41,15 @@ evaluation_directory = '/home/mat/work/U-of-T/summer-research/mml/lr-range-featu
 EPOCHS = 250
 optimizers = list()
 global optimizer
-for optimizer_folder in Path(evaluation_directory).iterdir():
+l_sorted_files = sorted(Path(evaluation_directory).iterdir())
+sorted_files = list()
+for optimizer_folder in l_sorted_files:
+    if 'AdaS' not in str(optimizer_folder):
+        continue
+    sorted_files.append(optimizer_folder)
     if optimizer_folder.is_dir():
         folder = str(optimizer_folder).split('/')[-1]
-        optimizers.append(folder)
+        optimizers.append(folder.replace('-', '-0.'))
 
 # fig = plt.figure()
 # x = np.linspace(np.min(learning_rates), np.max(learning_rates),
@@ -54,8 +60,9 @@ train_acc = np.zeros((len(y), len(x)))
 train_loss = np.zeros((len(y), len(x)))
 test_acc = np.zeros((len(y), len(x)))
 test_loss = np.zeros((len(y), len(x)))
+test_std = np.zeros((len(y), len(x)))
 i = -1
-for optimizer_folder in Path(evaluation_directory).iterdir():
+for s, optimizer_folder in enumerate(sorted_files):
     files = list()
     if not optimizer_folder.is_dir():
         continue
@@ -88,7 +95,7 @@ for optimizer_folder in Path(evaluation_directory).iterdir():
         train_loss_data[:len(train_loss_vec), j] = train_loss_vec[:, 0]
         test_acc_data[:len(test_acc_vec), j] = test_acc_vec[:, 0]
         test_loss_data[:len(test_loss_vec), j] = test_loss_vec[:, 0]
-    print(f.split('/')[-1])
+    print(optimizers[s])
     # print(train_acc_data.mean(1)[-1])
     # print(train_acc_data.std(1)[-1])
     # print(train_loss_data.mean(1)[-1])
@@ -96,20 +103,30 @@ for optimizer_folder in Path(evaluation_directory).iterdir():
     nan_locs = np.where(np.isnan(test_acc_data))
     len_ = len(test_acc_data) if len(
         nan_locs[1]) == 0 else nan_locs[0][0]
-    print(test_acc_data[:len_, :].mean(1)[-1])
-    print(test_acc_data[:len_, :].std(1)[-1])
+    print(f"ACC at 250: {100*test_acc_data[:len_, :].mean(1)[-1]}%")
+    print(f"Max ACC : {100*np.max(test_acc_data[:len_, :].mean(1))}%")
+    std = 100*test_acc_data[:len_, :].std(1)[-1]
+    print(f"STD: {std}%")
+    std = test_acc_data.std(1)
     # print(test_loss_data.mean(1)[-1])
     # print(test_loss_data.std(1)[-1])
     train_acc[:, i] = train_acc_data.mean(1)
     train_loss[:, i] = train_loss_data.mean(1)
     test_acc[:, i] = test_acc_data.mean(1)
     test_loss[:, i] = test_loss_data.mean(1)
+    test_std[:, i] = std
 
 if LIMIT_EPOCHS:
     y = y[:10]
 
 color_codes = [(1, 0, 0), (0.8, 0, 0), (0.6, 0, 0), (0.4, 0, 0),
                (0.3, 0, 0), 'steelblue', 'b', 'g', 'c', 'm', 'y', 'orange']
+color_codes = list(np.array(
+    [(48, 252, 3), (16, 77, 3), (0, 255, 255), (0, 74, 74),
+     (255, 132, 0), (112, 58, 0), (255, 10, 35), (120, 0, 12),
+     (223, 13, 255), (69, 3, 79), (232, 218, 23), (110, 102, 1)])/255.)
+random.seed(1)
+random.shuffle(color_codes)
 line_style = ['-', '--', 'dotted']
 acc_min = [0.82, 0.85, 0.60, 0.63]
 acc_max = [0.945, 0.96, 0.74, 0.78]
@@ -122,18 +139,21 @@ for (name, data) in [('train_acc', train_acc), ('train_loss', train_loss),
         plt.plot(np.array(range(1, data.shape[0] + 1)),
                  data[:, i], linestyle=line_style[int(i / len(color_codes))],
                  color=color_codes[idx])
+        if name == 'test_acc':
+            plt.fill_between(np.array(range(
+                1, data.shape[0] + 1)), data[:, i] - std, data[:, i] + std, color=color_codes[idx], alpha=.1)
     plt.gca().legend([f'{optimizer}' for optimizer in x],
                      prop={"size": 9}, loc="lower right",
                      bbox_to_anchor=(
         0.98, 0.02), borderaxespad=0., ncol=2)
     plt.xlabel('Epoch', size=9)
     plt.xlim((1, EPOCHS))
-    if 'loss' in name:
-        plt.ylim(5e-4, 10)
+    if 'train_loss' == name or 'test_loss' == name:
+        plt.ylim(5e-4, 1)
     elif 'train_acc' == name:
         plt.ylim(0.82, 1.)
     else:
-        plt.ylim(0.7, 0.96)
+        plt.ylim(0.8, 0.96)
     plt.ylabel(f'{name}', size=9)
     plt.savefig(f'comparison_{name}.png',
                 dpi=300, bbox_inces='tight')

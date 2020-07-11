@@ -28,7 +28,7 @@ from argparse import ArgumentParser
 
 # from .components import LogLevel
 from .train import args as train_args, main as train_main
-from .lr_range_test import args as lrrt_args, main as lrrt_main
+# from .lr_range_test import args as lrrt_args, main as lrrt_main
 
 parser = ArgumentParser(description=__doc__)
 # parser.add_argument(
@@ -51,9 +51,9 @@ train_subparser = subparser.add_parser(
     'train', help='Train commands')
 train_args(train_subparser)
 
-lrrt_subparser = subparser.add_parser(
-    'lrrt', help='LR Range Test commands')
-lrrt_args(lrrt_subparser)
+# lrrt_subparser = subparser.add_parser(
+#     'lrrt', help='LR Range Test commands')
+# lrrt_args(lrrt_subparser)
 
 args = parser.parse_args()
 # if str(args.log_level) == 'DEBUG' or args.very_verbose:
@@ -78,8 +78,8 @@ args = parser.parse_args()
 
 if str(args.command) == 'train':
     train_main(args)
-if str(args.command) == 'lrrt':
-    lrrt_main(args)
+# if str(args.command) == 'lrrt':
+#     lrrt_main(args)
 else:
     # logging.critical(f"AdaS: Unknown subcommand {args.command}")
     ...
