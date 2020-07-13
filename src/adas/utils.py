@@ -112,7 +112,7 @@ def parse_config(
     if not isinstance(config['init_lr'], str):
         if isinstance(config['init_lr'], list):
             for i, lr in enumerate(config['init_lr']):
-                config['init_lr'] = smart_string_to_float(lr, e=e)
+                config['init_lr'][i] = smart_string_to_float(lr, e=e)
         else:
             config['init_lr'] = smart_string_to_float(config['init_lr'], e=e)
     else:

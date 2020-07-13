@@ -126,7 +126,7 @@ def auto_lr(data_path: Path, output_path: Path, device: str):
     learning_rates = np.geomspace(min_lr, max_lr, num_split)
     rank_history = list()
     lr_idx = 0
-    min_delta = 1e-2
+    min_delta = 5e-2
     rank_thresh = 0.93 * 0
     exit_counter = 0
     lr_delta = 3e-5
@@ -287,7 +287,12 @@ def auto_lr(data_path: Path, output_path: Path, device: str):
 
             # delta = np.subtract(
             #     cur_rank, rank_history[lr_idx - 1])
-            if np.less(rate_of_change[-1], min_delta):
+            # if np.less(rate_of_change[-1], min_delta):
+            if len(rank_history) > 3 and \
+                np.isclose(rank_history[-1], rank_history[-2],
+                           atol=min_delta) and \
+                np.isclose(rank_history[-2], rank_history[-3],
+                           atol=min_delta):
                 # if np.less(np.abs(delta), min_delta):
                 output_history.append((learning_rates[lr_idx],
                                        cur_rank, 'plateau'))

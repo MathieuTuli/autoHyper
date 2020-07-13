@@ -37,6 +37,8 @@ evaluation_directory = '/home/mat/archive/training/AdaS/lr-range-test/correctnes
 evaluation_directory = '/home/mat/archive/training/AdaS/lr-range-test/autolr'
 evaluation_directory = '/home/mat/archive/training/AdaS/adaptive-learning-survey/paper-based-trial/iteration-2/'
 evaluation_directory = '/home/mat/work/U-of-T/summer-research/mml/lr-range-feature/draft/versus'
+evaluation_directory = '/home/mat/playgrounds/new/lr-range-test/'
+evaluation_directory = '/home/mat/archive/training/AdaS/lr-range-test/draft-experiments/iteration-1-cumprod/vgg16-cifar100/'
 
 EPOCHS = 250
 optimizers = list()
@@ -44,8 +46,6 @@ global optimizer
 l_sorted_files = sorted(Path(evaluation_directory).iterdir())
 sorted_files = list()
 for optimizer_folder in l_sorted_files:
-    if 'AdaS' not in str(optimizer_folder):
-        continue
     sorted_files.append(optimizer_folder)
     if optimizer_folder.is_dir():
         folder = str(optimizer_folder).split('/')[-1]
@@ -67,10 +67,18 @@ for s, optimizer_folder in enumerate(sorted_files):
     if not optimizer_folder.is_dir():
         continue
     i += 1
-    for excel_file in (optimizer_folder / '.adas-output').iterdir():
-        if '.csv' == excel_file.suffix:
-            continue
-        files.append(str(excel_file))
+    # for excel_file in (optimizer_folder / '.adas-output').iterdir():
+    #     # if 'lr-' in str(d.name):
+    #     # for excel_file in d.iterdir():
+    #     if '.csv' == excel_file.suffix:
+    #         continue
+    #     files.append(str(excel_file))
+    for d in (optimizer_folder / '.output').iterdir():
+        if 'lr-' in str(d.name):
+            for excel_file in d.iterdir():
+                if '.csv' == excel_file.suffix:
+                    continue
+                files.append(str(excel_file))
     train_acc_data = np.empty((EPOCHS, len(files)))
     train_acc_data[:] = np.nan
     train_loss_data = np.empty((EPOCHS, len(files)))
@@ -138,10 +146,11 @@ for (name, data) in [('train_acc', train_acc), ('train_loss', train_loss),
         idx = i % len(color_codes)
         plt.plot(np.array(range(1, data.shape[0] + 1)),
                  data[:, i], linestyle=line_style[int(i / len(color_codes))],
-                 color=color_codes[idx])
+                 color=color_codes[idx], zorder=0)
         if name == 'test_acc':
             plt.fill_between(np.array(range(
-                1, data.shape[0] + 1)), data[:, i] - std, data[:, i] + std, color=color_codes[idx], alpha=.1)
+                1, data.shape[0] + 1)), data[:, i] - std, data[:, i] + std, color=color_codes[idx], alpha=.1, zorder=100)
+    plt.grid(b=True, which='both', axis='both')
     plt.gca().legend([f'{optimizer}' for optimizer in x],
                      prop={"size": 9}, loc="lower right",
                      bbox_to_anchor=(

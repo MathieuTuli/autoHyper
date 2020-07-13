@@ -107,8 +107,7 @@ def main(args: APNamespace):
 
     if not config_path.exists():
         # logging.critical(f"AdaS: Config path {config_path} does not exist")
-        print(f"AdaS: Config path {config_path} does not exist")
-        raise ValueError
+        raise ValueError(f"AdaS: Config path {config_path} does not exist")
     if not data_path.exists():
         print(f"AdaS: Data dir {data_path} does not exist, building")
         data_path.mkdir(exist_ok=True, parents=True)
@@ -117,9 +116,8 @@ def main(args: APNamespace):
         output_path.mkdir(exist_ok=True, parents=True)
     if not GLOBALS.CHECKPOINT_PATH.exists():
         if args.resume:
-            print(f"AdaS: Cannot resume from checkpoint without specifying " +
-                  "checkpoint dir")
-            raise ValueError
+            raise ValueError(f"AdaS: Cannot resume from checkpoint without " +
+                             "specifying checkpoint dir")
         GLOBALS.CHECKPOINT_PATH.mkdir(exist_ok=True, parents=True)
     with config_path.open() as f:
         GLOBALS.CONFIG = parse_config(yaml.load(f))
