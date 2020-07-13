@@ -139,7 +139,10 @@ def main(args: APNamespace):
         GLOBALS.CONFIG['init_lr'] = auto_lr(
             data_path=data_path, output_path=output_path, device=device)
     for k, v in GLOBALS.CONFIG.items():
-        print(f"    {k:<20} {v:<20}")
+        if isinstance(v, list):
+            print(f"    {k:<20} {v}")
+        else:
+            print(f"    {k:<20} {v:<20}")
     print(f"AdaS: Pytorch device is set to {device}")
     # global best_acc
     GLOBALS.BEST_ACC = 0  # best test accuracy
