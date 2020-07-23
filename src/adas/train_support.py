@@ -72,6 +72,7 @@ def epoch_iteration(trial, train_loader, test_loader, epoch: int,
 
     """train CNN architecture"""
     for batch_idx, (inputs, targets) in enumerate(train_loader):
+        # print(f'{batch_idx} / {len(train_loader)}')
         inputs, targets = inputs.to(device), targets.to(device)
         if GLOBALS.CONFIG['lr_scheduler'] == 'CosineAnnealingWarmRestarts':
             scheduler.step(epoch + batch_idx / len(train_loader))

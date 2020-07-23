@@ -23,6 +23,7 @@ SOFTWARE.
 
 VGG11/13/16/19 in Pytorch.
 """
+from typing import Tuple
 import torch
 import torch.nn as nn
 
@@ -36,10 +37,12 @@ cfg = {
 
 
 class VGG(nn.Module):
-    def __init__(self, vgg_name, num_classes: int = 10):
+    def __init__(self, vgg_name,
+                 input_size: Tuple[int, int], num_classes: int = 10):
         super(VGG, self).__init__()
         self.features = self._make_layers(cfg[vgg_name])
-        self.classifier = nn.Linear(512, num_classes)
+        size = int(((input_size[0] / 2) * 2) * ((input_size[1] / 2) * 2) / 2)
+        self.classifier = nn.Linear(size, num_classes)
 
     def forward(self, x):
         out = self.features(x)

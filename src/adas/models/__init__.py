@@ -21,6 +21,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+from typing import Tuple
+
 import torch
 
 from .vgg import VGG
@@ -40,18 +42,40 @@ from .mobilenetv2 import MobileNetV2
 from .efficientnet import EfficientNetB0
 
 
-def get_net(network: str, num_classes) -> torch.nn.Module:
-    return VGG('VGG16', num_classes=num_classes) if network == 'VGG16' else \
-        ResNet34(num_classes=num_classes) if network == 'ResNet34' else \
-        PreActResNet18(num_classes=num_classes) if network == 'PreActResNet18' else \
-        GoogLeNet(num_classes=num_classes) if network == 'GoogLeNet' else \
-        densenet_cifar(num_classes=num_classes) if network == 'densenet_cifar' else \
-        ResNeXt29_2x64d(num_classes=num_classes) if network == 'ResNeXt29_2x64d' else \
-        MobileNet(num_classes=num_classes) if network == 'MobileNet' else \
-        MobileNetV2(num_classes=num_classes) if network == 'MobileNetV2' else \
-        DPN92(num_classes=num_classes) if network == 'DPN92' else \
-        ShuffleNetG2(num_classes=num_classes) if network == 'ShuffleNetG2' else \
-        SENet18(num_classes=num_classes) if network == 'SENet18' else \
-        ShuffleNetV2(1, num_classes=num_classes) if network == 'ShuffleNetV2' else \
+def get_net(network: str,
+            num_classes: int, input_size: Tuple[int, int]) -> torch.nn.Module:
+    return VGG(
+        'VGG16', num_classes=num_classes,
+        input_size=input_size) if network == 'VGG16' else \
+        ResNet34(
+        num_classes=num_classes,
+        input_size=input_size) if network == 'ResNet34' else \
+        PreActResNet18(
+        num_classes=num_classes,
+        input_size=input_size) if network == 'PreActResNet18' else \
+        GoogLeNet(
+        num_classes=num_classes,
+        input_size=input_size) if network == 'GoogLeNet' else \
+        densenet_cifar(
+        num_classes=num_classes,
+        input_size=input_size) if network == 'densenet_cifar' else \
+        ResNeXt29_2x64d(
+        num_classes=num_classes,
+        input_size=input_size) if network == 'ResNeXt29_2x64d' else \
+        MobileNet(
+        num_classes=num_classes,
+        input_size=input_size) if network == 'MobileNet' else \
+        MobileNetV2(
+        num_classes=num_classes,
+        input_size=input_size) if network == 'MobileNetV2' else \
+        DPN92(num_classes=num_classes,
+              input_size=input_size) if network == 'DPN92' else \
+        ShuffleNetG2(num_classes=num_classes,
+                     input_size=input_size) if network == 'ShuffleNetG2' else \
+        SENet18(num_classes=num_classes,
+                input_size=input_size) if network == 'SENet18' else \
+        ShuffleNetV2(1, num_classes=num_classes,
+                     input_size=input_size) if network == 'ShuffleNetV2' else \
         EfficientNetB0(
-            num_classes=num_classes) if network == 'EfficientNetB0' else None
+            num_classes=num_classes,
+            input_size=input_size) if network == 'EfficientNetB0' else None
