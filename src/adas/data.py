@@ -102,6 +102,8 @@ def get_data(root: Path, dataset: str, mini_batch_size: int,
 
         transform_test = transforms.Compose([
             transforms.ToTensor(),
+            transforms.Resize(256),
+            transforms.CenterCrop(224),
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[
                                  0.229, 0.224, 0.225]),
         ])
@@ -120,34 +122,4 @@ def get_data(root: Path, dataset: str, mini_batch_size: int,
         test_loader = torch.utils.data.DataLoader(
             testset, batch_size=mini_batch_size, shuffle=False,
             num_workers=num_workers, pin_memory=True)
-    # elif dataset == 'MOPath':
-    #     transform_train = transforms.Compose([
-    #         transforms.RandomResizedCrop(65),
-    #         transforms.RandomHorizontalFlip(),
-    #         transforms.ToTensor(),
-    #         # transforms.Normalize((0.4914, 0.4822, 0.4465),
-    #         #                      (0.2023, 0.1994, 0.2010)),
-    #     ])
-
-    #     transform_test = transforms.Compose([
-    #         transforms.ToTensor()
-    #         # transforms.Normalize((0.4914, 0.4822, 0.4465),
-    #         #                      (0.2023, 0.1994, 0.2010)),
-    #     ])
-    #     trainset = MOPath(
-    #         download=True,
-    #         root=str('/home/mat/archive/datasets/MOPath'),
-    #         mode='train', train_test_split=0.7,
-    #         val_test_split=0.0, transform=transform_train)
-    #     train_loader = torch.utils.data.DataLoader(
-    #         trainset, batch_size=mini_batch_size, shuffle=True, num_workers=num_workers,
-    #         pin_memory=True)
-
-    #     testset = MOPath(
-    #         root=str('/home/mat/archive/datasets/MOPath'), mode='test',
-    #         download=False,
-    #         transform=transform_test)
-    #     test_loader = torch.utils.data.DataLoader(
-    #         testset, batch_size=mini_batch_size, shuffle=False,
-    #         num_workers=num_workers, pin_memory=True)
     return train_loader, test_loader

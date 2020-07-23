@@ -70,6 +70,20 @@ class ImageNet(ImageFolder):
                              for idx, clss in enumerate(self.classes)
                              for cls in clss}
 
+    # @property
+    # def meta_file(self):
+    #     return os.path.join(self.root, 'meta.bin')
+
+    # def _load_meta_file(self):
+    #     if check_integrity(self.meta_file):
+    #         return torch.load(self.meta_file)
+    #     else:
+    #         raise RuntimeError("Meta file not found or corrupted.",
+    #                            "You can use download=True to create it.")
+
+    # def _save_meta_file(self, wnid_to_class, val_wnids):
+    #     torch.save((wnid_to_class, val_wnids), self.meta_file)
+
     def parse_archives(self):
         if not check_integrity(os.path.join(self.root, self.meta_file)):
             parse_devkit_archive(self.root)
