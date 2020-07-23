@@ -28,6 +28,8 @@ import torchvision.transforms as transforms
 import torchvision
 import torch
 
+from .datasets import ImageNet
+
 
 def get_data(root: Path, dataset: str, mini_batch_size: int,
              num_workers: int = 4):
@@ -104,15 +106,16 @@ def get_data(root: Path, dataset: str, mini_batch_size: int,
                                  0.229, 0.224, 0.225]),
         ])
 
-        trainset = torchvision.datasets.ImageNet(
-            root=str(root), train=True, download=True,
+        trainset = ImageNet(
+            root=str(root), split='train', download=False,
             transform=transform_train)
         train_loader = torch.utils.data.DataLoader(
-            trainset, batch_size=mini_batch_size, shuffle=True, num_workers=num_workers,
+            trainset, batch_size=mini_batch_size, shuffle=True,
+            num_workers=num_workers,
             pin_memory=True)
 
-        testset = torchvision.datasets.ImageNet(
-            root=str(root), train=False, download=True,
+        testset = ImageNet(
+            root=str(root), split='val', download=False,
             transform=transform_test)
         test_loader = torch.utils.data.DataLoader(
             testset, batch_size=mini_batch_size, shuffle=False,
