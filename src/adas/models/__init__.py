@@ -30,15 +30,15 @@ from .dpn import DPN92
 # from .lenet import *
 from .senet import SENet18
 # from .pnasnet import *
-from .densenet import densenet_cifar
+from .densenet import densenet121
 from .googlenet import GoogLeNet
 from .shufflenet import ShuffleNetG2
 from .shufflenetv2 import ShuffleNetV2
-from .resnet import ResNet34
+from .resnet import resnet34 as ResNet34
 from .resnext import ResNeXt29_2x64d
 from .preact_resnet import PreActResNet18
-from .mobilenet import MobileNet
-from .mobilenetv2 import MobileNetV2
+from .mobilenet import mobilenet_v2 as MobileNet
+# from .mobilenetv2 import MobileNetV2
 from .efficientnet import EfficientNetB0
 
 
@@ -56,7 +56,7 @@ def get_net(network: str,
         GoogLeNet(
         num_classes=num_classes,
         input_size=input_size) if network == 'GoogLeNet' else \
-        densenet_cifar(
+        densenet121(
         num_classes=num_classes,
         input_size=input_size) if network == 'densenet_cifar' else \
         ResNeXt29_2x64d(
@@ -65,9 +65,6 @@ def get_net(network: str,
         MobileNet(
         num_classes=num_classes,
         input_size=input_size) if network == 'MobileNet' else \
-        MobileNetV2(
-        num_classes=num_classes,
-        input_size=input_size) if network == 'MobileNetV2' else \
         DPN92(num_classes=num_classes,
               input_size=input_size) if network == 'DPN92' else \
         ShuffleNetG2(num_classes=num_classes,
@@ -77,5 +74,4 @@ def get_net(network: str,
         ShuffleNetV2(1, num_classes=num_classes,
                      input_size=input_size) if network == 'ShuffleNetV2' else \
         EfficientNetB0(
-            num_classes=num_classes,
-            input_size=input_size) if network == 'EfficientNetB0' else None
+            num_classes=num_classes) if network == 'EfficientNetB0' else None
