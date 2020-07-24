@@ -38,7 +38,7 @@ evaluation_directory = '/home/mat/archive/training/AdaS/lr-range-test/autolr'
 evaluation_directory = '/home/mat/archive/training/AdaS/adaptive-learning-survey/paper-based-trial/iteration-2/'
 evaluation_directory = '/home/mat/work/U-of-T/summer-research/mml/lr-range-feature/draft/versus'
 evaluation_directory = '/home/mat/playgrounds/new/lr-range-test/'
-evaluation_directory = '/home/mat/archive/training/AdaS/lr-range-test/draft-experiments/iteration-1-cumprod/vgg16-cifar100/'
+evaluation_directory = '/home/mat/archive/training/AdaS/lr-range-test/draft-experiments/iteration-2-regular/vgg16-cifar100'
 
 EPOCHS = 250
 optimizers = list()
@@ -48,8 +48,11 @@ sorted_files = list()
 for optimizer_folder in l_sorted_files:
     sorted_files.append(optimizer_folder)
     if optimizer_folder.is_dir():
-        folder = str(optimizer_folder).split('/')[-1]
-        optimizers.append(folder.replace('-', '-0.'))
+        for f in (optimizer_folder / '.output').iterdir():
+            if 'lr-' in f.name and f.is_dir():
+                folder = str(optimizer_folder).split('/')[-1]
+                optimizers.append(
+                    folder + f'-{float(f.name.replace("lr-", "")):.5f}')
 
 # fig = plt.figure()
 # x = np.linspace(np.min(learning_rates), np.max(learning_rates),
@@ -158,7 +161,7 @@ for (name, data) in [('train_acc', train_acc), ('train_loss', train_loss),
     plt.xlabel('Epoch', size=9)
     plt.xlim((1, EPOCHS))
     if 'train_loss' == name or 'test_loss' == name:
-        plt.ylim(5e-4, 1)
+        plt.ylim(0, 1)
     elif 'train_acc' == name:
         plt.ylim(0.82, 1.)
     else:
