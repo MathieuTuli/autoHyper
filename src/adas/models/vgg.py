@@ -41,12 +41,25 @@ class VGG(nn.Module):
                  input_size: Tuple[int, int], num_classes: int = 10):
         super(VGG, self).__init__()
         self.features = self._make_layers(cfg[vgg_name])
-        size = int(((input_size[0] / 2) * 2) * ((input_size[1] / 2) * 2) / 2)
-        self.classifier = nn.Linear(size, num_classes)
+        self.avgpool = nn.AdaptiveAvgPool2d((7, 7))
+        # size = int(((input_size[0] / 2) * 2) * ((input_size[1] / 2) * 2) / 2)
+        # size = 512
+        # self.classifier = nn.Linear(size, num_classes)
+        self.classifier = nn.Sequential(
+            nn.Linear(512 * 7 * 7, 4096),
+            nn.ReLU(True),
+            nn.Dropout(),
+            nn.Linear(4096, 4096),
+            nn.ReLU(True),
+            nn.Dropout(),
+            nn.Linear(4096, num_classes),
+        )
 
     def forward(self, x):
         out = self.features(x)
-        out = out.view(out.size(0), -1)
+        out = self.avgpool(out)
+        # out = out.view(out.size(0), -1)
+        out = torch.flatten(out, 1)
         out = self.classifier(out)
         return out
 
@@ -58,10 +71,10 @@ class VGG(nn.Module):
                 layers += [nn.MaxPool2d(kernel_size=2, stride=2)]
             else:
                 layers += [nn.Conv2d(in_channels, x, kernel_size=3, padding=1),
-                           nn.BatchNorm2d(x),
+                           # nn.BatchNorm2d(x),
                            nn.ReLU(inplace=True)]
                 in_channels = x
-        layers += [nn.AvgPool2d(kernel_size=1, stride=1)]
+        # layers += [nn.AvgPool2d(kernel_size=1, stride=1)]
         return nn.Sequential(*layers)
 
 
