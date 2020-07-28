@@ -92,7 +92,7 @@ def parse_config(
         'AlexNet', ', DenseNet201', 'DenseNet169', 'DenseNet161',
         'DenseNet121', 'GoogLeNet', 'InceptionV3', 'MNASNet_0_5',
         'MNASNet_0_75', 'MNASNet_1', 'MNASNet_1_3', 'MobileNetV2',
-        'ResNet18', 'ResNet34', 'ResNet50', 'ResNet101', 'ResNet152',
+        'ResNet18', 'ResNet34', 'ResNet34CIFAR', 'ResNet50', 'ResNet101', 'ResNet152',
         'ResNext50', 'ResNext101', 'WideResNet50', 'WideResNet101',
         'ShuffleNetV2_0_5', 'ShuffleNetV2_1', 'ShuffleNetV2_1_5',
         'ShuffleNetV2_2', 'SqueezeNet_1', 'SqueezeNet_1_1', 'VGG11',
@@ -117,7 +117,8 @@ def parse_config(
     if not isinstance(config['init_lr'], str):
         if isinstance(config['init_lr'], list):
             for i, lr in enumerate(config['init_lr']):
-                config['init_lr'][i] = smart_string_to_float(lr, e=e)
+                if config['init_lr'][i] != 'auto':
+                    config['init_lr'][i] = smart_string_to_float(lr, e=e)
         else:
             config['init_lr'] = smart_string_to_float(config['init_lr'], e=e)
     else:

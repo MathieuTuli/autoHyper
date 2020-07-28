@@ -135,9 +135,9 @@ def main(args: APNamespace):
     print(f"    {'Key':<20} {'Value':<20}")
     print("-"*45)
     device = 'cuda' if torch.cuda.is_available() and not args.cpu else 'cpu'
-    if GLOBALS.CONFIG['init_lr'] == 'auto':
-        GLOBALS.CONFIG['init_lr'] = auto_lr(
-            data_path=data_path, output_path=output_path, device=device)
+    # if GLOBALS.CONFIG['init_lr'] == 'auto':
+    #     GLOBALS.CONFIG['init_lr'] = auto_lr(
+    #         data_path=data_path, output_path=output_path, device=device)
     for k, v in GLOBALS.CONFIG.items():
         if isinstance(v, list):
             print(f"    {k:<20} {v}")
@@ -170,6 +170,10 @@ def main(args: APNamespace):
     else:
         list_lr = GLOBALS.CONFIG['init_lr']
     for learning_rate in list_lr:
+        if learning_rate == 'auto':
+            output_path = base_output_path
+            learning_rate = auto_lr(
+                data_path=data_path, output_path=output_path, device=device)
         GLOBALS.CONFIG['init_lr'] = learning_rate
         output_path = base_output_path / f'lr-{learning_rate}'
         output_path.mkdir(exist_ok=True, parents=True)
