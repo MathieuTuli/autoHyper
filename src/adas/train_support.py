@@ -2,6 +2,7 @@ from typing import Tuple
 
 import time
 
+from tqdm import tqdm
 import pandas as pd
 
 from . import global_vars as GLOBALS
@@ -71,8 +72,9 @@ def epoch_iteration(trial, train_loader, test_loader, epoch: int,
     total = 0
 
     """train CNN architecture"""
-    for batch_idx, (inputs, targets) in enumerate(train_loader):
-        print(f'{batch_idx} / {len(train_loader)}')
+    for batch_idx, (inputs, targets) in enumerate(train_loader):  # enumerate(tqdm(train_loader)):
+        # start = time.time()
+        # print(f'{batch_idx} / {len(train_loader)}')
         inputs, targets = inputs.to(device), targets.to(device)
         if GLOBALS.CONFIG['lr_scheduler'] == 'CosineAnnealingWarmRestarts':
             scheduler.step(epoch + batch_idx / len(train_loader))
@@ -106,7 +108,6 @@ def epoch_iteration(trial, train_loader, test_loader, epoch: int,
         correct += predicted.eq(targets).sum().item()
         if GLOBALS.CONFIG['lr_scheduler'] == 'OneCycleLR':
             scheduler.step()
-
         # progress_bar(batch_idx, len(train_loader),
         #              'Loss: %.3f | Acc: %.3f%% (%d/%d)'
         #              % (train_loss / (batch_idx + 1),

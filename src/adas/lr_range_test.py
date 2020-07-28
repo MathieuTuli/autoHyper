@@ -289,10 +289,11 @@ def auto_lr(data_path: Path, output_path: Path, device: str):
             #     cur_rank, rank_history[lr_idx - 1])
             # if np.less(rate_of_change[-1], min_delta):
             if len(rank_history) > 3 and \
-                np.isclose(rank_history[-1], rank_history[-2],
-                           atol=min_delta) and \
-                np.isclose(rank_history[-2], rank_history[-3],
-                           atol=min_delta):
+                    np.isclose(rank_history[-1], rank_history[-2],
+                               atol=min_delta) and \
+                    np.isclose(rank_history[-2], rank_history[-3],
+                               atol=min_delta) and \
+                    np.less(cur_rank, 0.2):
                 # if np.less(np.abs(delta), min_delta):
                 output_history.append((learning_rates[lr_idx],
                                        cur_rank, 'plateau'))

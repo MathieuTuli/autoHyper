@@ -204,12 +204,7 @@ def main(args: APNamespace):
                 num_classes=10 if
                 GLOBALS.CONFIG['dataset'] == 'CIFAR10' else 100 if
                 GLOBALS.CONFIG['dataset'] == 'CIFAR100'
-                else 25088 if GLOBALS.CONFIG['dataset'] == 'ImageNet' else 10,
-                input_size=(32, 32) if
-                GLOBALS.CONFIG['dataset'] == 'CIFAR10' else (32, 32) if
-                GLOBALS.CONFIG['dataset'] == 'CIFAR100'
-                else (224, 224) if GLOBALS.CONFIG['dataset'] == 'ImageNet'
-                else (32, 32))
+                else 25088 if GLOBALS.CONFIG['dataset'] == 'ImageNet' else 10)
             GLOBALS.METRICS = Metrics(list(GLOBALS.NET.parameters()),
                                       p=GLOBALS.CONFIG['p'])
             # if GLOBALS.CONFIG['lr_scheduler'] == 'AdaS':

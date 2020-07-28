@@ -29,6 +29,7 @@ import torchvision
 import torch
 
 from .datasets import ImageNet
+from .folder2lmdb import ImageFolderLMDB
 
 
 def get_data(root: Path, dataset: str, mini_batch_size: int,
@@ -101,24 +102,28 @@ def get_data(root: Path, dataset: str, mini_batch_size: int,
         ])
 
         transform_test = transforms.Compose([
-            transforms.ToTensor(),
             transforms.Resize(256),
             transforms.CenterCrop(224),
+            transforms.ToTensor(),
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[
                                  0.229, 0.224, 0.225]),
         ])
 
-        trainset = ImageNet(
-            root=str(root), split='train', download=False,
-            transform=transform_train)
+        # trainset = ImageNet(
+        #     root=str(root), split='train', download=False,
+        #     transform=transform_train)
+        trainset = ImageFolderLMDB(str(root / 'train.lmdb'),
+                                   transform_train)
         train_loader = torch.utils.data.DataLoader(
             trainset, batch_size=mini_batch_size, shuffle=True,
             num_workers=num_workers,
             pin_memory=True)
 
-        testset = ImageNet(
-            root=str(root), split='val', download=False,
-            transform=transform_test)
+        # testset = ImageNet(
+        #     root=str(root), split='val', download=False,
+        #     transform=transform_test)
+        testset = ImageFolderLMDB(str(root / 'val.lmdb'),
+                                  transform_test)
         test_loader = torch.utils.data.DataLoader(
             testset, batch_size=mini_batch_size, shuffle=False,
             num_workers=num_workers, pin_memory=True)

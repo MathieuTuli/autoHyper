@@ -49,7 +49,7 @@ from .vgg import vgg11 as VGG11, vgg11_bn as VGG11_BN, \
 
 
 def get_net(network: str,
-            num_classes: int, input_size: Tuple[int, int]) -> torch.nn.Module:
+            num_classes: int) -> torch.nn.Module:
     return AlexNet(num_classes=num_classes) if network == 'AlexNet' else\
         DenseNet201(num_classes=num_classes) if network == 'DenseNet201' else\
         DenseNet169(num_classes=num_classes) if network == 'DenseNet169' else\

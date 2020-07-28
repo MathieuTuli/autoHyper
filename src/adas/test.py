@@ -1,5 +1,6 @@
 from typing import Tuple
 
+from tqdm import tqdm
 import torch
 
 from . import global_vars as GLOBALS
@@ -12,6 +13,7 @@ def test_main(test_loader, epoch: int, device) -> Tuple[float, float]:
     correct = 0
     total = 0
     with torch.no_grad():
+        # enumerate(tqdm(test_loader)):
         for batch_idx, (inputs, targets) in enumerate(test_loader):
             inputs, targets = inputs.to(device), targets.to(device)
             outputs = GLOBALS.NET(inputs)

@@ -39,6 +39,7 @@ evaluation_directory = '/home/mat/archive/training/AdaS/adaptive-learning-survey
 evaluation_directory = '/home/mat/work/U-of-T/summer-research/mml/lr-range-feature/draft/versus'
 evaluation_directory = '/home/mat/playgrounds/new/lr-range-test/'
 evaluation_directory = '/home/mat/archive/training/AdaS/lr-range-test/draft-experiments/iteration-2-regular/vgg16-cifar100'
+evaluation_directory = '/home/mat/archive/training/AdaS/new-model-check'
 
 EPOCHS = 250
 optimizers = list()
@@ -161,7 +162,8 @@ for (name, data) in [('train_acc', train_acc), ('train_loss', train_loss),
     plt.xlabel('Epoch', size=9)
     plt.xlim((1, EPOCHS))
     if 'train_loss' == name or 'test_loss' == name:
-        plt.ylim(0, 1)
+        # plt.ylim(0, 1)
+        plt.yscale('log', basey=10)
     elif 'train_acc' == name:
         plt.ylim(0.82, 1.)
     else:
