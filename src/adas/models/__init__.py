@@ -38,6 +38,7 @@ from .resnet import resnet18 as ResNet18, resnet34 as ResNet34, \
     resnext50_32x4d as ResNext50, resnext101_32x8d as ResNext101, \
     wide_resnet50_2 as WideResNet50, wide_resnet101_2 as WideResNet101
 from .resnet_cifar import ResNet34 as ResNet34CIFAR
+from .resnext_cifar import ResNeXt29_2x64d as RestNeXtCIFAR
 from .shufflenetv2 import shufflenet_v2_x0_5 as ShuffleNetV2_0_5, \
     shufflenet_v2_x1_0 as ShuffleNetV2_1, \
     shufflenet_v2_x1_5 as ShuffleNetV2_1_5, \
