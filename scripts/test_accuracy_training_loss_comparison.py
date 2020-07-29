@@ -40,6 +40,7 @@ evaluation_directory = '/home/mat/work/U-of-T/summer-research/mml/lr-range-featu
 evaluation_directory = '/home/mat/playgrounds/new/lr-range-test/'
 evaluation_directory = '/home/mat/archive/training/AdaS/lr-range-test/draft-experiments/iteration-2-regular/vgg16-cifar100'
 evaluation_directory = '/home/mat/archive/training/AdaS/new-model-check'
+evaluation_directory = '/home/mat/playgrounds/lambda/resnext50-cifar10'
 
 EPOCHS = 250
 optimizers = list()
@@ -50,7 +51,7 @@ for optimizer_folder in l_sorted_files:
     sorted_files.append(optimizer_folder)
     if optimizer_folder.is_dir():
         for f in (optimizer_folder / '.output').iterdir():
-            if 'lr-' in f.name and f.is_dir():
+            if 'lr-' in f.name and f.is_dir() and 'auto' not in f.name:
                 folder = str(optimizer_folder).split('/')[-1]
                 optimizers.append(
                     folder + f'-{float(f.name.replace("lr-", "")):.5f}')
@@ -167,7 +168,7 @@ for (name, data) in [('train_acc', train_acc), ('train_loss', train_loss),
     elif 'train_acc' == name:
         plt.ylim(0.82, 1.)
     else:
-        plt.ylim(0.8, 0.96)
+        plt.ylim(0.6, 0.96)
     plt.ylabel(f'{name}', size=9)
     plt.savefig(f'comparison_{name}.png',
                 dpi=300, bbox_inces='tight')

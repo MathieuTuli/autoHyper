@@ -93,7 +93,7 @@ def parse_config(
         'DenseNet121', 'GoogLeNet', 'InceptionV3', 'MNASNet_0_5',
         'MNASNet_0_75', 'MNASNet_1', 'MNASNet_1_3', 'MobileNetV2',
         'ResNet18', 'ResNet34', 'ResNet34CIFAR', 'ResNet50', 'ResNet101', 'ResNet152',
-        'ResNext50', 'ResNext101', 'WideResNet50', 'WideResNet101',
+        'ResNext50', 'ResNext101', 'ResNeXtCIFAR', 'WideResNet50', 'WideResNet101',
         'ShuffleNetV2_0_5', 'ShuffleNetV2_1', 'ShuffleNetV2_1_5',
         'ShuffleNetV2_2', 'SqueezeNet_1', 'SqueezeNet_1_1', 'VGG11',
         'VGG11_BN', 'VGG13', 'VGG13_BN', 'VGG16', 'VGG16_BN', 'VGG19',
