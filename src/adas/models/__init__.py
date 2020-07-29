@@ -35,7 +35,7 @@ from .mnasnet import mnasnet0_5 as MNASNet_0_5, mnasnet0_75 as MNASNet_0_75, \
 from .mobilenet import mobilenet_v2 as MobileNetV2
 from .resnet import resnet18 as ResNet18, resnet34 as ResNet34, \
     resnet50 as ResNet50, resnet101 as ResNet101, resnet152 as ResNet152, \
-    resnext50_32x4d as ResNext50, resnext101_32x8d as ResNext101, \
+    resnext50_32x4d as ResNeXt50, resnext101_32x8d as ResNeXt101, \
     wide_resnet50_2 as WideResNet50, wide_resnet101_2 as WideResNet101
 from .resnet_cifar import ResNet34 as ResNet34CIFAR
 from .resnext_cifar import ResNeXt29_1x64d as ResNeXtCIFAR
@@ -48,6 +48,8 @@ from .squeezenet import squeezenet1_0 as SqueezeNet_1, \
 from .vgg import vgg11 as VGG11, vgg11_bn as VGG11_BN, \
     vgg13 as VGG13, vgg13_bn as VGG13_BN, vgg16 as VGG16, \
     vgg16_bn as VGG16_BN, vgg19 as VGG19, vgg19_bn as VGG19_BN
+from .efficientnet import efficientnet_b4 as EfficientNetB4
+from .efficientnet_cifar import EfficientNetB0 as EfficientNetB0CIFAR
 
 
 def get_net(network: str,
@@ -71,9 +73,9 @@ def get_net(network: str,
         ResNet50(num_classes=num_classes) if network == 'ResNet50' else\
         ResNet101(num_classes=num_classes) if network == 'ResNet101' else\
         ResNet152(num_classes=num_classes) if network == 'ResNet152' else\
-        ResNext50(num_classes=num_classes) if network == 'ResNext50' else\
+        ResNeXt50(num_classes=num_classes) if network == 'ResNext50' else\
         ResNeXtCIFAR(num_classes=num_classes) if network == 'ResNeXtCIFAR' else\
-        ResNext101(num_classes=num_classes) if network == 'ResNext101' else\
+        ResNeXt101(num_classes=num_classes) if network == 'ResNext101' else\
         WideResNet50(
         num_classes=num_classes) if network == 'WideResNet50' else\
         WideResNet101(
@@ -97,4 +99,8 @@ def get_net(network: str,
         VGG16(num_classes=num_classes) if network == 'VGG16' else\
         VGG16_BN(num_classes=num_classes) if network == 'VGG16_BN' else\
         VGG19(num_classes=num_classes) if network == 'VGG19' else\
-        VGG19_BN(num_classes=num_classes) if network == 'VGG19_BN' else None
+        VGG19_BN(num_classes=num_classes) if network == 'VGG19_BN' else \
+        EfficientNetB4(
+            num_classes=num_classes) if network == 'EfficientNetB4' else \
+        EfficientNetB0CIFAR(
+            num_classes=num_classes) if network == 'EfficientNetB0CIFAR' else None

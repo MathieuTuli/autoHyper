@@ -97,7 +97,7 @@ def parse_config(
         'ShuffleNetV2_0_5', 'ShuffleNetV2_1', 'ShuffleNetV2_1_5',
         'ShuffleNetV2_2', 'SqueezeNet_1', 'SqueezeNet_1_1', 'VGG11',
         'VGG11_BN', 'VGG13', 'VGG13_BN', 'VGG16', 'VGG16_BN', 'VGG19',
-        'VGG19_BN']
+        'VGG19_BN', 'EfficientNetB4', 'EfficientNetB0CIFAR']
     if config['network'] not in valid_models:
         raise ValueError(
             f"config.yaml: unknown model {config['network']}." +
