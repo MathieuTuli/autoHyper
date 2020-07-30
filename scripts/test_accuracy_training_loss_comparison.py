@@ -41,6 +41,7 @@ evaluation_directory = '/home/mat/playgrounds/new/lr-range-test/'
 evaluation_directory = '/home/mat/archive/training/AdaS/lr-range-test/draft-experiments/iteration-2-regular/vgg16-cifar100'
 evaluation_directory = '/home/mat/archive/training/AdaS/new-model-check'
 evaluation_directory = '/home/mat/playgrounds/lambda/resnext50-cifar10'
+evaluation_directory = '/home/mat/playgrounds/t'
 
 EPOCHS = 250
 optimizers = list()

@@ -97,7 +97,7 @@ def parse_config(
         'ShuffleNetV2_0_5', 'ShuffleNetV2_1', 'ShuffleNetV2_1_5',
         'ShuffleNetV2_2', 'SqueezeNet_1', 'SqueezeNet_1_1', 'VGG11',
         'VGG11_BN', 'VGG13', 'VGG13_BN', 'VGG16', 'VGG16_BN', 'VGG19',
-        'VGG19_BN', 'EfficientNetB4', 'EfficientNetB0CIFAR']
+        'VGG19_BN', 'EfficientNetB4', 'EfficientNetB0CIFAR', 'VGG16CIFAR']
     if config['network'] not in valid_models:
         raise ValueError(
             f"config.yaml: unknown model {config['network']}." +
@@ -117,12 +117,12 @@ def parse_config(
     if not isinstance(config['init_lr'], str):
         if isinstance(config['init_lr'], list):
             for i, lr in enumerate(config['init_lr']):
-                if config['init_lr'][i] != 'auto':
+                if config['init_lr'][i] != 'auto' and config['init_lr'][i] != 'auto-ema':
                     config['init_lr'][i] = smart_string_to_float(lr, e=e)
         else:
             config['init_lr'] = smart_string_to_float(config['init_lr'], e=e)
     else:
-        if config['init_lr'] != 'auto':
+        if config['init_lr'] != 'auto' and config['init_lr'] != 'auto-ema':
             raise ValueError(e)
     config['max_epoch'] = smart_string_to_int(
         config['max_epoch'],

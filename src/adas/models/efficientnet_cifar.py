@@ -31,9 +31,10 @@ class SE(nn.Module):
                              kernel_size=1, bias=True)
         self.se2 = nn.Conv2d(se_channels, in_channels,
                              kernel_size=1, bias=True)
+        self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
 
     def forward(self, x):
-        out = F.adaptive_avg_pool2d(x, (1, 1))
+        out = self.avgpool(x)
         out = swish(self.se1(out))
         out = self.se2(out).sigmoid()
         out = x * out
@@ -117,6 +118,9 @@ class EfficientNet(nn.Module):
         self.bn1 = nn.BatchNorm2d(32)
         self.layers = self._make_layers(in_channels=32)
         self.linear = nn.Linear(cfg['out_channels'][-1], num_classes)
+        self.dropout_rate = self.cfg['dropout_rate']
+        self.dropout = nn.Dropout(self.dropout_rate)
+        self.avgpool = nn.AdaptiveAvgPool2d(1)
 
     def _make_layers(self, in_channels):
         layers = []
@@ -142,11 +146,10 @@ class EfficientNet(nn.Module):
     def forward(self, x):
         out = swish(self.bn1(self.conv1(x)))
         out = self.layers(out)
-        out = F.adaptive_avg_pool2d(out, 1)
+        out = self.avgpool(out)
         out = out.view(out.size(0), -1)
-        dropout_rate = self.cfg['dropout_rate']
-        if self.training and dropout_rate > 0:
-            out = F.dropout(out, p=dropout_rate)
+        if self.training and self.dropout_rate > 0:
+            out = self.dropout(out)
         out = self.linear(out)
         return out
 

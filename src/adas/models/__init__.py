@@ -48,6 +48,7 @@ from .squeezenet import squeezenet1_0 as SqueezeNet_1, \
 from .vgg import vgg11 as VGG11, vgg11_bn as VGG11_BN, \
     vgg13 as VGG13, vgg13_bn as VGG13_BN, vgg16 as VGG16, \
     vgg16_bn as VGG16_BN, vgg19 as VGG19, vgg19_bn as VGG19_BN
+from .vgg_cifar import VGG as VGGCIFAR
 from .efficientnet import efficientnet_b4 as EfficientNetB4
 from .efficientnet_cifar import EfficientNetB0 as EfficientNetB0CIFAR
 
@@ -100,6 +101,8 @@ def get_net(network: str,
         VGG16_BN(num_classes=num_classes) if network == 'VGG16_BN' else\
         VGG19(num_classes=num_classes) if network == 'VGG19' else\
         VGG19_BN(num_classes=num_classes) if network == 'VGG19_BN' else \
+        VGGCIFAR('VGG16',
+                 num_classes=num_classes) if network == 'VGG16CIFAR' else \
         EfficientNetB4(
             num_classes=num_classes) if network == 'EfficientNetB4' else \
         EfficientNetB0CIFAR(
