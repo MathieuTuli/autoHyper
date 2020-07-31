@@ -38,10 +38,11 @@ evaluation_directory = '/home/mat/archive/training/AdaS/lr-range-test/autolr'
 evaluation_directory = '/home/mat/archive/training/AdaS/adaptive-learning-survey/paper-based-trial/iteration-2/'
 evaluation_directory = '/home/mat/work/U-of-T/summer-research/mml/lr-range-feature/draft/versus'
 evaluation_directory = '/home/mat/playgrounds/new/lr-range-test/'
-evaluation_directory = '/home/mat/archive/training/AdaS/lr-range-test/draft-experiments/iteration-2-regular/vgg16-cifar100'
 evaluation_directory = '/home/mat/archive/training/AdaS/new-model-check'
 evaluation_directory = '/home/mat/playgrounds/lambda/resnext50-cifar10'
 evaluation_directory = '/home/mat/playgrounds/t'
+evaluation_directory = '/home/mat/archive/training/AdaS/lr-range-test/ema-test/lambda-server-results/ema-test/vgg16-cifar10/'
+evaluation_directory = '/home/mat/archive/training/AdaS/lr-range-test/draft-experiments/iteration-2-regular/vgg16-cifar10'
 
 EPOCHS = 250
 optimizers = list()
@@ -49,10 +50,10 @@ global optimizer
 l_sorted_files = sorted(Path(evaluation_directory).iterdir())
 sorted_files = list()
 for optimizer_folder in l_sorted_files:
-    sorted_files.append(optimizer_folder)
     if optimizer_folder.is_dir():
         for f in (optimizer_folder / '.output').iterdir():
             if 'lr-' in f.name and f.is_dir() and 'auto' not in f.name:
+                sorted_files.append(f)
                 folder = str(optimizer_folder).split('/')[-1]
                 optimizers.append(
                     folder + f'-{float(f.name.replace("lr-", "")):.5f}')
@@ -79,12 +80,11 @@ for s, optimizer_folder in enumerate(sorted_files):
     #     if '.csv' == excel_file.suffix:
     #         continue
     #     files.append(str(excel_file))
-    for d in (optimizer_folder / '.output').iterdir():
-        if 'lr-' in str(d.name):
-            for excel_file in d.iterdir():
-                if '.csv' == excel_file.suffix:
-                    continue
-                files.append(str(excel_file))
+    # for d in (optimizer_folder / '.output').iterdir():
+    for excel_file in (optimizer_folder).iterdir():
+        if '.csv' == excel_file.suffix:
+            continue
+        files.append(str(excel_file))
     train_acc_data = np.empty((EPOCHS, len(files)))
     train_acc_data[:] = np.nan
     train_loss_data = np.empty((EPOCHS, len(files)))
@@ -109,6 +109,7 @@ for s, optimizer_folder in enumerate(sorted_files):
         train_loss_data[:len(train_loss_vec), j] = train_loss_vec[:, 0]
         test_acc_data[:len(test_acc_vec), j] = test_acc_vec[:, 0]
         test_loss_data[:len(test_loss_vec), j] = test_loss_vec[:, 0]
+    print('--')
     print(optimizers[s])
     # print(train_acc_data.mean(1)[-1])
     # print(train_acc_data.std(1)[-1])
@@ -169,7 +170,7 @@ for (name, data) in [('train_acc', train_acc), ('train_loss', train_loss),
     elif 'train_acc' == name:
         plt.ylim(0.82, 1.)
     else:
-        plt.ylim(0.6, 0.96)
+        plt.ylim(0.86, 0.96)
     plt.ylabel(f'{name}', size=9)
     plt.savefig(f'comparison_{name}.png',
                 dpi=300, bbox_inces='tight')

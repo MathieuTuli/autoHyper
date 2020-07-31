@@ -51,6 +51,7 @@ from .vgg import vgg11 as VGG11, vgg11_bn as VGG11_BN, \
 from .vgg_cifar import VGG as VGGCIFAR
 from .efficientnet import efficientnet_b4 as EfficientNetB4
 from .efficientnet_cifar import EfficientNetB0 as EfficientNetB0CIFAR
+from .densenet_cifar import DenseNet121 as DenseNet121CIFAR
 
 
 def get_net(network: str,
@@ -60,6 +61,8 @@ def get_net(network: str,
         DenseNet169(num_classes=num_classes) if network == 'DenseNet169' else\
         DenseNet161(num_classes=num_classes) if network == 'DenseNet161' else\
         DenseNet121(num_classes=num_classes) if network == 'DenseNet121' else\
+        DenseNet121CIFAR(
+        num_classes=num_classes) if network == 'DenseNet121CIFAR' else\
         GoogLeNet(num_classes=num_classes) if network == 'GoogLeNet' else\
         InceptionV3(num_classes=num_classes) if network == 'InceptionV3' else\
         MNASNet_0_5(num_classes=num_classes) if network == 'MNASNet_0_5' else\
