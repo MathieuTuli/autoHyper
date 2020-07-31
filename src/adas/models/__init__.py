@@ -51,7 +51,7 @@ from .vgg import vgg11 as VGG11, vgg11_bn as VGG11_BN, \
 from .vgg_cifar import VGG as VGGCIFAR
 from .efficientnet import efficientnet_b4 as EfficientNetB4
 from .efficientnet_cifar import EfficientNetB0 as EfficientNetB0CIFAR
-from .densenet_cifar import DenseNet121 as DenseNet121CIFAR
+from .densenet_cifar import densenet_cifar as DenseNet121CIFAR
 
 
 def get_net(network: str,

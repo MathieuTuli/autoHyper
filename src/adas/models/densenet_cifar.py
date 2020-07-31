@@ -30,10 +30,11 @@ class Transition(nn.Module):
         self.bn = nn.BatchNorm2d(in_planes)
         self.conv = nn.Conv2d(in_planes, out_planes, kernel_size=1, bias=False)
         self.relu = nn.ReLU(inplace=True)
+        self.avgpool = nn.AvgPool2d(2)
 
     def forward(self, x):
         out = self.conv(self.relu(self.bn(x)))
-        out = self.avg_pool2d(out, 2)
+        out = self.avgpool(out)
         return out
 
 
@@ -70,7 +71,7 @@ class DenseNet(nn.Module):
         self.bn = nn.BatchNorm2d(num_planes)
         self.linear = nn.Linear(num_planes, num_classes)
         self.relu = nn.ReLU(inplace=True)
-        self.avgpool = nn.AdaptiveAvgPool2d(4)
+        self.avgpool = nn.AvgPool2d(4)
 
     def _make_dense_layers(self, block, in_planes, nblock):
         layers = []
