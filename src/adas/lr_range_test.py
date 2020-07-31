@@ -265,6 +265,7 @@ def auto_lr(ema: bool, data_path: Path, output_path: Path, device: str):
                     np.isclose(rate_of_change[-2], rate_of_change[-3],
                                atol=min_delta):
                 if ema and not np.less(rate_of_change[-1], min_rank_thresh):
+                    lr_idx += 1
                     continue
                 output_history.append((learning_rates[lr_idx],
                                        cur_rank, 'plateau'))
