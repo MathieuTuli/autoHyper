@@ -154,17 +154,17 @@ def reset_experiment(learning_rate: float,
     return train_loader, test_loader, optimizer, scheduler
 
 
-def auto_lr(ema: bool, data_path: Path, output_path: Path, device: str):
+def auto_lr(data_path: Path, output_path: Path, device: str):
     # ###### LR RANGE STUFF #######
     min_lr = 1e-4
     max_lr = 0.1
     num_split = 20
     learning_rates = np.geomspace(min_lr, max_lr, num_split)
     lr_idx = 0
-    if ema:
-        min_delta = 5e-2
-    else:
-        min_delta = 1e-2
+    # if ema:
+    #     min_delta = 5e-2
+    # else:
+    min_delta = 1e-2
     exit_counter = 0
     lr_delta = 3e-5
     first_run = True
@@ -177,6 +177,7 @@ def auto_lr(ema: bool, data_path: Path, output_path: Path, device: str):
     cur_rank = -1
     auto_lr_path = output_path / 'auto-lr'
     auto_lr_path.mkdir(exist_ok=True)
+    power = 0.8
     while True:
         if lr_idx == len(learning_rates):
             min_lr = learning_rates[-2]
@@ -205,14 +206,14 @@ def auto_lr(ema: bool, data_path: Path, output_path: Path, device: str):
         # ###### LR RANGE STUFF #######
         cur_rank = compute_rank()
         rank_history.append(cur_rank)
-        if ema:
-            if len(rank_history) == 1:
-                rate_of_change = [cur_rank]
-            else:
-                rate_of_change.append(
-                    beta * rate_of_change[-1] + (1 - beta) * cur_rank)
-        else:
-            rate_of_change = np.cumprod(rank_history) ** 0.5
+        # if ema:
+        #     if len(rank_history) == 1:
+        #         rate_of_change = [cur_rank]
+        #     else:
+        #         rate_of_change.append(
+        #             beta * rate_of_change[-1] + (1 - beta) * cur_rank)
+        # else:
+        rate_of_change = np.cumprod(rank_history) ** power
         # rank_history.append(cur_rank)
         print(f"LR Range Test: Cur Space: {learning_rates}")
         print(f"LR Range Test: Cur lr: {learning_rates[lr_idx]}")
@@ -264,12 +265,13 @@ def auto_lr(ema: bool, data_path: Path, output_path: Path, device: str):
                                atol=min_delta) and \
                     np.isclose(rate_of_change[-2], rate_of_change[-3],
                                atol=min_delta):
-                if ema and not np.less(rate_of_change[-1], min_rank_thresh):
-                    lr_idx += 1
-                    continue
+                # if ema and not np.less(rate_of_change[-1], min_rank_thresh):
+                #     lr_idx += 1
+                #     continue
                 output_history.append((learning_rates[lr_idx],
                                        cur_rank, 'plateau'))
                 exit_counter += 1
+                # power = 0.8
                 min_lr = learning_rates[max(lr_idx - 2, 0)]
                 max_lr = learning_rates[lr_idx]
                 learning_rates = np.geomspace(min_lr, max_lr, num_split)

@@ -118,12 +118,12 @@ def parse_config(
     if not isinstance(config['init_lr'], str):
         if isinstance(config['init_lr'], list):
             for i, lr in enumerate(config['init_lr']):
-                if config['init_lr'][i] != 'auto' and config['init_lr'][i] != 'auto-ema':
+                if config['init_lr'][i] != 'auto':
                     config['init_lr'][i] = smart_string_to_float(lr, e=e)
         else:
             config['init_lr'] = smart_string_to_float(config['init_lr'], e=e)
     else:
-        if config['init_lr'] != 'auto' and config['init_lr'] != 'auto-ema':
+        if config['init_lr'] != 'auto':
             raise ValueError(e)
     config['max_epoch'] = smart_string_to_int(
         config['max_epoch'],

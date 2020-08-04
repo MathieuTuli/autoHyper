@@ -44,6 +44,7 @@ evaluation_directory = '/home/mat/playgrounds/t'
 evaluation_directory = '/home/mat/archive/training/AdaS/lr-range-test/ema-test/lambda-server-results/ema-test/vgg16-cifar10/'
 evaluation_directory = '/home/mat/archive/training/AdaS/lr-range-test/draft-experiments/iteration-2-regular/vgg16-cifar10'
 evaluation_directory = '/home/mat/playgrounds/lambda-output/ema-test/vgg16-cifar10'
+evaluation_directory = '/home/mat/playgrounds/iteration4/iteration-4-final/resnet34-cifar10'
 
 EPOCHS = 250
 optimizers = list()
@@ -51,6 +52,8 @@ global optimizer
 l_sorted_files = sorted(Path(evaluation_directory).iterdir())
 sorted_files = list()
 for optimizer_folder in l_sorted_files:
+    if 'AdaGrad' in str(optimizer_folder) or 'RMSProp' in str(optimizer_folder) or 'SLS' in str(optimizer_folder):
+        continue
     if optimizer_folder.is_dir():
         for f in (optimizer_folder / '.output').iterdir():
             if 'lr-' in f.name and f.is_dir() and 'auto' not in f.name:

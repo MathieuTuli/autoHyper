@@ -170,10 +170,9 @@ def main(args: APNamespace):
     else:
         list_lr = GLOBALS.CONFIG['init_lr']
     for learning_rate in list_lr:
-        if learning_rate == 'auto' or learning_rate == 'auto-ema':
+        if learning_rate == 'auto':
             output_path = base_output_path
             learning_rate = auto_lr(
-                ema=learning_rate == 'auto-ema',
                 data_path=data_path, output_path=output_path, device=device)
         GLOBALS.CONFIG['init_lr'] = learning_rate
         output_path = base_output_path / f'lr-{learning_rate}'
