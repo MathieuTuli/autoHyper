@@ -37,7 +37,7 @@ from .resnet import resnet18 as ResNet18, resnet34 as ResNet34, \
     resnet50 as ResNet50, resnet101 as ResNet101, resnet152 as ResNet152, \
     resnext50_32x4d as ResNeXt50, resnext101_32x8d as ResNeXt101, \
     wide_resnet50_2 as WideResNet50, wide_resnet101_2 as WideResNet101
-from .resnet_cifar import ResNet34 as ResNet34CIFAR
+from .resnet_cifar import ResNet34 as ResNet34CIFAR, ResNet18 as ResNet18CIFAR
 from .resnext_cifar import ResNeXt29_1x64d as ResNeXtCIFAR
 from .shufflenetv2 import shufflenet_v2_x0_5 as ShuffleNetV2_0_5, \
     shufflenet_v2_x1_0 as ShuffleNetV2_1, \
@@ -74,6 +74,7 @@ def get_net(network: str,
         ResNet18(num_classes=num_classes) if network == 'ResNet18' else\
         ResNet34(num_classes=num_classes) if network == 'ResNet34' else\
         ResNet34CIFAR(num_classes=num_classes) if network == 'ResNet34CIFAR' else\
+        ResNet18CIFAR(num_classes=num_classes) if network == 'ResNet18CIFAR' else\
         ResNet50(num_classes=num_classes) if network == 'ResNet50' else\
         ResNet101(num_classes=num_classes) if network == 'ResNet101' else\
         ResNet152(num_classes=num_classes) if network == 'ResNet152' else\
