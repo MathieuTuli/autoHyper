@@ -109,7 +109,7 @@ class ResNet(nn.Module):
 
 
 def ResNet18(num_classes: int = 10):
-    return ResNet(BasicBlock, [2, 2, 2, 2])
+    return ResNet(BasicBlock, [2, 2, 2, 2], num_classes)
 
 
 def ResNet34(num_classes: int = 10):

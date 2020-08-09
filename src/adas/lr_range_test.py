@@ -123,7 +123,8 @@ def reset_experiment(learning_rate: float,
     train_loader, test_loader = get_data(
         root=data_path,
         dataset=GLOBALS.CONFIG['dataset'],
-        mini_batch_size=GLOBALS.CONFIG['mini_batch_size'])
+        mini_batch_size=GLOBALS.CONFIG['mini_batch_size'],
+        num_workers=GLOBALS.CONFIG['num_workers'])
     GLOBALS.PERFORMANCE_STATISTICS = {}
 
     GLOBALS.NET = get_net(

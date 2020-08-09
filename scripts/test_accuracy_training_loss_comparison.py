@@ -44,7 +44,7 @@ evaluation_directory = '/home/mat/playgrounds/t'
 evaluation_directory = '/home/mat/archive/training/AdaS/lr-range-test/ema-test/lambda-server-results/ema-test/vgg16-cifar10/'
 evaluation_directory = '/home/mat/archive/training/AdaS/lr-range-test/draft-experiments/iteration-2-regular/vgg16-cifar10'
 evaluation_directory = '/home/mat/playgrounds/lambda-output/ema-test/vgg16-cifar10'
-evaluation_directory = '/home/mat/playgrounds/iteration4/iteration-4-final/efficientnetb0-cifar10'
+evaluation_directory = '/home/mat/playgrounds/iteration4/iteration-4-final/efficientnetb0-cifar10/'
 
 EPOCHS = 250
 optimizers = list()

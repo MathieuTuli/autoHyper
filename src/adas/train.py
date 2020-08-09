@@ -34,7 +34,7 @@ import yaml
 
 from .train_support import run_epochs
 from .optim import get_optimizer_scheduler
-from .lr_range_test import auto_lr
+from .lr_range_test import auto_lr, reset_experiment
 from .early_stop import EarlyStop
 from .utils import parse_config
 from .profiler import Profiler
@@ -194,45 +194,47 @@ def main(args: APNamespace):
             Profiler.filename = output_path / filename
             # Data
             # logging.info("Adas: Preparing Data")
-            train_loader, test_loader = get_data(
-                root=data_path,
-                dataset=GLOBALS.CONFIG['dataset'],
-                mini_batch_size=GLOBALS.CONFIG['mini_batch_size'],
-                num_workers=GLOBALS.CONFIG['num_workers'])
-            # global performance_statistics, net, metrics, adas
-            GLOBALS.PERFORMANCE_STATISTICS = {}
+            train_loader, test_loader, optimizer, scheduler = \
+                reset_experiment(learning_rate, data_path, device)
+            # train_loader, test_loader = get_data(
+            #     root=data_path,
+            #     dataset=GLOBALS.CONFIG['dataset'],
+            #     mini_batch_size=GLOBALS.CONFIG['mini_batch_size'],
+            #     num_workers=GLOBALS.CONFIG['num_workers'])
+            # # global performance_statistics, net, metrics, adas
+            # GLOBALS.PERFORMANCE_STATISTICS = {}
 
-            # logging.info("AdaS: Building Model")
-            GLOBALS.NET = get_net(
-                GLOBALS.CONFIG['network'],
-                num_classes=10 if
-                GLOBALS.CONFIG['dataset'] == 'CIFAR10' else 100 if
-                GLOBALS.CONFIG['dataset'] == 'CIFAR100'
-                else 25088 if GLOBALS.CONFIG['dataset'] == 'ImageNet' else 10)
-            GLOBALS.METRICS = Metrics(list(GLOBALS.NET.parameters()),
-                                      p=GLOBALS.CONFIG['p'])
-            # if GLOBALS.CONFIG['lr_scheduler'] == 'AdaS':
-            #     GLOBALS.ADAS = AdaS(parameters=list(GLOBALS.NET.parameters()),
-            #                         beta=GLOBALS.CONFIG['beta'],
-            #                         zeta=GLOBALS.CONFIG['zeta'],
-            #                         init_lr=learning_rate,
-            #                         min_lr=float(GLOBALS.CONFIG['min_lr']),
-            #                         p=GLOBALS.CONFIG['p'])
+            # # logging.info("AdaS: Building Model")
+            # GLOBALS.NET = get_net(
+            #     GLOBALS.CONFIG['network'],
+            #     num_classes=10 if
+            #     GLOBALS.CONFIG['dataset'] == 'CIFAR10' else 100 if
+            #     GLOBALS.CONFIG['dataset'] == 'CIFAR100'
+            #     else 1000 if GLOBALS.CONFIG['dataset'] == 'ImageNet' else 10)
+            # GLOBALS.METRICS = Metrics(list(GLOBALS.NET.parameters()),
+            #                           p=GLOBALS.CONFIG['p'])
+            # # if GLOBALS.CONFIG['lr_scheduler'] == 'AdaS':
+            # #     GLOBALS.ADAS = AdaS(parameters=list(GLOBALS.NET.parameters()),
+            # #                         beta=GLOBALS.CONFIG['beta'],
+            # #                         zeta=GLOBALS.CONFIG['zeta'],
+            # #                         init_lr=learning_rate,
+            # #                         min_lr=float(GLOBALS.CONFIG['min_lr']),
+            # #                         p=GLOBALS.CONFIG['p'])
 
-            GLOBALS.NET = GLOBALS.NET.to(device)
+            # GLOBALS.NET = GLOBALS.NET.to(device)
 
-            # global criterion
-            GLOBALS.CRITERION = get_loss(GLOBALS.CONFIG['loss'])
+            # # global criterion
+            # GLOBALS.CRITERION = get_loss(GLOBALS.CONFIG['loss'])
 
-            optimizer, scheduler = get_optimizer_scheduler(
-                net_parameters=GLOBALS.NET.parameters(),
-                listed_params=list(GLOBALS.NET.parameters()),
-                # init_lr=learning_rate,
-                # optim_method=GLOBALS.CONFIG['optim_method'],
-                # lr_scheduler=GLOBALS.CONFIG['lr_scheduler'],
-                train_loader_len=len(train_loader),
-                config=GLOBALS.CONFIG)
-            # max_epochs=int(GLOBALS.CONFIG['max_epoch']))
+            # optimizer, scheduler = get_optimizer_scheduler(
+            #     net_parameters=GLOBALS.NET.parameters(),
+            #     listed_params=list(GLOBALS.NET.parameters()),
+            #     # init_lr=learning_rate,
+            #     # optim_method=GLOBALS.CONFIG['optim_method'],
+            #     # lr_scheduler=GLOBALS.CONFIG['lr_scheduler'],
+            #     train_loader_len=len(train_loader),
+            #     config=GLOBALS.CONFIG)
+            # # max_epochs=int(GLOBALS.CONFIG['max_epoch']))
             GLOBALS.EARLY_STOP = EarlyStop(
                 patience=int(GLOBALS.CONFIG['early_stop_patience']),
                 threshold=float(GLOBALS.CONFIG['early_stop_threshold']))
