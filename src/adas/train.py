@@ -22,6 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 from argparse import Namespace as APNamespace, _SubParsersAction
+from datetime import datetime
 from pathlib import Path
 
 # import logging
@@ -180,13 +181,13 @@ def main(args: APNamespace):
         for trial in range(GLOBALS.CONFIG['n_trials']):
             if GLOBALS.CONFIG['lr_scheduler'] == 'AdaS':
                 filename = \
-                    f"stats_{GLOBALS.CONFIG['optim_method']}_AdaS_trial={trial}" +\
+                    f"{datetime.now()}_stats_{GLOBALS.CONFIG['optim_method']}_AdaS_trial={trial}" +\
                     f"_beta={GLOBALS.CONFIG['beta']}_initlr={learning_rate}_" +\
                     f"net={GLOBALS.CONFIG['network']}_dataset=" +\
                     f"{GLOBALS.CONFIG['dataset']}.csv"
             else:
                 filename = \
-                    f"stats_{GLOBALS.CONFIG['optim_method']}_" +\
+                    f"{datetime.now()}_stats_{GLOBALS.CONFIG['optim_method']}_" +\
                     f"{GLOBALS.CONFIG['lr_scheduler']}_" +\
                     f"trial={trial}_initlr={learning_rate}" +\
                     f"net={GLOBALS.CONFIG['network']}_dataset=" + \

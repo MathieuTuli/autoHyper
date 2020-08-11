@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Tuple
 
 import time
@@ -17,14 +18,14 @@ def run_epochs(trial, epochs, train_loader, test_loader,
                device, optimizer, scheduler, output_path):
     if GLOBALS.CONFIG['lr_scheduler'] == 'AdaS':
         xlsx_name = \
-            f"{GLOBALS.CONFIG['optim_method']}_AdaS_trial={trial}_" +\
+            f"{datetime.now()}_{GLOBALS.CONFIG['optim_method']}_AdaS_trial={trial}_" +\
             f"beta={GLOBALS.CONFIG['beta']}_initlr=" +\
             f"{GLOBALS.CONFIG['init_lr']}_" +\
             f"net={GLOBALS.CONFIG['network']}_dataset=" +\
             f"{GLOBALS.CONFIG['dataset']}.xlsx"
     else:
         xlsx_name = \
-            f"{GLOBALS.CONFIG['optim_method']}_" +\
+            f"{datetime.now()}_{GLOBALS.CONFIG['optim_method']}_" +\
             f"{GLOBALS.CONFIG['lr_scheduler']}_" +\
             f"trial={trial}_initlr={GLOBALS.CONFIG['init_lr']}" +\
             f"net={GLOBALS.CONFIG['network']}_dataset=" +\
