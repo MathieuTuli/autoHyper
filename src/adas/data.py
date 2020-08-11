@@ -29,7 +29,7 @@ import torchvision
 import torch
 
 from .datasets import ImageNet
-from .folder2lmdb import ImageFolderLMDB
+# from .folder2lmdb import ImageFolderLMDB
 
 
 def get_data(root: Path, dataset: str, mini_batch_size: int,
