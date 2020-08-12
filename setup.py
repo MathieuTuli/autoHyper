@@ -2,7 +2,7 @@ from setuptools import setup
 from glob import glob
 
 setup(
-    name='adas',
+    name='autolr',
     use_scm_version=True,
     packages=[''],
     package_dir={'': 'src'},

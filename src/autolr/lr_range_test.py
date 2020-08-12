@@ -44,7 +44,7 @@ from . import global_vars as GLOBALS
 
 def args(sub_parser: _SubParsersAction):
     # print("\n---------------------------------")
-    # print("AdaS Train Args")
+    # print("AutoLR Train Args")
     # print("---------------------------------\n")
     # sub_parser.add_argument(
     #     '-vv', '--very-verbose', action='store_true',
@@ -62,16 +62,16 @@ def args(sub_parser: _SubParsersAction):
         help="Set configuration file path: Default = 'config.yaml'")
     sub_parser.add_argument(
         '--data', dest='data',
-        default='.adas-data', type=str,
-        help="Set data directory path: Default = '.adas-data'")
+        default='.autolr-data', type=str,
+        help="Set data directory path: Default = '.autolr-data'")
     sub_parser.add_argument(
         '--output', dest='output',
-        default='.adas-output', type=str,
-        help="Set output directory path: Default = '.adas-output'")
+        default='.autolr-output', type=str,
+        help="Set output directory path: Default = '.autolr-output'")
     sub_parser.add_argument(
         '--checkpoint', dest='checkpoint',
-        default='.adas-checkpoint', type=str,
-        help="Set checkpoint directory path: Default = '.adas-checkpoint")
+        default='.autolr-checkpoint', type=str,
+        help="Set checkpoint directory path: Default = '.autolr-checkpoint")
     sub_parser.add_argument(
         '--root', dest='root',
         default='.', type=str,
@@ -162,9 +162,6 @@ def auto_lr(data_path: Path, output_path: Path, device: str):
     num_split = 20
     learning_rates = np.geomspace(min_lr, max_lr, num_split)
     lr_idx = 0
-    # if ema:
-    #     min_delta = 5e-2
-    # else:
     min_delta = 1e-2
     exit_counter = 0
     lr_delta = 3e-5
@@ -172,8 +169,6 @@ def auto_lr(data_path: Path, output_path: Path, device: str):
     epochs = range(0, 5)
     output_history = list()
     rank_history = list()
-    beta = 0.7
-    min_rank_thresh = 0.6
     exit_counter_thresh = 6
     cur_rank = -1
     auto_lr_path = output_path / 'auto-lr'
@@ -261,6 +256,7 @@ def auto_lr(data_path: Path, output_path: Path, device: str):
                 lr_idx = 0
                 cur_rank = -1
                 continue
+            # if np.less(rate_of_change[-1], min_delta):
             if len(rate_of_change) > 3 and \
                     np.isclose(rate_of_change[-1], rate_of_change[-2],
                                atol=min_delta) and \

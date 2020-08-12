@@ -49,7 +49,7 @@ from . import global_vars as GLOBALS
 
 def args(sub_parser: _SubParsersAction):
     # print("\n---------------------------------")
-    # print("AdaS Train Args")
+    # print("AutoLR Train Args")
     # print("---------------------------------\n")
     # sub_parser.add_argument(
     #     '-vv', '--very-verbose', action='store_true',
@@ -67,16 +67,16 @@ def args(sub_parser: _SubParsersAction):
         help="Set configuration file path: Default = 'config.yaml'")
     sub_parser.add_argument(
         '--data', dest='data',
-        default='.adas-data', type=str,
-        help="Set data directory path: Default = '.adas-data'")
+        default='.autolr-data', type=str,
+        help="Set data directory path: Default = '.autolr-data'")
     sub_parser.add_argument(
         '--output', dest='output',
-        default='.adas-output', type=str,
-        help="Set output directory path: Default = '.adas-output'")
+        default='.autolr-output', type=str,
+        help="Set output directory path: Default = '.autolr-output'")
     sub_parser.add_argument(
         '--checkpoint', dest='checkpoint',
-        default='.adas-checkpoint', type=str,
-        help="Set checkpoint directory path: Default = '.adas-checkpoint")
+        default='.autolr-checkpoint', type=str,
+        help="Set checkpoint directory path: Default = '.autolr-checkpoint")
     sub_parser.add_argument(
         '--root', dest='root',
         default='.', type=str,
@@ -108,16 +108,16 @@ def main(args: APNamespace):
 
     if not config_path.exists():
         # logging.critical(f"AdaS: Config path {config_path} does not exist")
-        raise ValueError(f"AdaS: Config path {config_path} does not exist")
+        raise ValueError(f"AutoLR: Config path {config_path} does not exist")
     if not data_path.exists():
-        print(f"AdaS: Data dir {data_path} does not exist, building")
+        print(f"AutoLR: Data dir {data_path} does not exist, building")
         data_path.mkdir(exist_ok=True, parents=True)
     if not output_path.exists():
-        print(f"AdaS: Output dir {output_path} does not exist, building")
+        print(f"AutoLR: Output dir {output_path} does not exist, building")
         output_path.mkdir(exist_ok=True, parents=True)
     if not GLOBALS.CHECKPOINT_PATH.exists():
         if args.resume:
-            raise ValueError(f"AdaS: Cannot resume from checkpoint without " +
+            raise ValueError(f"AutoLR: Cannot resume from checkpoint without " +
                              "specifying checkpoint dir")
         GLOBALS.CHECKPOINT_PATH.mkdir(exist_ok=True, parents=True)
     with config_path.open() as f:
@@ -144,19 +144,19 @@ def main(args: APNamespace):
             print(f"    {k:<20} {v}")
         else:
             print(f"    {k:<20} {v:<20}")
-    print(f"AdaS: Pytorch device is set to {device}")
+    print(f"AutoLR: Pytorch device is set to {device}")
     # global best_acc
     GLOBALS.BEST_ACC = 0  # best test accuracy
     start_epoch = 0  # start from epoch 0 or last checkpoint epoch
     if np.less(float(GLOBALS.CONFIG['early_stop_threshold']), 0):
         print(
-            "AdaS: Notice: early stop will not be used as it was set to " +
+            "AutoLR: Notice: early stop will not be used as it was set to " +
             f"{GLOBALS.CONFIG['early_stop_threshold']}, training till " +
             "completion")
     elif GLOBALS.CONFIG['optim_method'] != 'SGD' and \
             GLOBALS.CONFIG['lr_scheduler'] != 'AdaS':
         print(
-            "AdaS: Notice: early stop will not be used as it is not SGD with" +
+            "AutoLR: Notice: early stop will not be used as it is not SGD with" +
             " AdaS, training till completion")
         GLOBALS.CONFIG['early_stop_threshold'] = -1.
 

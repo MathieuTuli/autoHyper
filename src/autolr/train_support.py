@@ -43,7 +43,7 @@ def run_epochs(trial, epochs, train_loader, test_loader,
             scheduler.step()
         total_time = time.time()
         print(
-            f"AdaS: Trial {trial}/{GLOBALS.CONFIG['n_trials'] - 1} | " +
+            f"AutoLR: Trial {trial}/{GLOBALS.CONFIG['n_trials'] - 1} | " +
             f"Epoch {epoch}/{epochs[-1]} Ended | " +
             "Total Time: {:.3f}s | ".format(total_time - start_time) +
             "Epoch Time: {:.3f}s | ".format(end_time - start_time) +
@@ -58,7 +58,7 @@ def run_epochs(trial, epochs, train_loader, test_loader,
 
         df.to_excel(xlsx_path)
         if GLOBALS.EARLY_STOP(train_loss):
-            print("AdaS: Early stop activated.")
+            print("AutoLR: Early stop activated.")
             break
 
 
