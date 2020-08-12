@@ -139,6 +139,7 @@ def reset_experiment(learning_rate: float,
 
     # global criterion
     GLOBALS.CRITERION = get_loss(GLOBALS.CONFIG['loss'])
+    GLOBALS.CRITERION.to(device)
 
     optimizer, scheduler = get_optimizer_scheduler(
         net_parameters=GLOBALS.NET.parameters(),
