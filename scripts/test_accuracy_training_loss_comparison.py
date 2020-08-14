@@ -44,7 +44,7 @@ evaluation_directory = '/home/mat/playgrounds/t'
 evaluation_directory = '/home/mat/archive/training/AdaS/lr-range-test/ema-test/lambda-server-results/ema-test/vgg16-cifar10/'
 evaluation_directory = '/home/mat/archive/training/AdaS/lr-range-test/draft-experiments/iteration-2-regular/vgg16-cifar10'
 evaluation_directory = '/home/mat/playgrounds/lambda-output/ema-test/vgg16-cifar10'
-evaluation_directory = '/home/mat/playgrounds/iteration4/iteration-4-final/efficientnetb0-cifar10/'
+evaluation_directory = '/home/mat/playgrounds/cumprod08/iteration-4-final/resnet34-cifar100/'
 
 EPOCHS = 250
 optimizers = list()
@@ -174,7 +174,7 @@ for (name, data) in [('train_acc', train_acc), ('train_loss', train_loss),
     elif 'train_acc' == name:
         plt.ylim(0.82, 1.)
     else:
-        plt.ylim(0.86, 0.96)
+        plt.ylim(0.7, 0.96)
     plt.ylabel(f'{name}', size=9)
     plt.savefig(f'comparison_{name}.png',
                 dpi=300, bbox_inces='tight')
