@@ -21,10 +21,6 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-from typing import Tuple
-
-import torch
-
 from .alexnet import alexnet as AlexNet
 from .densenet import densenet201 as DenseNet201, densenet169 as DenseNet169, \
     densenet161 as DenseNet161, densenet121 as DenseNet121
@@ -54,60 +50,91 @@ from .efficientnet_cifar import EfficientNetB0 as EfficientNetB0CIFAR
 from .densenet_cifar import densenet_cifar as DenseNet121CIFAR
 
 
-def get_net(network: str,
-            num_classes: int) -> torch.nn.Module:
-    return AlexNet(num_classes=num_classes) if network == 'AlexNet' else\
-        DenseNet201(num_classes=num_classes) if network == 'DenseNet201' else\
-        DenseNet169(num_classes=num_classes) if network == 'DenseNet169' else\
-        DenseNet161(num_classes=num_classes) if network == 'DenseNet161' else\
-        DenseNet121(num_classes=num_classes) if network == 'DenseNet121' else\
-        DenseNet121CIFAR(
-        num_classes=num_classes) if network == 'DenseNet121CIFAR' else\
-        GoogLeNet(num_classes=num_classes) if network == 'GoogLeNet' else\
-        InceptionV3(num_classes=num_classes) if network == 'InceptionV3' else\
-        MNASNet_0_5(num_classes=num_classes) if network == 'MNASNet_0_5' else\
-        MNASNet_0_75(
-        num_classes=num_classes) if network == 'MNASNet_0_75' else\
-        MNASNet_1(num_classes=num_classes) if network == 'MNASNet_1' else\
-        MNASNet_1_3(num_classes=num_classes) if network == 'MNASNet_1_3' else\
-        MobileNetV2(num_classes=num_classes) if network == 'MobileNetV2' else\
-        ResNet18(num_classes=num_classes) if network == 'ResNet18' else\
-        ResNet34(num_classes=num_classes) if network == 'ResNet34' else\
-        ResNet34CIFAR(num_classes=num_classes) if network == 'ResNet34CIFAR' else\
-        ResNet18CIFAR(num_classes=num_classes) if network == 'ResNet18CIFAR' else\
-        ResNet50(num_classes=num_classes) if network == 'ResNet50' else\
-        ResNet101(num_classes=num_classes) if network == 'ResNet101' else\
-        ResNet152(num_classes=num_classes) if network == 'ResNet152' else\
-        ResNeXt50(num_classes=num_classes) if network == 'ResNext50' else\
-        ResNeXtCIFAR(num_classes=num_classes) if network == 'ResNeXtCIFAR' else\
-        ResNeXt101(num_classes=num_classes) if network == 'ResNext101' else\
-        WideResNet50(
-        num_classes=num_classes) if network == 'WideResNet50' else\
-        WideResNet101(
-        num_classes=num_classes) if network == 'WideResNet101' else\
-        ShuffleNetV2_0_5(
-        num_classes=num_classes) if network == 'ShuffleNetV2_0_5' else\
-        ShuffleNetV2_1(
-        num_classes=num_classes) if network == 'ShuffleNetV2_1' else\
-        ShuffleNetV2_1_5(
-        num_classes=num_classes) if network == 'ShuffleNetV2_1_5' else\
-        ShuffleNetV2_2(
-        num_classes=num_classes) if network == 'ShuffleNetV2_2' else\
-        SqueezeNet_1(
-        num_classes=num_classes) if network == 'SqueezeNet_1' else\
-        SqueezeNet_1_1(
-        num_classes=num_classes) if network == 'SqueezeNet_1_1' else\
-        VGG11(num_classes=num_classes) if network == 'VGG11' else\
-        VGG11_BN(num_classes=num_classes) if network == 'VGG11_BN' else\
-        VGG13(num_classes=num_classes) if network == 'VGG13' else\
-        VGG13_BN(num_classes=num_classes) if network == 'VGG13_BN' else\
-        VGG16(num_classes=num_classes) if network == 'VGG16' else\
-        VGG16_BN(num_classes=num_classes) if network == 'VGG16_BN' else\
-        VGG19(num_classes=num_classes) if network == 'VGG19' else\
-        VGG19_BN(num_classes=num_classes) if network == 'VGG19_BN' else \
-        VGGCIFAR('VGG16',
-                 num_classes=num_classes) if network == 'VGG16CIFAR' else \
-        EfficientNetB4(
-            num_classes=num_classes) if network == 'EfficientNetB4' else \
-        EfficientNetB0CIFAR(
-            num_classes=num_classes) if network == 'EfficientNetB0CIFAR' else None
+class Network:
+    def __init__(self, name: str, num_classes: int) -> None:
+        self.model = \
+            AlexNet(
+                num_classes=num_classes) if name == 'AlexNet' else\
+            DenseNet201(
+                num_classes=num_classes) if name == 'DenseNet201' else\
+            DenseNet169(
+                num_classes=num_classes) if name == 'DenseNet169' else\
+            DenseNet161(
+                num_classes=num_classes) if name == 'DenseNet161' else\
+            DenseNet121(
+                num_classes=num_classes) if name == 'DenseNet121' else\
+            DenseNet121CIFAR(
+                num_classes=num_classes) if name == 'DenseNet121CIFAR' else\
+            GoogLeNet(
+                num_classes=num_classes) if name == 'GoogLeNet' else\
+            InceptionV3(
+                num_classes=num_classes) if name == 'InceptionV3' else\
+            MNASNet_0_5(
+                num_classes=num_classes) if name == 'MNASNet_0_5' else\
+            MNASNet_0_75(
+                num_classes=num_classes) if name == 'MNASNet_0_75' else\
+            MNASNet_1(
+                num_classes=num_classes) if name == 'MNASNet_1' else\
+            MNASNet_1_3(
+                num_classes=num_classes) if name == 'MNASNet_1_3' else\
+            MobileNetV2(
+                num_classes=num_classes) if name == 'MobileNetV2' else\
+            ResNet18(
+                num_classes=num_classes) if name == 'ResNet18' else\
+            ResNet34(
+                num_classes=num_classes) if name == 'ResNet34' else\
+            ResNet34CIFAR(
+                num_classes=num_classes) if name == 'ResNet34CIFAR' else\
+            ResNet18CIFAR(
+                num_classes=num_classes) if name == 'ResNet18CIFAR' else\
+            ResNet50(
+                num_classes=num_classes) if name == 'ResNet50' else\
+            ResNet101(
+                num_classes=num_classes) if name == 'ResNet101' else\
+            ResNet152(
+                num_classes=num_classes) if name == 'ResNet152' else\
+            ResNeXt50(
+                num_classes=num_classes) if name == 'ResNext50' else\
+            ResNeXtCIFAR(
+                num_classes=num_classes) if name == 'ResNeXtCIFAR' else\
+            ResNeXt101(
+                num_classes=num_classes) if name == 'ResNext101' else\
+            WideResNet50(
+                num_classes=num_classes) if name == 'WideResNet50' else\
+            WideResNet101(
+                num_classes=num_classes) if name == 'WideResNet101' else\
+            ShuffleNetV2_0_5(
+                num_classes=num_classes) if name == 'ShuffleNetV2_0_5' else\
+            ShuffleNetV2_1(
+                num_classes=num_classes) if name == 'ShuffleNetV2_1' else\
+            ShuffleNetV2_1_5(
+                num_classes=num_classes) if name == 'ShuffleNetV2_1_5' else\
+            ShuffleNetV2_2(
+                num_classes=num_classes) if name == 'ShuffleNetV2_2' else\
+            SqueezeNet_1(
+                num_classes=num_classes) if name == 'SqueezeNet_1' else\
+            SqueezeNet_1_1(
+                num_classes=num_classes) if name == 'SqueezeNet_1_1' else\
+            VGG11(
+                num_classes=num_classes) if name == 'VGG11' else\
+            VGG11_BN(
+                num_classes=num_classes) if name == 'VGG11_BN' else\
+            VGG13(
+                num_classes=num_classes) if name == 'VGG13' else\
+            VGG13_BN(
+                num_classes=num_classes) if name == 'VGG13_BN' else\
+            VGG16(
+                num_classes=num_classes) if name == 'VGG16' else\
+            VGG16_BN(
+                num_classes=num_classes) if name == 'VGG16_BN' else\
+            VGG19(
+                num_classes=num_classes) if name == 'VGG19' else\
+            VGG19_BN(
+                num_classes=num_classes) if name == 'VGG19_BN' else \
+            VGGCIFAR('VGG16',
+                     num_classes=num_classes) if name == 'VGG16CIFAR' else \
+            EfficientNetB4(
+                num_classes=num_classes) if name == 'EfficientNetB4' else \
+            EfficientNetB0CIFAR(
+                num_classes=num_classes) if name == 'EfficientNetB0CIFAR' else\
+            None
