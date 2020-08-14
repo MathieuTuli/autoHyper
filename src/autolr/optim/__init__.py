@@ -49,38 +49,40 @@ from .lrd import LRD
 
 
 def get_optimizer_scheduler(
+        optim_method: str,
+        lr_scheduler: str,
+        init_lr: float,
         net_parameters: Any,
         listed_params: List[Any],
         train_loader_len: int,
-        config: Dict[str, Union[float, str, int]]) -> torch.nn.Module:
-    # init_lr: float, optim_method: str,
-    # lr_scheduler: str,
-    # train_loader_len: int,
-    # max_epochs: int) -> torch.nn.Module:
-    optim_method = config['optim_method']
-    lr_scheduler = config['lr_scheduler']
-    init_lr = config['init_lr']
-    min_lr = config['min_lr']
-    max_epochs = config['max_epoch']
-    adas_p = config['p']
-    beta = config['beta']
-    zeta = config['zeta']
-
+        max_epochs: int,
+        **kwargs) -> torch.nn.Module:
+    listed_params = list(net_parameters)
     optimizer = None
     scheduler = None
     if optim_method == 'SGD':
+        if 'momentum' not in kwargs.items() or \
+                'weight_decay' not in kwargs.items():
+            raise ValueError(
+                "'momentum' and 'weight_decay' need to be specified for"
+                "SGD optimizer in config.yaml::**kwargs")
         if lr_scheduler == 'AdaS':
             optimizer = SGDVec(
                 net_parameters, lr=init_lr,
-                momentum=0.9, weight_decay=5e-4)
+                momentum=momentum, weight_decay=weight_decay)
         else:
             optimizer = SGD(
                 net_parameters, lr=init_lr,
-                momentum=0.9, weight_decay=5e-4)
+                momentum=momentum, weight_decay=weight_decay)
     elif optim_method == 'NAG':
+        if 'momentum' not in kwargs.items() or \
+                'weight_decay' not in kwargs.items():
+            raise ValueError(
+                "'momentum' and 'weight_decay' need to be specified for"
+                "NAG optimizer  in config.yaml::**kwargs")
         optimizer = SGD(
             net_parameters, lr=init_lr,
-            momentum=0.9, weight_decay=5e-4,
+            momentum=momentum, weight_decay=weight_decay,
             nesterov=True)
     elif optim_method == 'AdaM':
         optimizer = Adam(net_parameters, lr=init_lr)
@@ -118,16 +120,31 @@ def get_optimizer_scheduler(
     elif optim_method == 'LaProp':
         optimizer = LaProp(net_parameters, lr=init_lr)
     elif optim_method == 'LearningRateDropout':
+        if 'lr_dropout_rate' not in kwargs.items():
+            raise ValueError(
+                "'lr_dropout_rate' needs to be specified for"
+                "LearningRateDropout optimizer in config.yaml::**kwargs")
         optimizer = LRD(net_parameters, lr=init_lr,
-                        lr_dropout_rate=0.5)
+                        lr_dropout_rate=lr_dropout_rate)
     else:
         print(f"Adas: Warning: Unknown optimizer {optim_method}")
     if lr_scheduler == 'StepLR':
+        if 'step_size' not in kwargs.items() or \
+                'gamma' not in kwargs.items():
+            raise ValueError(
+                "'step_size' and 'gamma' need to be specified for"
+                "StepLR scheduler in config.yaml::**kwargs")
         scheduler = StepLR(
-            optimizer, step_size=25, gamma=0.5)
+            optimizer, step_size=step_size, gamma=gamma)
     elif lr_scheduler == 'CosineAnnealingWarmRestarts':
-        first_restart_epochs = 25
-        increasing_factor = 1
+        # first_restart_epochs = 25
+        # increasing_factor = 1
+        if 'first_restart_epochs' not in kwargs.items() or \
+                'increasing_factor' not in kwargs.items():
+            raise ValueError(
+                "'first_restart_epochs' and 'increasing_factor' need to be "
+                "specified for CosineAnnealingWarmRestarts scheduler in "
+                "config.yaml::**kwargs")
         scheduler = CosineAnnealingWarmRestarts(
             optimizer, T_0=first_restart_epochs, T_mult=increasing_factor)
     elif lr_scheduler == 'OneCycleLR':
@@ -135,12 +152,19 @@ def get_optimizer_scheduler(
             optimizer, max_lr=init_lr,
             steps_per_epoch=train_loader_len, epochs=max_epochs)
     elif lr_scheduler == 'AdaS':
+        if 'beta' not in kwargs.items() or \
+                'zeta' not in kwargs.items() or \
+                'min_lr' not in kwargs.items() or \
+                'p' not in kwargs.items():
+            raise ValueError(
+                "'beta', 'zeta', 'min_lr', 'p' need to be specified for"
+                "AdaS scheduler in config.yaml::**kwargs")
         scheduler = AdaS(parameters=listed_params,
                          beta=beta,
                          zeta=zeta,
                          init_lr=init_lr,
                          min_lr=min_lr,
-                         p=adas_p)
+                         p=p)
     elif lr_scheduler not in ['None', '']:
         print(f"Adas: Warning: Unknown LR scheduler {lr_scheduler}")
     return (optimizer, scheduler)
