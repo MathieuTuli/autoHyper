@@ -11,6 +11,10 @@ class EarlyStop:
         self.wait = 0
         self.best_loss = np.Inf
 
+    def reset(self) -> None:
+        self.best_loss = np.Inf
+        self.wait = 0
+
     def __call__(self, train_loss: float) -> bool:
         """
         @monitor: value to monitor for early stopping
