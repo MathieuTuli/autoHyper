@@ -169,9 +169,9 @@ class TrainingAgent:
             patience=int(config['early_stop_patience']),
             threshold=float(config['early_stop_threshold']))
         cudnn.benchmark = True
-        self.reset()
+        # self.reset()
 
-    def reset(self) -> None:
+    def reset(self, learning_rate: float) -> None:
         self.performance_statistics = dict()
         self.network = get_network(name=self.config['network'],
                                    num_classes=self.num_classes)
@@ -180,7 +180,7 @@ class TrainingAgent:
         self.optimizer, self.scheduler = get_optimizer_scheduler(
             optim_method=self.config['optimizer'],
             lr_scheduler=self.config['scheduler'],
-            init_lr=self.config['init_lr'],
+            init_lr=learning_rate,
             net_parameters=self.network.parameters(),
             train_loader_len=len(self.train_loader),
             max_epochs=self.config['max_epochs'],
@@ -212,10 +212,10 @@ class TrainingAgent:
         else:
             list_lr = self.config['init_lr']
         for learning_rate in list_lr:
-            # if learning_rate == 'auto':
-            #     learning_rate = auto_lr(
-            #         data_path=self.data_path, output_path=self.output_path,
-            #         device=device)
+            if learning_rate == 'auto':
+                learning_rate = auto_lr(
+                    data_path=self.data_path, output_path=self.output_path,
+                    device=device)
             lr_output_path = self.output_path / f'lr-{learning_rate}'
             lr_output_path.mkdir(exist_ok=True, parents=True)
             for trial in range(self.config['n_trials']):
@@ -229,11 +229,11 @@ class TrainingAgent:
                     f"learning_rate={learning_rate}_" +\
                     '_'.join([f"{k}={v}" for k, v in
                               self.config['kwargs'].items()]) +\
-                    ".csv"
+                    ".csv".replace(' ', '-')
                 stats_filename = self.output_filename.replace(
                     'results', 'stats')
                 Profiler.filename = lr_output_path / stats_filename
-                self.reset()
+                self.reset(learning_rate)
                 epochs = range(self.start_epoch, self.start_epoch +
                                self.config['max_epoch'])
                 self.run_epochs(trial, epochs)
