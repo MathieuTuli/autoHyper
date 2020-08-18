@@ -34,9 +34,9 @@ import torch
 from .optim import get_optimizer_scheduler
 from .train_support import run_epochs
 from .early_stop import EarlyStop
+from .models import get_network
 from .profiler import Profiler
 from .metrics import Metrics
-from .models import get_net
 from .data import get_data
 
 from . import global_vars as GLOBALS

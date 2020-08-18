@@ -21,7 +21,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-from typing import Any, Dict, Union, List
+from typing import Any, List
 
 import torch
 
@@ -57,32 +57,33 @@ def get_optimizer_scheduler(
         train_loader_len: int,
         max_epochs: int,
         **kwargs) -> torch.nn.Module:
-    listed_params = list(net_parameters)
     optimizer = None
     scheduler = None
     if optim_method == 'SGD':
-        if 'momentum' not in kwargs.items() or \
-                'weight_decay' not in kwargs.items():
+        if 'momentum' not in kwargs.keys() or \
+                'weight_decay' not in kwargs.keys():
             raise ValueError(
                 "'momentum' and 'weight_decay' need to be specified for"
-                "SGD optimizer in config.yaml::**kwargs")
+                " SGD optimizer in config.yaml::**kwargs")
         if lr_scheduler == 'AdaS':
             optimizer = SGDVec(
                 net_parameters, lr=init_lr,
-                momentum=momentum, weight_decay=weight_decay)
+                momentum=kwargs['momentum'],
+                weight_decay=kwargs['weight_decay'])
         else:
             optimizer = SGD(
                 net_parameters, lr=init_lr,
-                momentum=momentum, weight_decay=weight_decay)
+                momentum=kwargs['momentum'],
+                weight_decay=kwargs['weight_decay'])
     elif optim_method == 'NAG':
-        if 'momentum' not in kwargs.items() or \
-                'weight_decay' not in kwargs.items():
+        if 'momentum' not in kwargs.keys() or \
+                'weight_decay' not in kwargs.keys():
             raise ValueError(
                 "'momentum' and 'weight_decay' need to be specified for"
-                "NAG optimizer  in config.yaml::**kwargs")
+                " NAG optimizer  in config.yaml::**kwargs")
         optimizer = SGD(
             net_parameters, lr=init_lr,
-            momentum=momentum, weight_decay=weight_decay,
+            momentum=kwargs['momentum'], weight_decay=kwargs['weight_decay'],
             nesterov=True)
     elif optim_method == 'AdaM':
         optimizer = Adam(net_parameters, lr=init_lr)
@@ -120,51 +121,52 @@ def get_optimizer_scheduler(
     elif optim_method == 'LaProp':
         optimizer = LaProp(net_parameters, lr=init_lr)
     elif optim_method == 'LearningRateDropout':
-        if 'lr_dropout_rate' not in kwargs.items():
+        if 'lr_dropout_rate' not in kwargs.keys():
             raise ValueError(
                 "'lr_dropout_rate' needs to be specified for"
                 "LearningRateDropout optimizer in config.yaml::**kwargs")
         optimizer = LRD(net_parameters, lr=init_lr,
-                        lr_dropout_rate=lr_dropout_rate)
+                        lr_dropout_rate=kwargs['lr_dropout_rate'])
     else:
         print(f"Adas: Warning: Unknown optimizer {optim_method}")
     if lr_scheduler == 'StepLR':
-        if 'step_size' not in kwargs.items() or \
-                'gamma' not in kwargs.items():
+        if 'step_size' not in kwargs.keys() or \
+                'gamma' not in kwargs.keys():
             raise ValueError(
                 "'step_size' and 'gamma' need to be specified for"
                 "StepLR scheduler in config.yaml::**kwargs")
         scheduler = StepLR(
-            optimizer, step_size=step_size, gamma=gamma)
+            optimizer, step_size=kwargs['step_size'], gamma=kwargs['gamma'])
     elif lr_scheduler == 'CosineAnnealingWarmRestarts':
         # first_restart_epochs = 25
         # increasing_factor = 1
-        if 'first_restart_epochs' not in kwargs.items() or \
-                'increasing_factor' not in kwargs.items():
+        if 'first_restart_epochs' not in kwargs.keys() or \
+                'increasing_factor' not in kwargs.keys():
             raise ValueError(
                 "'first_restart_epochs' and 'increasing_factor' need to be "
                 "specified for CosineAnnealingWarmRestarts scheduler in "
                 "config.yaml::**kwargs")
         scheduler = CosineAnnealingWarmRestarts(
-            optimizer, T_0=first_restart_epochs, T_mult=increasing_factor)
+            optimizer, T_0=kwargs['first_restart_epochs'],
+            T_mult=kwargs['increasing_factor'])
     elif lr_scheduler == 'OneCycleLR':
         scheduler = OneCycleLR(
             optimizer, max_lr=init_lr,
             steps_per_epoch=train_loader_len, epochs=max_epochs)
     elif lr_scheduler == 'AdaS':
-        if 'beta' not in kwargs.items() or \
-                'zeta' not in kwargs.items() or \
-                'min_lr' not in kwargs.items() or \
-                'p' not in kwargs.items():
+        if 'beta' not in kwargs.keys() or \
+                'zeta' not in kwargs.keys() or \
+                'min_lr' not in kwargs.keys() or \
+                'p' not in kwargs.keys():
             raise ValueError(
                 "'beta', 'zeta', 'min_lr', 'p' need to be specified for"
-                "AdaS scheduler in config.yaml::**kwargs")
+                " AdaS scheduler in config.yaml::**kwargs")
         scheduler = AdaS(parameters=listed_params,
-                         beta=beta,
-                         zeta=zeta,
+                         beta=kwargs['beta'],
+                         zeta=kwargs['zeta'],
                          init_lr=init_lr,
-                         min_lr=min_lr,
-                         p=p)
+                         min_lr=kwargs['min_lr'],
+                         p=kwargs['p'])
     elif lr_scheduler not in ['None', '']:
         print(f"Adas: Warning: Unknown LR scheduler {lr_scheduler}")
     return (optimizer, scheduler)

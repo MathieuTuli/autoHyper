@@ -1,30 +1,32 @@
 ###### Application Specific ######
-dataset: 'CIFAR10' # options: CIFAR100, CIFAR10, ImageNet
-network: 'ResNeXtCIFAR' # AlexNet, DenseNet201, DenseNet169, DenseNet161, DenseNet121, GoogLeNet
+dataset: 'CIFAR100' # options: CIFAR100, CIFAR10, ImageNet
+network: 'ResNet18CIFAR' # AlexNet, DenseNet201, DenseNet169, DenseNet161, DenseNet121, GoogLeNet
 # InceptionV3, MNASNet_0_5, MNASNet_0_75, MNASNet_1, MNASNet_1_3, MobileNetV2, ResNet18
 # ResNet34, ResNet50, ResNet101, ResNet152, ResNext50, ResNext101, WideResNet50, WideResNet101
 # ShuffleNetV2_0_5, ShuffleNetV2_1, ShuffleNetV2_1_5, ShuffleNetV2_2, SqueezeNet_1,
 # SqueezeNet_1_1, VGG11, VGG11_BN, VGG13, VGG13_BN, VGG16, VGG16_BN, VGG19, VGG19_BN,
 # ResNet34CIFAR, ResNeXtCIFAR, EfficientNetB4
-optim_method: 'AdaM' # options: SGD, AdaM, AdaGrad, RMSProp, AdaDelta
-lr_scheduler: 'None' # options: AdaS (with SGD), StepLR, CosineAnnealingWarmRestarts, OneCycleLR
+optimizer: 'SGD' # options: SGD, AdaM, AdaGrad, RMSProp, AdaDelta
+scheduler: 'AdaS' # options: AdaS (with SGD), StepLR, CosineAnnealingWarmRestarts, OneCycleLR
 
 
 ###### Suggested Tune ######
 n_trials: 1
-beta: 0.8
-init_lr:
-  - 0.01
-  - 'auto'
+init_lr: 0.01
 num_workers: 4
 
 
 ###### Suggested Default ######
-max_epoch: 50
-early_stop_threshold: -1 # set to -1 if you wish not to use early stop, or equally, set to a high value. Set to -1 if not using AdaS
+max_epochs: 100
+early_stop_threshold: 0.001 # set to -1 if you wish not to use early stop, or equally, set to a high value. Set to -1 if not using AdaS
 early_stop_patience: 10 # epoch window to consider when deciding whether to stop
 mini_batch_size: 128
-min_lr: 0.00000000000000000001
-zeta: 1.0
-p: 1 # options: 1, 2.
 loss: 'cross_entropy' # options: cross_entropy
+p: 1 # options: 1, 2.
+kwargs:
+  momentum: 0.9
+  weight_decay: 5e-4
+  min_lr: 1e-20
+  zeta: 1.0
+  p: 1 # options: 1, 2.
+  beta: 0.8

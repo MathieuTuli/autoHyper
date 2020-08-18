@@ -43,10 +43,10 @@ from .models import get_network
 from .utils import parse_config
 from .profiler import Profiler
 from .metrics import Metrics
+from .models.vgg import VGG
 from .optim.sls import SLS
 from .optim.sps import SPS
 from .data import get_data
-from .models import VGG
 from .AdaS import AdaS
 
 
@@ -112,7 +112,7 @@ class TrainingAgent:
     train_loader = None
     test_loader = None
     num_classes: int = None
-    network: torch.nn.module = None
+    network: torch.nn.Module = None
     optimizer: torch.optim.Optimizer = None
     scheduler = None
     loss = None
@@ -128,12 +128,6 @@ class TrainingAgent:
             start_epoch: int = 0,
             resume: bool = False,
             gpu: int = None) -> None:
-        self.load_config(config_path, data_path)
-        for k, v in self.config.items():
-            if isinstance(v, list):
-                print(f"    {k:<20} {v}")
-            else:
-                print(f"    {k:<20} {v:<20}")
         self.gpu = gpu
         self.best_acc = 0.
         self.device = device
@@ -142,6 +136,16 @@ class TrainingAgent:
         self.data_path = data_path
         self.output_path = output_path
         self.checkpoint_path = checkpoint_path
+
+        self.load_config(config_path, data_path)
+        print("AutoLR: Experiment Configuration")
+        print("-"*45)
+        for k, v in self.config.items():
+            if isinstance(v, list) or isinstance(v, dict):
+                print(f"    {k:<20} {v}")
+            else:
+                print(f"    {k:<20} {v:<20}")
+        print("-"*45)
 
     def load_config(self, config_path: Path, data_path: Path) -> None:
         with config_path.open() as f:
@@ -154,13 +158,13 @@ class TrainingAgent:
             self.criterion = torch.nn.CrossEntropyLoss() if \
                 config['loss'] == 'cross_entropy' else None
         else:
-            self.criterion = torch.nn.CrossEntropyLoss().cuda(args.gpu) if \
+            self.criterion = torch.nn.CrossEntropyLoss().cuda(self.gpu) if \
                 config['loss'] == 'cross_entropy' else None
         if np.less(float(config['early_stop_threshold']), 0):
             print("AutoLR: Notice: early stop will not be used as it was " +
                   f"set to {config['early_stop_threshold']}, " +
                   "training till completion")
-        elif config['optim_method'] != 'SGD' and \
+        elif config['optimizer'] != 'SGD' and \
                 config['lr_scheduler'] != 'AdaS':
             print("AutoLR: Notice: early stop will not be used as it is not " +
                   "SGD with AdaS, training till completion")
@@ -177,14 +181,6 @@ class TrainingAgent:
                                    num_classes=self.num_classes)
         self.metrics = Metrics(list(self.network.parameters()),
                                p=self.config['p'])
-        self.optimizer, self.scheduler = get_optimizer_scheduler(
-            optim_method=self.config['optimizer'],
-            lr_scheduler=self.config['scheduler'],
-            init_lr=learning_rate,
-            net_parameters=self.network.parameters(),
-            train_loader_len=len(self.train_loader),
-            max_epochs=self.config['max_epochs'],
-            **self.config['kwargs'])
         # TODO add other parallelisms
         if self.device == 'cpu':
             print("Resetting cpu-based network")
@@ -204,6 +200,15 @@ class TrainingAgent:
                 self.network.cuda()
             else:
                 self.network = torch.nn.DataParallel(self.network)
+        self.optimizer, self.scheduler = get_optimizer_scheduler(
+            optim_method=self.config['optimizer'],
+            lr_scheduler=self.config['scheduler'],
+            init_lr=learning_rate,
+            net_parameters=self.network.parameters(),
+            listed_params=list(self.network.parameters()),
+            train_loader_len=len(self.train_loader),
+            max_epochs=self.config['max_epochs'],
+            **self.config['kwargs'])
         self.early_stop.reset()
 
     def train(self) -> None:
@@ -215,7 +220,7 @@ class TrainingAgent:
             if learning_rate == 'auto':
                 learning_rate = auto_lr(
                     data_path=self.data_path, output_path=self.output_path,
-                    device=device)
+                    device=self.device)
             lr_output_path = self.output_path / f'lr-{learning_rate}'
             lr_output_path.mkdir(exist_ok=True, parents=True)
             for trial in range(self.config['n_trials']):
@@ -230,12 +235,14 @@ class TrainingAgent:
                     '_'.join([f"{k}={v}" for k, v in
                               self.config['kwargs'].items()]) +\
                     ".csv".replace(' ', '-')
+                self.output_filename = str(
+                    lr_output_path / self.output_filename)
                 stats_filename = self.output_filename.replace(
                     'results', 'stats')
                 Profiler.filename = lr_output_path / stats_filename
                 self.reset(learning_rate)
                 epochs = range(self.start_epoch, self.start_epoch +
-                               self.config['max_epoch'])
+                               self.config['max_epochs'])
                 self.run_epochs(trial, epochs)
                 Profiler.stream = None
 
@@ -249,27 +256,30 @@ class TrainingAgent:
             if isinstance(self.scheduler, StepLR):
                 self.scheduler.step()
             total_time = time.time()
+            scheduler_string = f" w/ {self.config['scheduler']}" if \
+                self.scheduler is not None else ''
             print(
-                f"{self.config['optimizer']} w/ {self.config['scheduler']} " +
-                f" on {self.config['dataset']}:" +
-                f"T {trial}/{self.config['n_trials'] - 1} | " +
-                f"E {epoch}/{epochs[-1]} Ended | " +
+                f"{self.config['optimizer']}{scheduler_string} " +
+                f"on {self.config['dataset']}: " +
+                f"T {trial + 1}/{self.config['n_trials']} | " +
+                f"E {epoch + 1}/{epochs[-1] + 1} Ended | " +
                 "E Time: {:.3f}s | ".format(end_time - start_time) +
                 "~Time Left: {:.3f}s | ".format(
                     (total_time - start_time) * (epochs[-1] - epoch)),
                 "Train Loss: {:.4f}% | Train Acc. {:.4f}% | ".format(
                     train_loss,
-                    train_acc1) +
-                "Test Loss: {:.4f}% | Test Acc. {:.4f}%".format(test_loss,
-                                                                test_acc1))
+                    train_acc1 * 100) +
+                "Test Loss: {:.4f}% | Test Acc. {:.4f}%".format(
+                    test_loss,
+                    test_acc1 * 100))
             df = pd.DataFrame(data=self.performance_statistics)
 
-            df.to_csv(self.output_path)
+            df.to_csv(self.output_filename)
             if self.early_stop(train_loss):
                 print("AutoLR: Early stop activated.")
                 break
 
-    @Profiler
+    # @Profiler
     def epoch_iteration(self, trial: int, epoch: int):
         # logging.info(f"Adas: Train: Epoch: {epoch}")
         # global net, performance_statistics, metrics, adas, config
@@ -292,7 +302,6 @@ class TrainingAgent:
             if isinstance(self.scheduler, CosineAnnealingWarmRestarts):
                 self.scheduler.step(epoch + batch_idx / len(self.train_loader))
             self.optimizer.zero_grad()
-            # if GLOBALS.CONFIG['optim_method'] == 'SLS':
             if isinstance(self.optimizer, SLS):
                 def closure():
                     outputs = self.network(inputs)
@@ -303,13 +312,9 @@ class TrainingAgent:
                 outputs = self.network(inputs)
                 loss = self.criterion(outputs, targets)
                 loss.backward()
-                # if GLOBALS.ADAS is not None:
-                #     optimizer.step(GLOBALS.METRICS.layers_index_todo,
-                #                    GLOBALS.ADAS.lr_vector)
                 if isinstance(self.scheduler, AdaS):
                     self.optimizer.step(self.metrics.layers_index_todo,
                                         self.scheduler.lr_vector)
-                # elif GLOBALS.CONFIG['optim_method'] == 'SPS':
                 elif isinstance(self.optimizer, SPS):
                     self.optimizer.step(loss=loss)
                 else:
@@ -390,7 +395,7 @@ class TrainingAgent:
             # _, predicted = outputs.max(1)
             # total += targets.size(0)
             # correct += predicted.eq(targets).sum().item()
-            acc1, acc5 = accuracy(outputs, targets)
+            acc1, acc5 = accuracy(outputs, targets, topk=(1, 5))
             top1.update(acc1.cpu().item())
             top5.update(acc5.cpu().item())
 
@@ -412,9 +417,10 @@ class TrainingAgent:
             top1.avg / 100.)
         self.performance_statistics[f'test_acc5_epoch_{epoch}'] = (
             top5.avg / 100.)
-        self.performance_statistics[f'test_loss_epoch_{epoch}'] = test_loss
+        self.performance_statistics[f'test_loss_epoch_{epoch}'] = \
+            test_loss / (batch_idx + 1)
         return test_loss / (batch_idx + 1), (top1.avg / 100,
-                                             top5.avg / 100,
+                                             top5.avg / 100)
 
 
 class AverageMeter:
@@ -424,40 +430,40 @@ class AverageMeter:
         self.reset()
 
     def reset(self):
-        self.val=0
-        self.avg=0
-        self.sum=0
-        self.count=0
+        self.val = 0
+        self.avg = 0
+        self.sum = 0
+        self.count = 0
 
     def update(self, val, n=1):
-        self.val=val
+        self.val = val
         self.sum += val * n
         self.count += n
-        self.avg=self.sum / self.count
+        self.avg = self.sum / self.count
 
 
 def accuracy(outputs, targets, topk=(1,)):
     with torch.no_grad():
-        maxk=max(topk)
-        batch_size=targets.size(0)
+        maxk = max(topk)
+        batch_size = targets.size(0)
 
-        _, pred=outputs.topk(maxk, 1, True, True)
-        pred=pred.t()
-        correct=pred.eq(targets.view(1, -1).expand_as(pred))
+        _, pred = outputs.topk(maxk, 1, True, True)
+        pred = pred.t()
+        correct = pred.eq(targets.view(1, -1).expand_as(pred))
 
-        res=[]
+        res = []
         for k in topk:
-            correct_k=correct[:k].view(-1).float().sum(0, keepdim=True)
+            correct_k = correct[:k].view(-1).float().sum(0, keepdim=True)
             res.append(correct_k.mul_(100.0 / batch_size))
         return res
 
 
 def setup_dirs(args: APNamespace) -> Tuple[Path, Path, Path, Path]:
-    root_path=Path(args.root).expanduser()
-    config_path=Path(args.config).expanduser()
-    data_path=root_path / Path(args.data).expanduser()
-    output_path=root_path / Path(args.output).expanduser()
-    checkpoint_path=root_path / Path(args.checkpoint).expanduser()
+    root_path = Path(args.root).expanduser()
+    config_path = Path(args.config).expanduser()
+    data_path = root_path / Path(args.data).expanduser()
+    output_path = root_path / Path(args.output).expanduser()
+    checkpoint_path = root_path / Path(args.checkpoint).expanduser()
 
     if not config_path.exists():
         raise ValueError(f"AutoLR: Config path {config_path} does not exist")
@@ -476,13 +482,15 @@ def setup_dirs(args: APNamespace) -> Tuple[Path, Path, Path, Path]:
 
 
 def main(args: APNamespace):
-    print("Adas: Argument Parser Options")
+    print("AutoLR: Argument Parser Options")
     print("-"*45)
     for arg in vars(args):
-        print(f"    {arg:,20}: {getattr(args, arg)<40}")
+        attr = getattr(args, arg)
+        attr = attr if attr is not None else "None"
+        print(f"    {arg:<20}: {attr:<40}")
     print("-"*45)
-    config_path, output_path, data_path, checkpoint_path=setup_dirs(args)
-    training_agent=TrainingAgent(
+    config_path, output_path, data_path, checkpoint_path = setup_dirs(args)
+    training_agent = TrainingAgent(
         config_path=config_path,
         device='cuda' if torch.cuda.is_available() and not args.cpu else 'cpu',
         output_path=output_path,

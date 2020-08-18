@@ -104,16 +104,16 @@ def parse_config(
             f"config.yaml: unknown model {config['network']}." +
             f"Must be one of {valid_models}")
 
-    if config['lr_scheduler'] == 'AdaS' and config['optim_method'] != 'SGD':
+    if config['scheduler'] == 'AdaS' and config['optimizer'] != 'SGD':
         raise ValueError(
             'config.yaml: AdaS can only be used with SGD')
 
     config['n_trials'] = smart_string_to_int(
         config['n_trials'],
         e='config.yaml: n_trials must be an int')
-    config['beta'] = smart_string_to_float(
-        config['beta'],
-        e='config.yaml: beta must be a float')
+    # config['beta'] = smart_string_to_float(
+    #     config['beta'],
+    #     e='config.yaml: beta must be a float')
     e = 'config.yaml: init_lr must be a float or list of floats'
     if not isinstance(config['init_lr'], str):
         if isinstance(config['init_lr'], list):
@@ -125,9 +125,9 @@ def parse_config(
     else:
         if config['init_lr'] != 'auto':
             raise ValueError(e)
-    config['max_epoch'] = smart_string_to_int(
-        config['max_epoch'],
-        e='config.yaml: max_epoch must be an int')
+    config['max_epochs'] = smart_string_to_int(
+        config['max_epochs'],
+        e='config.yaml: max_epochs must be an int')
     config['early_stop_threshold'] = smart_string_to_float(
         config['early_stop_threshold'],
         e='config.yaml: early_stop_threshold must be a float')
@@ -137,12 +137,12 @@ def parse_config(
     config['mini_batch_size'] = smart_string_to_int(
         config['mini_batch_size'],
         e='config.yaml: mini_batch_size must be an int')
-    config['min_lr'] = smart_string_to_float(
-        config['min_lr'],
-        e='config.yaml: min_lr must be a float')
-    config['zeta'] = smart_string_to_float(
-        config['zeta'],
-        e='config.yaml: zeta must be a float')
+    # config['min_lr'] = smart_string_to_float(
+    #     config['min_lr'],
+    #     e='config.yaml: min_lr must be a float')
+    # config['zeta'] = smart_string_to_float(
+    #     config['zeta'],
+    #     e='config.yaml: zeta must be a float')
     config['p'] = smart_string_to_int(
         config['p'],
         e='config.yaml: p must be an int')
@@ -151,4 +151,6 @@ def parse_config(
         e='config.yaml: num_works must be an int')
     if config['loss'] != 'cross_entropy':
         raise ValueError('config.yaml: loss must be cross_entropy')
+    for k, v in config['kwargs'].items():
+        config['kwargs'][k] = smart_string_to_float(v)
     return config
