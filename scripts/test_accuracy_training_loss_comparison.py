@@ -47,6 +47,9 @@ evaluation_directory = '/home/mat/playgrounds/lambda-output/ema-test/vgg16-cifar
 evaluation_directory = '/home/mat/playgrounds/cumprod08/iteration-4-final/resnet34-cifar100/'
 evaluation_directory = '/home/mat/work/U-of-T/summer-research/mml/lr-range-feature/cumprod-08-results/iteration-4-final'
 evaluation_directory = '/home/mat/playgrounds/iteration4/iteration-4-final/resnext-cifar10/'
+evaluation_directory = '/home/mat/work/U-of-T/summer-research/mml/lr-range-feature/' +\
+    'final-draft-results/' +\
+    'iteration-4-final/DenseNet121-CIFAR100'
 
 # for net in Path(evaluation_directory).iterdir():
 for net in ['resnext']:
@@ -58,7 +61,7 @@ for net in ['resnext']:
     sorted_files = list()
     for optimizer_folder in l_sorted_files:
         if 'AdaGrad' in str(optimizer_folder) or 'RMSProp' in str(optimizer_folder) or 'SLS' in str(optimizer_folder):
-            continue
+            ...
         if optimizer_folder.is_dir():
             if (optimizer_folder / '.output').exists():
                 for f in (optimizer_folder / '.output').iterdir():
@@ -188,7 +191,7 @@ for net in ['resnext']:
             if 'cifar100' in str(net).lower():
                 plt.ylim(0.59, 0.8)
             else:
-                plt.ylim(0.8, 0.96)
+                plt.ylim(0.57, 0.75)
             if 'cifar100' in str(net).lower() and 'efficientnet' in str(net).lower():
                 plt.ylim(0.4, 0.8)
         plt.ylabel(f'{name}', size=9)

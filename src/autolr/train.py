@@ -22,16 +22,19 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 from argparse import Namespace as APNamespace, _SubParsersAction
+from typing import Tuple, Dict, Any, List
 from datetime import datetime
 from pathlib import Path
-from typing import Tuple, Dict, Any, List
 
 # import logging
+import warnings
 import time
 
 import torch.backends.cudnn as cudnn
-import numpy as np
+import torch.multiprocessing as mp
+import torch.distributed as dist
 import pandas as pd
+import numpy as np
 import torch
 import yaml
 
@@ -105,12 +108,25 @@ def args(sub_parser: _SubParsersAction):
         'fastest way to use PyTorch for either single node or '
         'multi node data parallel training')
     sub_parser.set_defaults(mpd=False)
+    sub_parser.add_argument(
+        '--dist-url', default='tcp://127.0.0.1:23456', type=str,
+        help='url used to set up distributed training')
+    sub_parser.add_argument(
+        '--dist-backend', default='nccl', type=str,
+        help='distributed backend')
+    sub_parser.add_argument(
+        '--world-size', default=-1, type=int,
+        help='number of nodes for distributed training')
+    sub_parser.add_argument(
+        '--rank', default=-1, type=int,
+        help='node rank for distributed training')
 
 
 class TrainingAgent:
     config: Dict[str, Any] = None
     train_loader = None
     test_loader = None
+    train_sampler = None
     num_classes: int = None
     network: torch.nn.Module = None
     optimizer: torch.optim.Optimizer = None
@@ -127,11 +143,26 @@ class TrainingAgent:
             checkpoint_path: Path,
             start_epoch: int = 0,
             resume: bool = False,
-            gpu: int = None) -> None:
+            gpu: int = None,
+            ngpus_per_node: int = 0,
+            world_size: int = -1,
+            rank: int = -1,
+            dist: bool = False,
+            mpd: bool = False,
+            dist_url: str = None,
+            dist_backend: str = None) -> None:
+
         self.gpu = gpu
+        self.mpd = mpd
+        self.dist = dist
+        self.rank = rank
         self.best_acc = 0.
         self.device = device
+        self.dist_url = dist_url
+        self.world_size = world_size
         self.start_epoch = start_epoch
+        self.dist_backend = dist_backend
+        self.ngpus_per_node = ngpus_per_node
 
         self.data_path = data_path
         self.output_path = output_path
@@ -150,16 +181,23 @@ class TrainingAgent:
     def load_config(self, config_path: Path, data_path: Path) -> None:
         with config_path.open() as f:
             self.config = config = parse_config(yaml.load(f))
-        self.train_loader, self.test_loader, self.num_classes = get_data(
-            name=config['dataset'], root=data_path,
-            mini_batch_size=config['mini_batch_size'],
-            num_workers=config['num_workers'])
         if self.device == 'cpu':
-            self.criterion = torch.nn.CrossEntropyLoss() if \
-                config['loss'] == 'cross_entropy' else None
-        else:
-            self.criterion = torch.nn.CrossEntropyLoss().cuda(self.gpu) if \
-                config['loss'] == 'cross_entropy' else None
+            warnings.warn("Using CPU will be slow")
+        elif self.dist:
+            if self.gpu is not None:
+                config['mini_batch_size'] = int(
+                    config['min_batch_size'] / self.ngpus_per_node)
+                config['num_workers'] = int(
+                    (config['num_workers'] + self.ngpus_per_node - 1) /
+                    self.ngpus_per_node)
+        self.train_loader, self.train_sampler, \
+            self.test_loader, self.num_classes = get_data(
+                name=config['dataset'], root=data_path,
+                mini_batch_size=config['mini_batch_size'],
+                num_workers=config['num_workers'],
+                dist=self.dist)
+        self.criterion = torch.nn.CrossEntropyLoss().cuda(self.gpu) if \
+            config['loss'] == 'cross_entropy' else None
         if np.less(float(config['early_stop_threshold']), 0):
             print("AutoLR: Notice: early stop will not be used as it was " +
                   f"set to {config['early_stop_threshold']}, " +
@@ -184,16 +222,21 @@ class TrainingAgent:
         # TODO add other parallelisms
         if self.device == 'cpu':
             print("Resetting cpu-based network")
+        elif self.dist:
+            if self.gpu is not None:
+                torch.cuda.set_device(self.gpu)
+                self.network.cuda(self.gpu)
+                self.network = torch.nn.parallel.DsitributedDataParallel(
+                    self.network,
+                    device_ids=[self.gpu])
+            else:
+                self.network.cuda()
+                self.network = torch.nn.parallel.DsitributedDataParallel(
+                    self.network)
         elif self.gpu is not None:
             torch.cuda.set_device(self.gpu)
-            self.network.cuda(self.gpu)
-            # self.network = torch.nn.parallel.DistributedDataParallel(
-            #     self.network, device_ids=[self.gpu])
+            self.network = self.network.cuda(self.gpu)
         else:
-            self.network = torch.nn.DataParallel(self.network).cuda()
-            # self.network = torch.nn.parallel.DistributedDataParallel(
-            #     self.network)
-        if self.device == 'cuda':
             if isinstance(self.network, VGG):
                 self.network.features = torch.nn.DataParallel(
                     self.network.features)
@@ -248,6 +291,8 @@ class TrainingAgent:
 
     def run_epochs(self, trial: int, epochs: List[int]) -> None:
         for epoch in epochs:
+            if self.dist:
+                self.train_sampler.set_epoch(epoch)
             start_time = time.time()
             train_loss, (train_acc1, train_acc5) = \
                 self.epoch_iteration(trial, epoch)
@@ -489,15 +534,42 @@ def main(args: APNamespace):
         attr = attr if attr is not None else "None"
         print(f"    {arg:<20}: {attr:<40}")
     print("-"*45)
-    config_path, output_path, data_path, checkpoint_path = setup_dirs(args)
+    args.config_path, args.output_path, \
+        args.data_path, args.checkpoint_path = setup_dirs(args)
+    ngpus_per_node = torch.cuda.device_count()
+    args.distributed = args.multiprocessing_distributed or args.world_size > 1
+    if args.multiprocessing_distributed:
+        args.world_size *= args.ngpus_per_node
+        mp.spawn(main_worker, nprocs=ngpus_per_node,
+                 args=(ngpus_per_node, args))
+    else:
+        main_worker(args.gpu, ngpus_per_node, args)
+
+
+def main_worker(gpu: int, ngpus_per_node: int, args: APNamespace):
+    args.gpu = gpu
+    if args.distributed:
+        if args.multiprocessing_distributed:
+            args.rank = args.rank * ngpus_per_node + gpu
+        dist.init_process_group(
+            backend=args.dist_backend, init_method=args.dist_url,
+            world_size=args.world_size, rank=args.rank)
+    device = 'cuda' if torch.cuda.is_available() and not args.cpu else 'cpu'
     training_agent = TrainingAgent(
-        config_path=config_path,
-        device='cuda' if torch.cuda.is_available() and not args.cpu else 'cpu',
-        output_path=output_path,
-        data_path=data_path,
-        checkpoint_path=checkpoint_path,
+        config_path=args.config_path,
+        device=device,
+        output_path=args.output_path,
+        data_path=args.data_path,
+        checkpoint_path=args.checkpoint_path,
         start_epoch=0,
         resume=args.resume,
-        gpu=args.gpu)
+        gpu=args.gpu,
+        ngpus_per_node=ngpus_per_node,
+        world_size=args.world_size,
+        rank=args.rank,
+        dist=args.distributed,
+        mpd=args.multiprocessing_distributed,
+        dist_url=args.dist_url,
+        dist_backend=args.dist_backend)
     print(f"AutoLR: Pytorch device is set to {training_agent.device}")
     training_agent.train()

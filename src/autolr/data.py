@@ -34,7 +34,7 @@ from .datasets import ImageNet
 
 def get_data(
         name: str, root: Path,
-        mini_batch_size: int, num_workers: int) -> None:
+        mini_batch_size: int, num_workers: int, dist: bool = False) -> None:
     if name == 'CIFAR100':
         num_classes = 100
         transform_train = transforms.Compose([
@@ -55,10 +55,14 @@ def get_data(
         trainset = torchvision.datasets.CIFAR100(
             root=str(root), train=True, download=True,
             transform=transform_train)
+        train_sampler = \
+            torch.utils.data.distributed.DistributedSampler(
+                trainset) if dist else None
         train_loader = torch.utils.data.DataLoader(
-            trainset, batch_size=mini_batch_size, shuffle=True,
-            num_workers=num_workers, pin_memory=True)
-
+            trainset, batch_size=mini_batch_size,
+            shuffle=(train_sampler is None),
+            num_workers=num_workers, pin_memory=True,
+            sampler=train_sampler)
         testset = torchvision.datasets.CIFAR100(
             root=str(root), train=False,
             download=True, transform=transform_test)
@@ -83,9 +87,14 @@ def get_data(
         trainset = torchvision.datasets.CIFAR10(
             root=str(root), train=True, download=True,
             transform=transform_train)
+        train_sampler = \
+            torch.utils.data.distributed.DistributedSampler(
+                trainset) if dist else None
         train_loader = torch.utils.data.DataLoader(
-            trainset, batch_size=mini_batch_size, shuffle=True,
-            num_workers=num_workers, pin_memory=True)
+            trainset, batch_size=mini_batch_size,
+            shuffle=(train_sampler is None),
+            num_workers=num_workers, pin_memory=True,
+            sampler=train_sampler)
 
         testset = torchvision.datasets.CIFAR10(
             root=str(root), train=False,
@@ -114,12 +123,16 @@ def get_data(
         trainset = ImageNet(
             root=str(root), split='train', download=None,
             transform=transform_train)
+        train_sampler = \
+            torch.utils.data.distributed.DistributedSampler(
+                trainset) if dist else None
         # trainset = ImageFolderLMDB(str(root / 'train.lmdb'),
         #                            transform_train)
         train_loader = torch.utils.data.DataLoader(
-            trainset, batch_size=mini_batch_size, shuffle=True,
+            trainset, batch_size=mini_batch_size,
+            shuffle=(train_sampler is None),
             num_workers=num_workers,
-            pin_memory=True)
+            pin_memory=True, sampler=train_sampler)
 
         testset = ImageNet(
             root=str(root), split='val', download=None,
@@ -129,4 +142,4 @@ def get_data(
         test_loader = torch.utils.data.DataLoader(
             testset, batch_size=mini_batch_size, shuffle=False,
             num_workers=num_workers, pin_memory=True)
-    return train_loader, test_loader, num_classes
+    return train_loader, train_sampler, test_loader, num_classes
