@@ -268,7 +268,8 @@ class TrainingAgent:
             lr_output_path.mkdir(exist_ok=True, parents=True)
             for trial in range(self.config['n_trials']):
                 self.output_filename = \
-                    f"results_date={datetime.now()}_" +\
+                    "results_" +\
+                    f"date={datetime.now().strftime('%Y-%m-%d-%H-%M-%S')}_" +\
                     f"trial=AdaS_trial={trial}_" +\
                     f"network={self.config['network']}_" +\
                     f"dataset={self.config['dataset']}" +\
