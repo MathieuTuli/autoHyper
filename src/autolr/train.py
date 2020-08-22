@@ -427,22 +427,23 @@ class TrainingAgent:
         # total = 0
         top1 = AverageMeter()
         top5 = AverageMeter()
-        for batch_idx, (inputs, targets) in enumerate(self.test_loader):
-            # inputs, targets = \
-            #     inputs.to(self.device), targets.to(self.device)
-            if self.gpu is not None:
-                inputs = inputs.cuda(self.gpu, non_blocking=True)
-            if self.device == 'cuda':
-                targets = targets.cuda(self.gpu, non_blocking=True)
-            outputs = self.network(inputs)
-            loss = self.criterion(outputs, targets)
-            test_loss += loss.item()
-            # _, predicted = outputs.max(1)
-            # total += targets.size(0)
-            # correct += predicted.eq(targets).sum().item()
-            acc1, acc5 = accuracy(outputs, targets, topk=(1, 5))
-            top1.update(acc1.cpu().item())
-            top5.update(acc5.cpu().item())
+        with torch.no_grad():
+            for batch_idx, (inputs, targets) in enumerate(self.test_loader):
+                # inputs, targets = \
+                #     inputs.to(self.device), targets.to(self.device)
+                if self.gpu is not None:
+                    inputs = inputs.cuda(self.gpu, non_blocking=True)
+                if self.device == 'cuda':
+                    targets = targets.cuda(self.gpu, non_blocking=True)
+                outputs = self.network(inputs)
+                loss = self.criterion(outputs, targets)
+                test_loss += loss.item()
+                # _, predicted = outputs.max(1)
+                # total += targets.size(0)
+                # correct += predicted.eq(targets).sum().item()
+                acc1, acc5 = accuracy(outputs, targets, topk=(1, 5))
+                top1.update(acc1.cpu().item())
+                top5.update(acc5.cpu().item())
 
         # Save checkpoint.
         # acc = 100. * correct / total
@@ -537,8 +538,8 @@ def main(args: APNamespace):
     args.config_path, args.output_path, \
         args.data_path, args.checkpoint_path = setup_dirs(args)
     ngpus_per_node = torch.cuda.device_count()
-    args.distributed = args.multiprocessing_distributed or args.world_size > 1
-    if args.multiprocessing_distributed:
+    args.distributed = args.mpd or args.world_size > 1
+    if args.mpd:
         args.world_size *= args.ngpus_per_node
         mp.spawn(main_worker, nprocs=ngpus_per_node,
                  args=(ngpus_per_node, args))
@@ -549,7 +550,7 @@ def main(args: APNamespace):
 def main_worker(gpu: int, ngpus_per_node: int, args: APNamespace):
     args.gpu = gpu
     if args.distributed:
-        if args.multiprocessing_distributed:
+        if args.mpd:
             args.rank = args.rank * ngpus_per_node + gpu
         dist.init_process_group(
             backend=args.dist_backend, init_method=args.dist_url,
@@ -568,7 +569,7 @@ def main_worker(gpu: int, ngpus_per_node: int, args: APNamespace):
         world_size=args.world_size,
         rank=args.rank,
         dist=args.distributed,
-        mpd=args.multiprocessing_distributed,
+        mpd=args.mpd,
         dist_url=args.dist_url,
         dist_backend=args.dist_backend)
     print(f"AutoLR: Pytorch device is set to {training_agent.device}")
