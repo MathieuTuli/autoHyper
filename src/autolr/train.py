@@ -371,8 +371,8 @@ class TrainingAgent:
             # total += targets.size(0)
             # correct += predicted.eq(targets).sum().item()
             acc1, acc5 = accuracy(outputs, targets, (1, 5))
-            top1.update(acc1.cpu().item())
-            top5.update(acc5.cpu().item())
+            top1.update(acc1[0], inputs.size(0))
+            top5.update(acc5[0], inputs.size(0))
             if isinstance(self.scheduler, OneCycleLR):
                 self.scheduler.step()
         self.performance_statistics[f'train_acc1_epoch_{epoch}'] = \
@@ -443,8 +443,8 @@ class TrainingAgent:
                 # total += targets.size(0)
                 # correct += predicted.eq(targets).sum().item()
                 acc1, acc5 = accuracy(outputs, targets, topk=(1, 5))
-                top1.update(acc1.cpu().item())
-                top5.update(acc5.cpu().item())
+                top1.update(acc1[0], inputs.size(0))
+                top5.update(acc5[0], inputs.size(0))
 
         # Save checkpoint.
         # acc = 100. * correct / total
