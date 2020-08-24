@@ -23,10 +23,9 @@ early_stop_patience: 10 # epoch window to consider when deciding whether to stop
 mini_batch_size: 128
 loss: 'cross_entropy' # options: cross_entropy
 p: 1 # options: 1, 2.
-kwargs:
+optimizer_kwargs:
   momentum: 0.9
   weight_decay: 1e-4
-  min_lr: 1e-20
-  zeta: 1.0
+scheduler_kwargs:
   p: 1 # options: 1, 2.
   beta: 0.8

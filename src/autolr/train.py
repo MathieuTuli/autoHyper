@@ -251,7 +251,8 @@ class TrainingAgent:
             listed_params=list(self.network.parameters()),
             train_loader_len=len(self.train_loader),
             max_epochs=self.config['max_epochs'],
-            **self.config['kwargs'])
+            optimizer_kwargs=self.config['optimizer_kwargs'],
+            scheduler_kwargs=self.config['scheduler_kwargs'])
         self.early_stop.reset()
 
     def train(self) -> None:
