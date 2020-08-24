@@ -152,44 +152,45 @@ def get_optimizer_scheduler(
                 "LearningRateDropout optimizer in config.yaml::**kwargs")
         optimizer = LRD(net_parameters, lr=init_lr,
                         # lr_dropout_rate=kwargs['lr_dropout_rate'],
-                        # **processed_kwargs)
+                        **optim_processed_kwargs)
     else:
         print(f"Adas: Warning: Unknown optimizer {optim_method}")
     if lr_scheduler == 'StepLR':
-        if 'step_size' not in kwargs.keys() or \
-                'gamma' not in kwargs.keys():
+        if 'step_size' not in scheduler_processed_kwargs.keys() or \
+                'gamma' not in scheduler_processed_kwargs.keys():
             raise ValueError(
                 "'step_size' and 'gamma' need to be specified for"
                 "StepLR scheduler in config.yaml::**kwargs")
-        scheduler=StepLR(
+        scheduler = StepLR(
             optimizer,
             # step_size=kwargs['step_size'], gamma=kwargs['gamma'],
             **scheduler_processed_kwargs)
     elif lr_scheduler == 'CosineAnnealingWarmRestarts':
         # first_restart_epochs = 25
         # increasing_factor = 1
-        if 'T_0' not in kwargs.keys() or \
-                'T_mult' not in kwargs.keys():
+        if 'T_0' not in scheduler_processed_kwargs.keys() or \
+                'T_mult' not in scheduler_processed_kwargs.keys():
             raise ValueError(
                 "'first_restart_epochs' and 'increasing_factor' need to be "
                 "specified for CosineAnnealingWarmRestarts scheduler in "
                 "config.yaml::**kwargs")
-        scheduler=CosineAnnealingWarmRestarts(
+        scheduler = CosineAnnealingWarmRestarts(
             optimizer,
-            T_0=kwargs['first_restart_epochs'],
-            T_mult=kwargs['increasing_factor'],
+            T_0=scheduler_processed_kwargs['T_0'],
+            T_mult=scheduler_processed_kwargs['T_mult'],
             **scheduler_processed_kwargs)
     elif lr_scheduler == 'OneCycleLR':
-        scheduler=OneCycleLR(
+        scheduler = OneCycleLR(
             optimizer, max_lr=init_lr,
-            steps_per_epoch=train_loader_len, epochs=max_epochs)
+            steps_per_epoch=train_loader_len, epochs=max_epochs,
+            **scheduler_processed_kwargs)
     elif lr_scheduler == 'AdaS':
-        if 'beta' not in kwargs.keys() or \
-                'p' not in kwargs.keys():
+        if 'beta' not in scheduler_processed_kwargs.keys() or \
+                'p' not in scheduler_processed_kwargs.keys():
             raise ValueError(
                 "'beta', 'p' need to be specified for"
                 " AdaS scheduler in config.yaml::**kwargs")
-        scheduler=AdaS(parameters=listed_params,
+        scheduler = AdaS(parameters=listed_params,
                          init_lr=init_lr,
                          # min_lr=kwargs['min_lr'],
                          # p=kwargs['p'],
