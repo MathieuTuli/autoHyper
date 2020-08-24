@@ -274,11 +274,13 @@ class TrainingAgent:
                     f"trial=AdaS_trial={trial}_" +\
                     f"network={self.config['network']}_" +\
                     f"dataset={self.config['dataset']}" +\
-                    f"optimizer={self.config['optimizer']}_" +\
-                    f"scheduler={self.config['scheduler']}_" +\
-                    f"learning_rate={learning_rate}_" +\
+                    f"optimizer={self.config['optimizer']}" +\
                     '_'.join([f"{k}={v}" for k, v in
-                              self.config['kwargs'].items()]) +\
+                              self.config['optimizer_kwargs'].items()]) +\
+                    f"_scheduler={self.config['scheduler']}" +\
+                    '_'.join([f"{k}={v}" for k, v in
+                              self.config['scheduler_kwargs'].items()]) +\
+                    f"_learning_rate={learning_rate}" +\
                     ".csv".replace(' ', '-')
                 self.output_filename = str(
                     lr_output_path / self.output_filename)
