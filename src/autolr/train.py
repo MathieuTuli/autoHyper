@@ -376,9 +376,9 @@ class TrainingAgent:
             if isinstance(self.scheduler, OneCycleLR):
                 self.scheduler.step()
         self.performance_statistics[f'train_acc1_epoch_{epoch}'] = \
-            top1.avg / 100.
+            top1.avg.cpu().item() / 100.
         self.performance_statistics[f'train_acc5_epoch_{epoch}'] = \
-            top5.avg / 100.
+            top5.avg.cpu().item() / 100.
         self.performance_statistics[f'train_loss_epoch_{epoch}'] = \
             train_loss / (batch_idx + 1)
 
@@ -418,8 +418,8 @@ class TrainingAgent:
                 self.performance_statistics[
                     f'learning_rate_epoch_{epoch}'] = \
                     self.optimizer.param_groups[0]['lr']
-        return train_loss / (batch_idx + 1), (top1.avg / 100.,
-                                              top5.avg / 100.)
+        return train_loss / (batch_idx + 1), (top1.avg.cpu().item() / 100.,
+                                              top5.avg.cpu().item() / 100.)
 
     def validate(self, epoch: int):
         self.network.eval()
@@ -461,13 +461,13 @@ class TrainingAgent:
         #     torch.save(state, str(self.checkpoint_path / 'ckpt.pth'))
         #     self.best_acc = acc
         self.performance_statistics[f'test_acc1_epoch_{epoch}'] = (
-            top1.avg / 100.)
+            top1.avg.cpu().item() / 100.)
         self.performance_statistics[f'test_acc5_epoch_{epoch}'] = (
-            top5.avg / 100.)
+            top5.avg.cpu().item() / 100.)
         self.performance_statistics[f'test_loss_epoch_{epoch}'] = \
             test_loss / (batch_idx + 1)
-        return test_loss / (batch_idx + 1), (top1.avg / 100,
-                                             top5.avg / 100)
+        return test_loss / (batch_idx + 1), (top1.avg.cpu().item() / 100,
+                                             top5.avg.cpu().item() / 100)
 
 
 class AverageMeter:
