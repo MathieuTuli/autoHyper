@@ -47,9 +47,7 @@ evaluation_directory = '/home/mat/playgrounds/lambda-output/ema-test/vgg16-cifar
 evaluation_directory = '/home/mat/playgrounds/cumprod08/iteration-4-final/resnet34-cifar100/'
 evaluation_directory = '/home/mat/work/U-of-T/summer-research/mml/lr-range-feature/cumprod-08-results/iteration-4-final'
 evaluation_directory = '/home/mat/playgrounds/iteration4/iteration-4-final/resnext-cifar10/'
-evaluation_directory = '/home/mat/work/U-of-T/summer-research/mml/lr-range-feature/' +\
-    'final-draft-results/' +\
-    'iteration-4-final/DenseNet121-CIFAR100'
+evaluation_directory = '/home/mat/playgrounds/steplr-auto//iteration-6-step-95//resnet34-cifar100/'
 
 # for net in Path(evaluation_directory).iterdir():
 for net in ['resnext']:
@@ -188,12 +186,10 @@ for net in ['resnext']:
         elif 'train_acc' == name:
             plt.ylim(0.82, 1.)
         else:
-            if 'cifar100' in str(net).lower():
-                plt.ylim(0.59, 0.8)
-            else:
-                plt.ylim(0.57, 0.75)
             if 'cifar100' in str(net).lower() and 'efficientnet' in str(net).lower():
                 plt.ylim(0.4, 0.8)
+                plt.ylim(0.59, 0.8)
+        plt.ylim(0.5, 0.96)
         plt.ylabel(f'{name}', size=9)
         # plt.savefig(f'comparison_{net.name}_{name}.png',
         #             dpi=300, bbox_inces='tight')

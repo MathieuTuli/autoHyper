@@ -120,9 +120,12 @@ def get_data(
                                  0.229, 0.224, 0.225]),
         ])
 
-        trainset = torchvision.datasets.ImageFolder(
-            root=str(root / 'train'),
+        trainset = ImageNet(
+            root=str(root), split='train', download=None,
             transform=transform_train)
+        # trainset = torchvision.datasets.ImageFolder(
+        #     root=str(root / 'train'),
+        #     transform=transform_train)
         train_sampler = \
             torch.utils.data.distributed.DistributedSampler(
                 trainset) if dist else None
@@ -134,8 +137,11 @@ def get_data(
             num_workers=num_workers,
             pin_memory=True, sampler=train_sampler)
 
-        testset = torchvision.datasets.ImageFolder(
-            root=str(root / 'val'),
+        # testset = torchvision.datasets.ImageFolder(
+        #     root=str(root / 'val'),
+        #     transform=transform_test)
+        testset = ImageNet(
+            root=str(root), split='val', download=None,
             transform=transform_test)
         # testset = ImageFolderLMDB(str(root / 'val.lmdb'),
         #                           transform_test)

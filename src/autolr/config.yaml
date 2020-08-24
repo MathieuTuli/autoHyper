@@ -25,7 +25,7 @@ loss: 'cross_entropy' # options: cross_entropy
 p: 1 # options: 1, 2.
 kwargs:
   momentum: 0.9
-  weight_decay: 5e-4
+  weight_decay: 1e-4
   min_lr: 1e-20
   zeta: 1.0
   p: 1 # options: 1, 2.
