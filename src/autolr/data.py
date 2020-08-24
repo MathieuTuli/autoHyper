@@ -23,7 +23,6 @@ SOFTWARE.
 """
 from pathlib import Path
 
-from torchvision.datasets import datasets
 import torchvision.transforms as transforms
 
 import torchvision
@@ -121,7 +120,7 @@ def get_data(
                                  0.229, 0.224, 0.225]),
         ])
 
-        trainset = datasets.ImageFolder(
+        trainset = torchvision.datasets.ImageFolder(
             root=str(root / 'train'),
             transform=transform_train)
         train_sampler = \
@@ -135,7 +134,7 @@ def get_data(
             num_workers=num_workers,
             pin_memory=True, sampler=train_sampler)
 
-        testset = datasets.ImageFolder(
+        testset = torchvision.datasets.ImageFolder(
             root=str(root / 'val'),
             transform=transform_test)
         # testset = ImageFolderLMDB(str(root / 'val.lmdb'),
