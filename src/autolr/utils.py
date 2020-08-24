@@ -151,6 +151,8 @@ def parse_config(
         e='config.yaml: num_works must be an int')
     if config['loss'] != 'cross_entropy':
         raise ValueError('config.yaml: loss must be cross_entropy')
-    for k, v in config['kwargs'].items():
-        config['kwargs'][k] = smart_string_to_float(v)
+    for k, v in config['optimizer_kwargs'].items():
+        config['optimizer_kwargs'][k] = smart_string_to_float(v)
+    for k, v in config['scheduler_kwargs'].items():
+        config['scheduler_kwargs'][k] = smart_string_to_float(v)
     return config
