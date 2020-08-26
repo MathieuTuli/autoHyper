@@ -285,9 +285,7 @@ class TrainingAgent:
             list_lr = self.config['init_lr']
         for learning_rate in list_lr:
             if learning_rate == 'auto':
-                learning_rate = auto_lr(
-                    data_path=self.data_path, output_path=self.output_path,
-                    device=self.device)
+                learning_rate = auto_lr(self)
             lr_output_path = self.output_path / f'lr-{learning_rate}'
             lr_output_path.mkdir(exist_ok=True, parents=True)
             for trial in range(self.start_trial,
