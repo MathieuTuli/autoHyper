@@ -84,14 +84,21 @@ def args(sub_parser: _SubParsersAction):
         default='.autolr-checkpoint', type=str,
         help="Set checkpoint directory path: Default = '.autolr-checkpoint")
     sub_parser.add_argument(
+        '--resume', dest='resume',
+        default=None, type=str,
+        help="Set checkpoint resume path")
+    # sub_parser.add_argument(
+    #     '-r', '--resume', action='store_true',
+    #     dest='resume',
+    #     help="Flag: resume training from checkpoint")
+    sub_parser.add_argument(
         '--root', dest='root',
         default='.', type=str,
         help="Set root path of project that parents all others: Default = '.'")
     sub_parser.add_argument(
-        '-r', '--resume', action='store_true',
-        dest='resume',
-        help="Flag: resume training from checkpoint")
-    sub_parser.set_defaults(resume=False)
+        '--save-freq', default=25, type=int,
+        help='Checkpoint epoch save frequency.')
+    # sub_parser.set_defaults(resume=False)
     sub_parser.add_argument(
         '--cpu', action='store_true',
         dest='cpu',
@@ -133,6 +140,7 @@ class TrainingAgent:
     scheduler = None
     loss = None
     output_filename: Path = None
+    checkpoint = None
 
     def __init__(
             self,
@@ -141,8 +149,8 @@ class TrainingAgent:
             output_path: Path,
             data_path: Path,
             checkpoint_path: Path,
-            start_epoch: int = 0,
-            resume: bool = False,
+            resume: Path = None,
+            save_freq: int = 25,
             gpu: int = None,
             ngpus_per_node: int = 0,
             world_size: int = -1,
@@ -156,11 +164,14 @@ class TrainingAgent:
         self.mpd = mpd
         self.dist = dist
         self.rank = rank
-        self.best_acc = 0.
+        self.best_acc1 = 0.
+        self.start_epoch = 0
+        self.start_trial = 0
         self.device = device
+        self.resume = resume
         self.dist_url = dist_url
+        self.save_freq = save_freq
         self.world_size = world_size
-        self.start_epoch = start_epoch
         self.dist_backend = dist_backend
         self.ngpus_per_node = ngpus_per_node
 
@@ -190,7 +201,7 @@ class TrainingAgent:
                 config['num_workers'] = int(
                     (config['num_workers'] + self.ngpus_per_node - 1) /
                     self.ngpus_per_node)
-        self.train_loader, self.train_sampler, \
+        self.train_loader, self.train_sampler,\
             self.test_loader, self.num_classes = get_data(
                 name=config['dataset'], root=data_path,
                 mini_batch_size=config['mini_batch_size'],
@@ -211,6 +222,17 @@ class TrainingAgent:
             patience=int(config['early_stop_patience']),
             threshold=float(config['early_stop_threshold']))
         cudnn.benchmark = True
+        if self.resume is not None:
+            print("Resuming Config")
+            if self.gpu is None:
+                self.checkpoint = torch.load(str(self.resume))
+            else:
+                self.checkpoint = torch.load(
+                    str(self.resume),
+                    map_location=f'cuda:{self.gpu}')
+            self.start_epoch = self.checkpoint['epoch']
+            self.start_trial = self.checkpoint['trial']
+            self.best_acc1 = self.checkpoint['best_acc1']
         # self.reset()
 
     def reset(self, learning_rate: float) -> None:
@@ -267,9 +289,9 @@ class TrainingAgent:
                     device=self.device)
             lr_output_path = self.output_path / f'lr-{learning_rate}'
             lr_output_path.mkdir(exist_ok=True, parents=True)
-            for trial in range(self.config['n_trials']):
-                self.output_filename = \
-                    "results_" +\
+            for trial in range(self.start_trial,
+                               self.config['n_trials']):
+                self.output_filename = "results_" +\
                     f"date={datetime.now().strftime('%Y-%m-%d-%H-%M-%S')}_" +\
                     f"trial=AdaS_trial={trial}_" +\
                     f"network={self.config['network']}_" +\
@@ -288,8 +310,21 @@ class TrainingAgent:
                     'results', 'stats')
                 Profiler.filename = lr_output_path / stats_filename
                 self.reset(learning_rate)
-                epochs = range(self.start_epoch, self.start_epoch +
-                               self.config['max_epochs'])
+                if trial == self.start_trial and self.resume is not None:
+                    print("Resuming Network/Optimizer")
+                    self.network.load_state_dict(
+                        self.checkpoint['state_dict_network'])
+                    self.optimizer.load_state_dict(
+                        self.checkpoint['state_dict_optimizer'])
+                    if not isinstance(self.scheduler, AdaS):
+                        self.scheduler.load_state_dict(
+                            self.checkpoint['state_dict_scheduler'])
+                    else:
+                        self.metrics.historical_metrics = \
+                            self.checkpoint['historical_metrics']
+                    epochs = range(self.start_epoch, self.config['max_epochs'])
+                else:
+                    epochs = range(0, self.config['max_epochs'])
                 self.run_epochs(trial, epochs)
                 Profiler.stream = None
 
@@ -298,8 +333,8 @@ class TrainingAgent:
             if self.dist:
                 self.train_sampler.set_epoch(epoch)
             start_time = time.time()
-            train_loss, (train_acc1, train_acc5) = \
-                self.epoch_iteration(trial, epoch)
+            train_loss, (train_acc1, train_acc5) = self.epoch_iteration(
+                trial, epoch)
             test_loss, (test_acc1, test_acc5) = self.validate(epoch)
             end_time = time.time()
             if isinstance(self.scheduler, StepLR):
@@ -327,8 +362,30 @@ class TrainingAgent:
             if self.early_stop(train_loss):
                 print("AutoLR: Early stop activated.")
                 break
+            if not self.mpd or \
+                    (self.mpd and self.rank % self.ngpus_per_node == 0):
+                data = {'epoch': epoch + 1,
+                        'trial': trial,
+                        'config': self.config,
+                        'state_dict_network': self.network.state_dict(),
+                        'state_dict_optimizer': self.optimizer.state_dict(),
+                        'state_dict_scheduler': self.scheduler.state_dict()
+                        if not isinstance(self.scheduler, AdaS) else None,
+                        'best_acc1': self.best_acc1,
+                        'historical_metrics': self.metrics.historical_metrics}
+                if epoch % self.save_freq == 0:
+                    filename = f'trial_{trial}_epoch_{epoch}.pth.tar'
+                    print("Saving")
+                    torch.save(data, str(self.checkpoint_path / filename))
+                if np.greater(test_acc1, self.best_acc1):
+                    self.best_acc1 = test_acc1
+                    print("Saving Best.")
+                    torch.save(
+                        data, str(self.checkpoint_path / 'best.pth.tar'))
+        torch.save(data, str(self.checkpoint_path / 'last.pth.tar'))
 
     # @Profiler
+
     def epoch_iteration(self, trial: int, epoch: int):
         # logging.info(f"Adas: Train: Epoch: {epoch}")
         # global net, performance_statistics, metrics, adas, config
@@ -390,7 +447,8 @@ class TrainingAgent:
             io_metrics.input_channel_S
         self.performance_statistics[f'out_S_epoch_{epoch}'] = \
             io_metrics.output_channel_S
-        self.performance_statistics[f'fc_S_epoch_{epoch}'] = io_metrics.fc_S
+        self.performance_statistics[f'fc_S_epoch_{epoch}'] = \
+            io_metrics.fc_S
         self.performance_statistics[f'in_rank_epoch_{epoch}'] = \
             io_metrics.input_channel_rank
         self.performance_statistics[f'out_rank_epoch_{epoch}'] = \
@@ -414,8 +472,7 @@ class TrainingAgent:
             #         GLOBALS.CONFIG['optim_method'] == 'SPS':
             if isinstance(self.optimizer, SLS) or isinstance(
                     self.optimizer, SPS):
-                self.performance_statistics[
-                    f'learning_rate_epoch_{epoch}'] = \
+                self.performance_statistics[f'learning_rate_epoch_{epoch}'] = \
                     self.optimizer.state['step_size']
             else:
                 self.performance_statistics[
@@ -467,8 +524,8 @@ class TrainingAgent:
             top1.avg.cpu().item() / 100.)
         self.performance_statistics[f'test_acc5_epoch_{epoch}'] = (
             top5.avg.cpu().item() / 100.)
-        self.performance_statistics[f'test_loss_epoch_{epoch}'] = \
-            test_loss / (batch_idx + 1)
+        self.performance_statistics[f'test_loss_epoch_{epoch}'] = test_loss / (
+            batch_idx + 1)
         return test_loss / (batch_idx + 1), (top1.avg.cpu().item() / 100,
                                              top5.avg.cpu().item() / 100)
 
@@ -524,11 +581,12 @@ def setup_dirs(args: APNamespace) -> Tuple[Path, Path, Path, Path]:
         print(f"AutoLR: Output dir {output_path} does not exist, building")
         output_path.mkdir(exist_ok=True, parents=True)
     if not checkpoint_path.exists():
-        if args.resume:
-            raise ValueError("AutoLR: Cannot resume from checkpoint without " +
-                             "specifying checkpoint dir")
         checkpoint_path.mkdir(exist_ok=True, parents=True)
-    return config_path, output_path, data_path, checkpoint_path
+    if args.resume is not None:
+        if not Path(args.resume).exists():
+            raise ValueError("Resume path does not exist")
+    return config_path, output_path, data_path, checkpoint_path,\
+        Path(args.resume) if args.resume is not None else None
 
 
 def main(args: APNamespace):
@@ -540,7 +598,8 @@ def main(args: APNamespace):
         print(f"    {arg:<20}: {attr:<40}")
     print("-"*45)
     args.config_path, args.output_path, \
-        args.data_path, args.checkpoint_path = setup_dirs(args)
+        args.data_path, args.checkpoint_path, \
+        args.resume = setup_dirs(args)
     ngpus_per_node = torch.cuda.device_count()
     args.distributed = args.mpd or args.world_size > 1
     if args.mpd:
@@ -566,8 +625,8 @@ def main_worker(gpu: int, ngpus_per_node: int, args: APNamespace):
         output_path=args.output_path,
         data_path=args.data_path,
         checkpoint_path=args.checkpoint_path,
-        start_epoch=0,
         resume=args.resume,
+        save_freq=args.save_freq,
         gpu=args.gpu,
         ngpus_per_node=ngpus_per_node,
         world_size=args.world_size,

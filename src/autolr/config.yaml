@@ -1,6 +1,6 @@
 ###### Application Specific ######
-dataset: 'CIFAR100' # options: CIFAR100, CIFAR10, ImageNet
-network: 'ResNet18CIFAR' # AlexNet, DenseNet201, DenseNet169, DenseNet161, DenseNet121, GoogLeNet
+dataset: 'CIFAR10' # options: CIFAR100, CIFAR10, ImageNet
+network: 'ResNet34CIFAR' # AlexNet, DenseNet201, DenseNet169, DenseNet161, DenseNet121, GoogLeNet
 # InceptionV3, MNASNet_0_5, MNASNet_0_75, MNASNet_1, MNASNet_1_3, MobileNetV2, ResNet18
 # ResNet34, ResNet50, ResNet101, ResNet152, ResNext50, ResNext101, WideResNet50, WideResNet101
 # ShuffleNetV2_0_5, ShuffleNetV2_1, ShuffleNetV2_1_5, ShuffleNetV2_2, SqueezeNet_1,
@@ -12,7 +12,7 @@ scheduler: 'AdaS' # options: AdaS (with SGD), StepLR, CosineAnnealingWarmRestart
 
 ###### Suggested Tune ######
 n_trials: 1
-init_lr: 0.01
+init_lr: 0.03
 num_workers: 4
 
 
@@ -25,7 +25,7 @@ loss: 'cross_entropy' # options: cross_entropy
 p: 1 # options: 1, 2.
 optimizer_kwargs:
   momentum: 0.9
-  weight_decay: 1e-4
+  weight_decay: 5e-4
 scheduler_kwargs:
   p: 1 # options: 1, 2.
   beta: 0.8
