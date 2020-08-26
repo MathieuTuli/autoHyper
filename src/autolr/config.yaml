@@ -11,13 +11,13 @@ scheduler: 'AdaS' # options: AdaS (with SGD), StepLR, CosineAnnealingWarmRestart
 
 
 ###### Suggested Tune ######
-n_trials: 1
+n_trials: 3
 init_lr: 0.03
 num_workers: 4
 
 
 ###### Suggested Default ######
-max_epochs: 100
+max_epochs: 10
 early_stop_threshold: 0.001 # set to -1 if you wish not to use early stop, or equally, set to a high value. Set to -1 if not using AdaS
 early_stop_patience: 10 # epoch window to consider when deciding whether to stop
 mini_batch_size: 128

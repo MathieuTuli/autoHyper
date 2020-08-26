@@ -197,7 +197,7 @@ class TrainingAgent:
         elif self.dist:
             if self.gpu is not None:
                 config['mini_batch_size'] = int(
-                    config['min_batch_size'] / self.ngpus_per_node)
+                    config['mini_batch_size'] / self.ngpus_per_node)
                 config['num_workers'] = int(
                     (config['num_workers'] + self.ngpus_per_node - 1) /
                     self.ngpus_per_node)
@@ -223,7 +223,6 @@ class TrainingAgent:
             threshold=float(config['early_stop_threshold']))
         cudnn.benchmark = True
         if self.resume is not None:
-            print("Resuming Config")
             if self.gpu is None:
                 self.checkpoint = torch.load(str(self.resume))
             else:
@@ -233,6 +232,8 @@ class TrainingAgent:
             self.start_epoch = self.checkpoint['epoch']
             self.start_trial = self.checkpoint['trial']
             self.best_acc1 = self.checkpoint['best_acc1']
+            print(f'Resuming config for trial {self.start_trial} at ' +
+                  f'epoch {self.start_epoch}')
         # self.reset()
 
     def reset(self, learning_rate: float) -> None:
@@ -248,12 +249,12 @@ class TrainingAgent:
             if self.gpu is not None:
                 torch.cuda.set_device(self.gpu)
                 self.network.cuda(self.gpu)
-                self.network = torch.nn.parallel.DsitributedDataParallel(
+                self.network = torch.nn.parallel.DistributedDataParallel(
                     self.network,
                     device_ids=[self.gpu])
             else:
                 self.network.cuda()
-                self.network = torch.nn.parallel.DsitributedDataParallel(
+                self.network = torch.nn.parallel.DistributedDataParallel(
                     self.network)
         elif self.gpu is not None:
             torch.cuda.set_device(self.gpu)
@@ -291,24 +292,6 @@ class TrainingAgent:
             lr_output_path.mkdir(exist_ok=True, parents=True)
             for trial in range(self.start_trial,
                                self.config['n_trials']):
-                self.output_filename = "results_" +\
-                    f"date={datetime.now().strftime('%Y-%m-%d-%H-%M-%S')}_" +\
-                    f"trial=AdaS_trial={trial}_" +\
-                    f"network={self.config['network']}_" +\
-                    f"dataset={self.config['dataset']}" +\
-                    f"optimizer={self.config['optimizer']}" +\
-                    '_'.join([f"{k}={v}" for k, v in
-                              self.config['optimizer_kwargs'].items()]) +\
-                    f"_scheduler={self.config['scheduler']}" +\
-                    '_'.join([f"{k}={v}" for k, v in
-                              self.config['scheduler_kwargs'].items()]) +\
-                    f"_learning_rate={learning_rate}" +\
-                    ".csv".replace(' ', '-')
-                self.output_filename = str(
-                    lr_output_path / self.output_filename)
-                stats_filename = self.output_filename.replace(
-                    'results', 'stats')
-                Profiler.filename = lr_output_path / stats_filename
                 self.reset(learning_rate)
                 if trial == self.start_trial and self.resume is not None:
                     print("Resuming Network/Optimizer")
@@ -323,8 +306,29 @@ class TrainingAgent:
                         self.metrics.historical_metrics = \
                             self.checkpoint['historical_metrics']
                     epochs = range(self.start_epoch, self.config['max_epochs'])
+                    self.output_filename = self.checkpoint['output_filename']
+                    self.performance_statistics = self.checkpoint[
+                            'performance_statistics']
                 else:
                     epochs = range(0, self.config['max_epochs'])
+                    self.output_filename = "results_" +\
+                        f"date={datetime.now().strftime('%Y-%m-%d-%H-%M-%S')}_" +\
+                        f"trial=AdaS_trial={trial}_" +\
+                        f"network={self.config['network']}_" +\
+                        f"dataset={self.config['dataset']}" +\
+                        f"optimizer={self.config['optimizer']}" +\
+                        '_'.join([f"{k}={v}" for k, v in
+                                  self.config['optimizer_kwargs'].items()]) +\
+                        f"_scheduler={self.config['scheduler']}" +\
+                        '_'.join([f"{k}={v}" for k, v in
+                                  self.config['scheduler_kwargs'].items()]) +\
+                        f"_learning_rate={learning_rate}" +\
+                        ".csv".replace(' ', '-')
+                self.output_filename = str(
+                    lr_output_path / self.output_filename)
+                stats_filename = self.output_filename.replace(
+                    'results', 'stats')
+                Profiler.filename = lr_output_path / stats_filename
                 self.run_epochs(trial, epochs)
                 Profiler.stream = None
 
@@ -372,14 +376,14 @@ class TrainingAgent:
                         'state_dict_scheduler': self.scheduler.state_dict()
                         if not isinstance(self.scheduler, AdaS) else None,
                         'best_acc1': self.best_acc1,
+                        'performance_statistics': self.performance_statistics,
+                        'output_filename': Path(self.output_filename).name,
                         'historical_metrics': self.metrics.historical_metrics}
                 if epoch % self.save_freq == 0:
                     filename = f'trial_{trial}_epoch_{epoch}.pth.tar'
-                    print("Saving")
                     torch.save(data, str(self.checkpoint_path / filename))
                 if np.greater(test_acc1, self.best_acc1):
                     self.best_acc1 = test_acc1
-                    print("Saving Best.")
                     torch.save(
                         data, str(self.checkpoint_path / 'best.pth.tar'))
         torch.save(data, str(self.checkpoint_path / 'last.pth.tar'))
@@ -603,7 +607,7 @@ def main(args: APNamespace):
     ngpus_per_node = torch.cuda.device_count()
     args.distributed = args.mpd or args.world_size > 1
     if args.mpd:
-        args.world_size *= args.ngpus_per_node
+        args.world_size *= ngpus_per_node
         mp.spawn(main_worker, nprocs=ngpus_per_node,
                  args=(ngpus_per_node, args))
     else:
