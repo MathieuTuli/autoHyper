@@ -29,6 +29,7 @@ from pathlib import Path
 # import logging
 import warnings
 import time
+import sys
 
 import torch.backends.cudnn as cudnn
 import torch.multiprocessing as mp
@@ -38,19 +39,38 @@ import numpy as np
 import torch
 import yaml
 
-from .optim.lr_scheduler import CosineAnnealingWarmRestarts, StepLR, OneCycleLR
-from .optim import get_optimizer_scheduler
-from .lr_range_test import auto_lr
-from .early_stop import EarlyStop
-from .models import get_network
-from .utils import parse_config
-from .profiler import Profiler
-from .metrics import Metrics
-from .models.vgg import VGG
-from .optim.sls import SLS
-from .optim.sps import SPS
-from .data import get_data
-from .AdaS import AdaS
+mod_name = vars(sys.modules[__name__])['__package__']
+
+if mod_name:
+    from .optim.lr_scheduler import CosineAnnealingWarmRestarts, StepLR, \
+        OneCycleLR
+    from .optim import get_optimizer_scheduler
+    from .lr_range_test import auto_lr
+    from .early_stop import EarlyStop
+    from .models import get_network
+    from .utils import parse_config
+    from .profiler import Profiler
+    from .metrics import Metrics
+    from .models.vgg import VGG
+    from .optim.sls import SLS
+    from .optim.sps import SPS
+    from .data import get_data
+    from .AdaS import AdaS
+else:
+    from optim.lr_scheduler import CosineAnnealingWarmRestarts, StepLR, \
+        OneCycleLR
+    from optim import get_optimizer_scheduler
+    from lr_range_test import auto_lr
+    from early_stop import EarlyStop
+    from models import get_network
+    from utils import parse_config
+    from profiler import Profiler
+    from metrics import Metrics
+    from models.vgg import VGG
+    from optim.sls import SLS
+    from optim.sps import SPS
+    from data import get_data
+    from AdaS import AdaS
 
 
 def args(sub_parser: _SubParsersAction):
@@ -306,7 +326,7 @@ class TrainingAgent:
                     epochs = range(self.start_epoch, self.config['max_epochs'])
                     self.output_filename = self.checkpoint['output_filename']
                     self.performance_statistics = self.checkpoint[
-                            'performance_statistics']
+                        'performance_statistics']
                 else:
                     epochs = range(0, self.config['max_epochs'])
                     self.output_filename = "results_" +\
