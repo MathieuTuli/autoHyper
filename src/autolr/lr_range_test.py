@@ -21,83 +21,21 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-from argparse import Namespace as _SubParsersAction
-from pathlib import Path
-from typing import List, Tuple, Any
+from typing import Union, List
 
 # import logging
 
-import torch.backends.cudnn as cudnn
 import numpy as np
-import torch
 
-from .optim import get_optimizer_scheduler
-from .train_support import run_epochs
-from .early_stop import EarlyStop
-from .models import get_network
-from .profiler import Profiler
+from .train import TrainingAgent
 from .metrics import Metrics
-from .data import get_data
-
-from . import global_vars as GLOBALS
 
 
-def args(sub_parser: _SubParsersAction):
-    # print("\n---------------------------------")
-    # print("AutoLR Train Args")
-    # print("---------------------------------\n")
-    # sub_parser.add_argument(
-    #     '-vv', '--very-verbose', action='store_true',
-    #     dest='very_verbose',
-    #     help="Set flask debug mode")
-    # sub_parser.add_argument(
-    #     '-v', '--verbose', action='store_true',
-    #     dest='verbose',
-    #     help="Set flask debug mode")
-    # sub_parser.set_defaults(verbose=False)
-    # sub_parser.set_defaults(very_verbose=False)
-    sub_parser.add_argument(
-        '--config', dest='config',
-        default='config.yaml', type=str,
-        help="Set configuration file path: Default = 'config.yaml'")
-    sub_parser.add_argument(
-        '--data', dest='data',
-        default='.autolr-data', type=str,
-        help="Set data directory path: Default = '.autolr-data'")
-    sub_parser.add_argument(
-        '--output', dest='output',
-        default='.autolr-output', type=str,
-        help="Set output directory path: Default = '.autolr-output'")
-    sub_parser.add_argument(
-        '--checkpoint', dest='checkpoint',
-        default='.autolr-checkpoint', type=str,
-        help="Set checkpoint directory path: Default = '.autolr-checkpoint")
-    sub_parser.add_argument(
-        '--root', dest='root',
-        default='.', type=str,
-        help="Set root path of project that parents all others: Default = '.'")
-    sub_parser.add_argument(
-        '-r', '--resume', action='store_true',
-        dest='resume',
-        help="Flag: resume training from checkpoint")
-    sub_parser.set_defaults(resume=False)
-    sub_parser.add_argument(
-        '--cpu', action='store_true',
-        dest='cpu',
-        help="Flag: CPU bound training")
-    sub_parser.set_defaults(cpu=False)
-
-
-def get_loss(loss: str) -> torch.nn.Module:
-    return torch.nn.CrossEntropyLoss() if loss == 'cross_entropy' else \
-        None
-
-
-def compute_rank() -> float:
+def compute_rank(metrics: Metrics) -> float:
     per_S_zero = np.mean([np.mean(np.isclose(
         metric.input_channel_S + metric.output_channel_S,
         0).astype(np.float16)) for
-        metric in GLOBALS.METRICS.historical_metrics])
+        metric in metrics.historical_metrics])
     return per_S_zero
 
 
@@ -116,72 +54,36 @@ def compute_rate_of_change(rank_history: List[float]) -> float:
     return output
 
 
-def reset_experiment(learning_rate: float,
-                     data_path: Path, device) -> Tuple[Any, Any]:
-    GLOBALS.CONFIG['init_lr'] = learning_rate
-    print(f"Using LR: {GLOBALS.CONFIG['init_lr']}")
-    train_loader, test_loader = get_data(
-        root=data_path,
-        dataset=GLOBALS.CONFIG['dataset'],
-        mini_batch_size=GLOBALS.CONFIG['mini_batch_size'],
-        num_workers=GLOBALS.CONFIG['num_workers'])
-    GLOBALS.PERFORMANCE_STATISTICS = {}
-
-    GLOBALS.NET = get_net(
-        GLOBALS.CONFIG['network'], num_classes=10 if
-        GLOBALS.CONFIG['dataset'] == 'CIFAR10' else 100 if
-        GLOBALS.CONFIG['dataset'] == 'CIFAR100'
-        else 1000 if GLOBALS.CONFIG['dataset'] == 'ImageNet' else 10)
-    GLOBALS.METRICS = Metrics(list(GLOBALS.NET.parameters()),
-                              p=GLOBALS.CONFIG['p'])
-
-    GLOBALS.NET = GLOBALS.NET.to(device)
-
-    # global criterion
-    GLOBALS.CRITERION = get_loss(GLOBALS.CONFIG['loss'])
-    GLOBALS.CRITERION.to(device)
-
-    optimizer, scheduler = get_optimizer_scheduler(
-        net_parameters=GLOBALS.NET.parameters(),
-        listed_params=list(GLOBALS.NET.parameters()),
-        train_loader_len=len(train_loader),
-        config=GLOBALS.CONFIG)
-    GLOBALS.EARLY_STOP = EarlyStop(
-        patience=int(GLOBALS.CONFIG['early_stop_patience']),
-        threshold=float(GLOBALS.CONFIG['early_stop_threshold']))
-
-    if device == 'cuda':
-        GLOBALS.NET = torch.nn.DataParallel(GLOBALS.NET)
-        cudnn.benchmark = True
-    return train_loader, test_loader, optimizer, scheduler
-
-
-def auto_lr(data_path: Path, output_path: Path, device: str):
+def auto_lr(training_agent: TrainingAgent,
+            min_lr: float = 1e-4,
+            max_lr: float = 0.1,
+            num_split: int = 20,
+            min_delta: float = 5e-3,
+            lr_delta: float = 3e-5,
+            epochs: Union[range, List[int]] = range(0, 5),
+            exit_counter_thresh: int = 6,
+            power: float = 0.8):
     # ###### LR RANGE STUFF #######
-    min_lr = 1e-4
-    max_lr = 0.1
-    num_split = 20
     learning_rates = np.geomspace(min_lr, max_lr, num_split)
     lr_idx = 0
-    min_delta = 1e-2
     exit_counter = 0
-    lr_delta = 3e-5
     first_run = True
-    epochs = range(0, 5)
     output_history = list()
     rank_history = list()
-    exit_counter_thresh = 6
     cur_rank = -1
-    auto_lr_path = output_path / 'auto-lr'
+    auto_lr_path = training_agent.output_path / 'auto-lr'
     auto_lr_path.mkdir(exist_ok=True)
-    power = 0.8
     while True:
+        with (training_agent.output_path / 'lrrt.csv').open('w+') as f:
+            f.write('lr,rank,msg\n')
+            for (lr, rank, msg) in output_history:
+                f.write(f'{lr},{rank},{msg}\n')
         if lr_idx == len(learning_rates):
             min_lr = learning_rates[-2]
             max_lr = float(learning_rates[-1]) * 1.5
-            print("LR Range Test: Reached End")
+            print("LR Range Test: Reached End of Grid: Expanding.")
             learning_rates = np.geomspace(min_lr, max_lr, num_split)
-            rank_history = list()
+            # rank_history = list()
             output_history.append(
                 (learning_rates[lr_idx - 1], -1, 'end-reached'))
             lr_idx = 0
@@ -194,28 +96,16 @@ def auto_lr(data_path: Path, output_path: Path, device: str):
             output_history.append(
                 (learning_rates[lr_idx], cur_rank, 'exit-delta'))
             break
-        train_loader, test_loader, optimizer, scheduler = \
-            reset_experiment(learning_rates[lr_idx], data_path, device)
-        run_epochs(0, epochs, train_loader, test_loader,
-                   device, optimizer, scheduler, auto_lr_path)
-        Profiler.stream = None
+        training_agent.reset(learning_rates[lr_idx])
+        training_agent.run_epochs(trial=0, epochs=epochs)
 
         # ###### LR RANGE STUFF #######
-        cur_rank = compute_rank()
+        cur_rank = compute_rank(training_agent.metrics)
         rank_history.append(cur_rank)
-        # if ema:
-        #     if len(rank_history) == 1:
-        #         rate_of_change = [cur_rank]
-        #     else:
-        #         rate_of_change.append(
-        #             beta * rate_of_change[-1] + (1 - beta) * cur_rank)
-        # else:
         rate_of_change = np.cumprod(rank_history) ** power
-        # rank_history.append(cur_rank)
-        print(f"LR Range Test: Cur Space: {learning_rates}")
-        print(f"LR Range Test: Cur lr: {learning_rates[lr_idx]}")
-        print(f"LR Range Test: Cur %: {cur_rank}")
-        # TODO minimum on min_lr?
+        print(f"LR Range Test: Cur. Grid Space: {learning_rates}")
+        print(f"LR Range Test: Cur. LR: {learning_rates[lr_idx]}")
+        print(f"LR Range Test: Cur. Rank: {cur_rank}")
         if np.isclose(cur_rank, 1.):
             output_history.append((learning_rates[lr_idx],
                                    cur_rank, 'all-zero'))
@@ -238,7 +128,6 @@ def auto_lr(data_path: Path, output_path: Path, device: str):
                 rank_history = list()
                 print("LR Range Test: Crossed thresh early, new range: " +
                       f"{learning_rates}")
-                # lr_idx = 0 ; redundant
                 cur_rank = -1
                 continue
         else:
@@ -257,19 +146,15 @@ def auto_lr(data_path: Path, output_path: Path, device: str):
                 lr_idx = 0
                 cur_rank = -1
                 continue
-            # if np.less(rate_of_change[-1], min_delta):
-            if len(rate_of_change) > 3 and \
-                    np.isclose(rate_of_change[-1], rate_of_change[-2],
-                               atol=min_delta) and \
-                    np.isclose(rate_of_change[-2], rate_of_change[-3],
-                               atol=min_delta):
-                # if ema and not np.less(rate_of_change[-1], min_rank_thresh):
-                #     lr_idx += 1
-                #     continue
+            # if len(rate_of_change) > 3 and \
+            #         np.isclose(rate_of_change[-1], rate_of_change[-2],
+            #                    atol=min_delta) and \
+            #         np.isclose(rate_of_change[-2], rate_of_change[-3],
+            #                    atol=min_delta):
+            if np.less(rate_of_change[-1], min_delta):
                 output_history.append((learning_rates[lr_idx],
                                        cur_rank, 'plateau'))
                 exit_counter += 1
-                # power = 0.8
                 min_lr = learning_rates[max(lr_idx - 2, 0)]
                 max_lr = learning_rates[lr_idx]
                 learning_rates = np.geomspace(min_lr, max_lr, num_split)
@@ -294,7 +179,7 @@ def auto_lr(data_path: Path, output_path: Path, device: str):
                 (learning_rates[lr_idx], cur_rank, 'exit-counter'))
             break
         lr_idx += 1
-    with (output_path / 'lrrt.csv').open('w+') as f:
+    with (training_agent.output_path / 'lrrt.csv').open('w+') as f:
         f.write('lr,rank,msg\n')
         for (lr, rank, msg) in output_history:
             f.write(f'{lr},{rank},{msg}\n')
