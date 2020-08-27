@@ -214,7 +214,7 @@ The **Suggested Tune** parameters are highly recommended to be tuned, and are ve
 The **Application Specific** parameters then are simply ones that the user must change to do what they want (what dataset, model, learning algorithm, etc.)
 
 
-##### Available Datasets for Training #####
+#### Available Datasets for Training ####
 ---
 **yaml identifier: dataset**
 Currently the following datasets are supported:
@@ -222,7 +222,7 @@ Currently the following datasets are supported:
 - CIFAR100
 - ImageNet
 
-##### Available Models for Training #####
+#### Available Models for Training ####
 
 ---
 **yaml identifier: network**
@@ -243,7 +243,7 @@ All models used can be found in [src/autolr/models](src/adas/models). They are a
 - EfficientNetB4 | EfficientNetB0CIFAR
 
 
-##### Optimizer Method #####
+#### Optimizer Method ####
 
 ---
 **yaml identifier: optimizer**
@@ -270,7 +270,7 @@ Options:
 - LaProp
 - LearningRateDropout
 
-##### Learning Rate Scheduler #####
+#### Learning Rate Scheduler ####
 
 ---
 **yaml identifier: scheduler**
@@ -281,14 +281,14 @@ Options:
 - CosineAnnealingWarmRestarts
 - OneCycleLR
 
-##### Initial Learning Rate #####
+#### Initial Learning Rate ####
 
 ---
 **yaml identifier: init_lr**
 
 Initial learning rate for the optimizer method. Note that specifying 'auto' will run the AutoLR algorithm to determine the optimal initial learning rate.
 
-##### Early Stopping Threshold #####
+#### Early Stopping Threshold ####
 
 ---
 **yaml identifier: early_stop_threshold**
@@ -299,21 +299,21 @@ The threshold for early stopping. The early stopping criterion operates by keepi
 
 To deactivate early_stopping, set this value to `-1`.
 
-##### Optimizer Arguments #####
+#### Optimizer Arguments ####
 
 ---
 **yaml identifier: optimizer_kwargs**
 
 Specific arguments to pass to the selected optimizer. Expecting a dictionary, where keys are the exact argument names. There are certain required arguments for certain optimizers, which can be seen listed in [src/autolr/optim/__init__.py](src/autolr/optim/__init__.py). If not passing any arguments, ensure an empty list is the value.
 
-##### Scheduler Arguments #####
+#### Scheduler Arguments ####
 
 ---
 **yaml identifier: scheduler_kwargs**
 
 Same as above, but for scheduler argument.
 
-##### Number of Training Trials #####
+#### Number of Training Trials ####
 
 ---
 **yaml identifier: n_trials**
@@ -321,28 +321,28 @@ Same as above, but for scheduler argument.
 Number of full training cycles
 
 
-##### Max Epochs #####
+#### Max Epochs ####
 
 ---
 **yaml identifier: max_epoch**
 
 Maximum number of epochs for one trial
 
-##### Mini-Batch Size #####
+#### Mini-Batch Size ####
 
 ---
 **yaml identifier: mini_batch_size**
 
 Size of mini-batch for one epoch
 
-##### Early Stopping Patience #####
+#### Early Stopping Patience ####
 
 ---
 **yaml identifier: early_stop_patience**
 
 Patience window for early stopping.
 
-##### Power #####
+#### Power ####
 
 ---
 **yaml identifier: p**
