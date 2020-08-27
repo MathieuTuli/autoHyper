@@ -111,7 +111,7 @@ There are two versions of the AdaS code contained in this repository.
 ---
 
 ##### Repository Cloning #####
-After cloning the repository, simply run
+After cloning the repository (`git clone https://github.com/MathieuTuli/AutoLR.git`), simply run
 ```console
 python setup.py build
 python setup.py install
