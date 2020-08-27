@@ -22,13 +22,19 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 from typing import Union, List
+from datetime import datetime
+import sys
 
 # import logging
 
 import numpy as np
 
-from .train import TrainingAgent
-from .metrics import Metrics
+mod_name = vars(sys.modules[__name__])['__package__']
+
+if mod_name:
+    from .metrics import Metrics
+else:
+    from metrics import Metrics
 
 
 def compute_rank(metrics: Metrics) -> float:
@@ -54,7 +60,7 @@ def compute_rate_of_change(rank_history: List[float]) -> float:
     return output
 
 
-def auto_lr(training_agent: TrainingAgent,
+def auto_lr(training_agent,
             min_lr: float = 1e-4,
             max_lr: float = 0.1,
             num_split: int = 20,
@@ -97,6 +103,24 @@ def auto_lr(training_agent: TrainingAgent,
                 (learning_rates[lr_idx], cur_rank, 'exit-delta'))
             break
         training_agent.reset(learning_rates[lr_idx])
+        training_agent.output_filename = training_agent.output_path / 'auto-lr'
+        training_agent.output_filename.mkdir(exist_ok=True, parents=True)
+        string_name = \
+            "auto_lr_results_" +\
+            f"date={datetime.now().strftime('%Y-%m-%d-%H-%M-%S')}_" +\
+            f"trial=AdaS_trial={0}_" +\
+            f"network={training_agent.config['network']}_" +\
+            f"dataset={training_agent.config['dataset']}" +\
+            f"optimizer={training_agent.config['optimizer']}" +\
+            '_'.join([f"{k}={v}" for k, v in
+                      training_agent.config['optimizer_kwargs'].items()]) +\
+            f"_scheduler={training_agent.config['scheduler']}" +\
+            '_'.join([f"{k}={v}" for k, v in
+                      training_agent.config['scheduler_kwargs'].items()]) +\
+            f"_learning_rate={learning_rates[lr_idx]}" +\
+            ".csv".replace(' ', '-')
+        training_agent.output_filename = str(
+            training_agent.output_filename / string_name)
         training_agent.run_epochs(trial=0, epochs=epochs)
 
         # ###### LR RANGE STUFF #######

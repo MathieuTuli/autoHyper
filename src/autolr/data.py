@@ -22,13 +22,19 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 from pathlib import Path
+import sys
 
 import torchvision.transforms as transforms
 
 import torchvision
 import torch
 
-from .datasets import ImageNet
+mod_name = vars(sys.modules[__name__])['__package__']
+
+if mod_name:
+    from .datasets import ImageNet
+else:
+    from datasets import ImageNet
 # from .folder2lmdb import ImageFolderLMDB
 
 

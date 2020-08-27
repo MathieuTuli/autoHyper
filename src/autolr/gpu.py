@@ -37,9 +37,15 @@ from subprocess import Popen, PIPE
 from distutils import spawn
 
 import platform
+import sys
 import os
 
-from .utils import safe_float_cast
+mod_name = vars(sys.modules[__name__])['__package__']
+
+if mod_name:
+    from .utils import safe_float_cast
+else:
+    from utils import safe_float_cast
 
 
 class GPU:

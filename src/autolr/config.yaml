@@ -1,6 +1,6 @@
 ###### Application Specific ######
 dataset: 'CIFAR10' # options: CIFAR100, CIFAR10, ImageNet
-network: 'ResNet34CIFAR' # AlexNet, DenseNet201, DenseNet169, DenseNet161, DenseNet121, GoogLeNet
+network: 'ResNet18CIFAR' # AlexNet, DenseNet201, DenseNet169, DenseNet161, DenseNet121, GoogLeNet
 # InceptionV3, MNASNet_0_5, MNASNet_0_75, MNASNet_1, MNASNet_1_3, MobileNetV2, ResNet18
 # ResNet34, ResNet50, ResNet101, ResNet152, ResNext50, ResNext101, WideResNet50, WideResNet101
 # ShuffleNetV2_0_5, ShuffleNetV2_1, ShuffleNetV2_1_5, ShuffleNetV2_2, SqueezeNet_1,
@@ -12,12 +12,12 @@ scheduler: 'AdaS' # options: AdaS (with SGD), StepLR, CosineAnnealingWarmRestart
 
 ###### Suggested Tune ######
 n_trials: 3
-init_lr: 0.03
+init_lr: 'auto'
 num_workers: 4
 
 
 ###### Suggested Default ######
-max_epochs: 10
+max_epochs: 100
 early_stop_threshold: 0.001 # set to -1 if you wish not to use early stop, or equally, set to a high value. Set to -1 if not using AdaS
 early_stop_patience: 10 # epoch window to consider when deciding whether to stop
 mini_batch_size: 128

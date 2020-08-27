@@ -4,13 +4,21 @@ from pathlib import Path
 
 import cProfile
 import pstats
+import sys
 import io
 
 from memory_profiler import memory_usage
 
-from .components import Statistics
-from .utils import pstats_to_dict
-from .gpu import GPU
+mod_name = vars(sys.modules[__name__])['__package__']
+
+if mod_name:
+    from .components import Statistics
+    from .utils import pstats_to_dict
+    from .gpu import GPU
+else:
+    from components import Statistics
+    from utils import pstats_to_dict
+    from gpu import GPU
 
 
 class Profiler:

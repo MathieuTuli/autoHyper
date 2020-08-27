@@ -21,7 +21,8 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-from argparse import Namespace as APNamespace, _SubParsersAction
+from argparse import Namespace as APNamespace, _SubParsersAction, \
+    ArgumentParser
 from typing import Tuple, Dict, Any, List
 from datetime import datetime
 from pathlib import Path
@@ -41,7 +42,7 @@ import yaml
 
 mod_name = vars(sys.modules[__name__])['__package__']
 
-if mod_name:
+if mod_name is not None:
     from .optim.lr_scheduler import CosineAnnealingWarmRestarts, StepLR, \
         OneCycleLR
     from .optim import get_optimizer_scheduler
@@ -659,3 +660,10 @@ def main_worker(gpu: int, ngpus_per_node: int, args: APNamespace):
         dist_backend=args.dist_backend)
     print(f"AutoLR: Pytorch device is set to {training_agent.device}")
     training_agent.train()
+
+
+if __name__ == "__main__":
+    parser = ArgumentParser(description=__doc__)
+    args(parser)
+    args = parser.parse_args()
+    main(args)

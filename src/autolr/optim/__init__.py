@@ -22,30 +22,57 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 from typing import Any, List
+import sys
 
 import torch
+mod_name = vars(sys.modules[__name__])['__package__']
 
-from .lr_scheduler import StepLR, CosineAnnealingWarmRestarts, OneCycleLR
-from .novograd import NovoGrad
-from .adabound import AdaBound
-from .adashift import AdaShift
-from .adadelta import Adadelta
-from .adagrad import Adagrad
-from .rmsprop import RMSprop
-from .nosadam import NosAdam
-from .laprop import LaProp
-from .adamod import AdaMod
-from .adamax import Adamax
-from .nadam import NAdam
-from .padam import PAdam
-from .radam import RAdam
-from ..AdaS import AdaS
-from .sgd import SGDVec
-from .adam import Adam
-from .sgd import SGD
-from .sps import SPS
-from .sls import SLS
-from .lrd import LRD
+if 'autolr.' in mod_name:
+    from .lr_scheduler import StepLR, CosineAnnealingWarmRestarts,\
+        OneCycleLR
+    from .novograd import NovoGrad
+    from .adabound import AdaBound
+    from .adashift import AdaShift
+    from .adadelta import Adadelta
+    from .adagrad import Adagrad
+    from .rmsprop import RMSprop
+    from .nosadam import NosAdam
+    from .laprop import LaProp
+    from .adamod import AdaMod
+    from .adamax import Adamax
+    from .nadam import NAdam
+    from .padam import PAdam
+    from .radam import RAdam
+    from ..AdaS import AdaS
+    from .sgd import SGDVec
+    from .adam import Adam
+    from .sgd import SGD
+    from .sps import SPS
+    from .sls import SLS
+    from .lrd import LRD
+else:
+    from optim.lr_scheduler import StepLR, CosineAnnealingWarmRestarts,\
+        OneCycleLR
+    from optim.novograd import NovoGrad
+    from optim.adabound import AdaBound
+    from optim.adashift import AdaShift
+    from optim.adadelta import Adadelta
+    from optim.adagrad import Adagrad
+    from optim.rmsprop import RMSprop
+    from optim.nosadam import NosAdam
+    from optim.laprop import LaProp
+    from optim.adamod import AdaMod
+    from optim.adamax import Adamax
+    from optim.nadam import NAdam
+    from optim.padam import PAdam
+    from optim.radam import RAdam
+    from AdaS import AdaS
+    from optim.sgd import SGDVec
+    from optim.adam import Adam
+    from optim.sgd import SGD
+    from optim.sps import SPS
+    from optim.sls import SLS
+    from optim.lrd import LRD
 
 
 def get_optimizer_scheduler(
