@@ -103,11 +103,11 @@ def args(sub_parser: _SubParsersAction):
     sub_parser.add_argument(
         '--checkpoint', dest='checkpoint',
         default='.autolr-checkpoint', type=str,
-        help="Set checkpoint directory path: Default = '.autolr-checkpoint")
+        help="Set checkpoint directory path: Default = '.autolr-checkpoint'")
     sub_parser.add_argument(
         '--resume', dest='resume',
         default=None, type=str,
-        help="Set checkpoint resume path")
+        help="Set checkpoint resume path: Default = None")
     # sub_parser.add_argument(
     #     '-r', '--resume', action='store_true',
     #     dest='resume',
@@ -118,36 +118,37 @@ def args(sub_parser: _SubParsersAction):
         help="Set root path of project that parents all others: Default = '.'")
     sub_parser.add_argument(
         '--save-freq', default=25, type=int,
-        help='Checkpoint epoch save frequency.')
+        help='Checkpoint epoch save frequency: Default = 25')
     # sub_parser.set_defaults(resume=False)
     sub_parser.add_argument(
         '--cpu', action='store_true',
         dest='cpu',
-        help="Flag: CPU bound training")
+        help="Flag: CPU bound training: Default = False")
     sub_parser.set_defaults(cpu=False)
     sub_parser.add_argument(
-        '--gpu', default=None, type=int,
-        help='GPU id to use.')
+        '--gpu', default=0, type=int,
+        help='GPU id to use: Default = 0')
     sub_parser.add_argument(
         '--multiprocessing-distributed', action='store_true',
         dest='mpd',
         help='Use multi-processing distributed training to launch '
         'N processes per node, which has N GPUs. This is the '
         'fastest way to use PyTorch for either single node or '
-        'multi node data parallel training')
+        'multi node data parallel training: Default = False')
     sub_parser.set_defaults(mpd=False)
     sub_parser.add_argument(
         '--dist-url', default='tcp://127.0.0.1:23456', type=str,
-        help='url used to set up distributed training')
+        help="url used to set up distributed training:" +
+             "Default = 'tcp://127.0.0.1:23456'")
     sub_parser.add_argument(
         '--dist-backend', default='nccl', type=str,
-        help='distributed backend')
+        help="distributed backend: Default = 'nccl'")
     sub_parser.add_argument(
         '--world-size', default=-1, type=int,
-        help='number of nodes for distributed training')
+        help='Number of nodes for distributed training: Default = -1')
     sub_parser.add_argument(
         '--rank', default=-1, type=int,
-        help='node rank for distributed training')
+        help='Node rank for distributed training: Default = -1')
 
 
 class TrainingAgent:

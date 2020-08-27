@@ -5,43 +5,42 @@
 [![maintenance](https://img.shields.io/badge/maintained%3F-yes-brightgreen.svg)](https://GitHub.com/Naereen/StrapDown.js/graphs/commit-activity)
 [![python](https://img.shields.io/badge/python-v3.7-blue)](https://www.python.org/downloads/release/python-370/)
 ![size](https://img.shields.io/github/repo-size/MathieuTuli/AutoLR)
+
 ## Table of Contents ##
 - [Introduction](#introduction)
 - [License](#license)
 - [Citing AutoLR](#citing-autolr)
 - [Requirements](#requirements)
-  * [Software](#software)
-  * [Hardware](#hardware)
-  * [Some Experimental Results](#some-experimental-results)
+  - [Software](#software)
+  - [Hardware](#hardware)
 - [Installation](#installation)
-  * [Python Package](#python-package)
-    + [Direct pip-installation](#direct-pip-installation)
-    + [Repository Cloning](#repository-cloning)
-  * [Unpackaged Python](#unpackaged-python)
+  - [Python Package](#python-package)
+    * [Repository Cloning](#repository-cloning)
+  - [Unpackaged Python](#unpackaged-python)
 - [Usage](#usage)
-  * [Training](#training)
-  * [Config Options](#config-options)
-    + [Available Datasets for Training](#available-datasets-for-training)
-    + [Available Models for Training](#available-models-for-training)
-    + [Optimizer Method](#optimizer-method)
-    + [Learning Rate Scheduler](#learning-rate-scheduler)
-    + [Number of Training Trials](#number-of-training-trials)
-    + [Beta](#beta)
-    + [Initial Learning Rate](#initial-learning-rate)
-    + [Max Epochs](#max-epochs)
-    + [Early Stopping Threshold](#early-stopping-threshold)
-    + [Early Stopping Patience](#early-stopping-patience)
-    + [Mini-Batch Size](#mini-batch-size)
-    + [Minimum Learning Rate](#minimum-learning-rate)
-    + [Zeta](#zeta)
-    + [Power](#power)
-  * [Training Outputs](#training-outputs)
-    + [XLSX Output](#xlsx-output)
-    + [Checkpoints](#checkpoints)
+  - [Running the Code](#running-the-code)
+  - [Config File](#config-file)
+    * [Available Datasets for Training](#available-datasets-for-training)
+    * [Available Models for Training](#available-models-for-training)
+    * [Optimizer Method](#optimizer-method)
+    * [Learning Rate Scheduler](#learning-rate-scheduler)
+    * [Initial Learning Rate](#initial-learning-rate)
+    * [Early Stopping Threshold](#early-stopping-threshold)
+    * [Optimizer Arguments](#optimizer-arguments)
+    * [Scheduler Arguments](#scheduler-arguments)
+    * [Number of Training Trials](#number-of-training-trials)
+    * [Max Epochs](#max-epochs)
+    * [Mini-Batch Size](#mini-batch-size)
+    * [Early Stopping Patience](#early-stopping-patience)
+    * [Power](#power)
+  - [Training Outputs](#training-outputs)
+    * [XLSX Output](#xlsx-output)
+    * [Checkpoints](#checkpoints)
 - [Common Issues (running list)](#common-issues--running-list-)
+- [TODO](#todo)
 - [Pytest](#pytest)
 
-## Introduction ##
+### Introduction ###
 [Paper]()
 
 
@@ -67,9 +66,27 @@ We use `Python 3.7`
 
 Per [requirements.txt](requirements.txt), the following Python packages are required:
 ```text
+-e .
+future==0.18.2
+joblib==0.16.0
+memory-profiler==0.57.0
+numpy==1.19.1
+pandas==1.1.1
+Pillow==7.2.0
+psutil==5.7.2
+python-dateutil==2.8.1
+pytz==2020.1
+PyYAML==5.3.1
+scikit-learn==0.23.2
+scipy==1.5.2
+six==1.15.0
+threadpoolctl==2.1.0
+torch==1.6.0
+torchvision==0.7.0
+tqdm==4.48.2
 ```
 
-**NOTE** that in order to satisfy `torch==1.5.0` the following Nvidia requirements need to be met:
+**NOTE** that in order to satisfy `torch==1.6.0` the following (soft) Nvidia requirements need to be met:
 - CUDA Version: `CUDA 10.2`
 - CUDA Driver Version: `r440`
 - CUDNN Version: `7.6.4-7.6.5`
@@ -85,9 +102,9 @@ Refer to the [PyTorch installation guide](https://pytorch.org/) for information 
 Naturally, the memory requirements is scaled relative to current dataset being used and mini-batch sizes, we state these number using the CIFAR10 and CIFAR100 dataset.
 
 ### Installation ###
-There are two version of the AdaS code contained in this repository.
+There are two versions of the AdaS code contained in this repository.
 1. a python-package version of the AdaS code, which can be `pip`-installed.
-2. a static python module, provided in addition to the package for any user who may want an unpackaged version of the code. This code can be found at [unpackaged](unpackaged)
+2. a static python module (unpackaged), runable as a script.
 
 #### Python Package ####
 
@@ -103,73 +120,94 @@ or
 ```console
 pip install .
 ```
-If you will be making changes and wish to not have to reinstall the package each time, run 
+If you will be making changes and wish to not have to reinstall the package each time, run
 ```console
 pip install -e .
 ```
+
+Note that `pip install -e .` is a command included in the [requirements.txt](requirements.txt) file.
 
 #### Unpackaged Python ####
 
 ---
 Ensure first that you have the requirements installed per [requirements.txt](requirements.txt)
 
-You can run the code either by typing
-```console
-python main.py train --...
-```
-OR
+You can run the code by running
 ```console
 python train.py --...
 ```
 Where `--...` represents the options for training (see below)
 
-### Usage ###
-#### Training ####
-As this is a self-contained python module, all functionalities are built in once you `pip`-install the package. To start training, you must first define you configuration file. An example can be found at [src/adas/config.yaml](src/adas/config.yaml). Finally, run
-```console
-python -m adas train --config *config.yaml*
-```
-Where you specify the path of you `config.yaml` file. Note the following options for adas:
-```console
+Similarly, the `train.py` file could be run from an IDE. We leave specifying arguments up to the user if run this way. Note a quick and dirty way is to alter the default argument values found in `train.py`.
 
-python -m adas train --help
---
+### Usage ###
+Moving forward, I will refer to console usage of this library. IDE usage is no different. Training options are split two ways:
+1. First, all environment/infrastructure options (GPU usage, output paths, etc.) is specified using arguments.
+2. Second, all training specific options (network, dataset, hyper-parameters, etc.) is specified using a configuration file.
+#### Running the Code ####
+To start training, you must first define your training configuration file. An example can be found at [src/autolr/config.yaml](src/autolr/config.yaml). Finally, run
+```console
+python -m adas train --config path-to-config.yaml
+```
+Where you specify the path of your `config.yaml` file. Note the following additional options for autolr:
+```console
 usage: __main__.py train [-h] [--config CONFIG] [--data DATA]
                          [--output OUTPUT] [--checkpoint CHECKPOINT]
-                         [--root ROOT] [-r]
+                         [--resume RESUME] [--root ROOT]
+                         [--save-freq SAVE_FREQ] [--cpu] [--gpu GPU]
+                         [--multiprocessing-distributed] [--dist-url DIST_URL]
+                         [--dist-backend DIST_BACKEND]
+                         [--world-size WORLD_SIZE] [--rank RANK]
 
 optional arguments:
   -h, --help            show this help message and exit
   --config CONFIG       Set configuration file path: Default = 'config.yaml'
-  --data DATA           Set data directory path: Default = '.adas-data'
-  --output OUTPUT       Set output directory path: Default = '.adas-output'
+  --data DATA           Set data directory path: Default = '.autolr-data'
+  --output OUTPUT       Set output directory path: Default = '.autolr-output'
   --checkpoint CHECKPOINT
-                        Set checkpoint directory path: Default = '.adas-checkpoint
+                        Set checkpoint directory path: Default = '.autolr-checkpoint'
+  --resume RESUME       Set checkpoint resume path: Default = None
   --root ROOT           Set root path of project that parents all others:
                         Default = '.'
-  -r, --resume          Flag: resume training from checkpoint
+  --save-freq SAVE_FREQ
+                        Checkpoint epoch save frequency: Default = 25
+  --cpu                 Flag: CPU bound training: Default = False
+  --gpu GPU             GPU id to use: Default = 0
+  --multiprocessing-distributed
+                        Use multi-processing distributed training to launch N
+                        processes per node, which has N GPUs. This is the
+                        fastest way to use PyTorch for either single node or
+                        multi node data parallel training: Default = False
+  --dist-url DIST_URL   url used to set up distributed training:Default =
+                        'tcp://127.0.0.1:23456'
+  --dist-backend DIST_BACKEND
+                        distributed backend: Default = 'nccl'
+  --world-size WORLD_SIZE
+                        Number of nodes for distributed training: Default = -1
+  --rank RANK           Node rank for distributed training: Default = -1
 ```
-#### Config Options ####
+#### Config File ####
 In the following sections we list the configuration options available to the user. Note that we also classify the configuration options into the following categories:
-- Suggested Default
-  - max_epoch
-  - early_stop_threshold
-  - early_stop_patience
-  - min_lr
-  - zeta
-  - p
-  - loss
-- Suggested Tune
-  - n_trials
-  - beta
-  - init_lr
 - Application Specific
   - dataset
   - network
-  - optim_method
-  - lr_scheduler
+  - optimizer
+  - scheduler
+- Suggested Tune
+   - init_lr
+   - early_stop_threshold
+   - optimizer_kwargs
+   - scheduler_kwargs
+- Suggested Default
+   - n_trials
+   - max_epochs
+   - mini_batch_size
+   - num_workers
+   - loss
+   - early_stop_patience
+   - p
 
-The **Suggested Default** parameters are ones we have preset and suggest not be altered too much. Naturally, the user may change them at their discretion, however these values were found to be stable and optimal.
+The **Suggested Default** parameters are ones we have preset and suggest not be altered too much. Naturally, the user may change them at their discretion.
 
 The **Suggested Tune** parameters are highly recommended to be tuned, and are very application specific.
 
@@ -179,80 +217,76 @@ The **Application Specific** parameters then are simply ones that the user must 
 ##### Available Datasets for Training #####
 ---
 **yaml identifier: dataset**
-Currently only the following datasets are supported:
+Currently the following datasets are supported:
 - CIFAR10
 - CIFAR100
-- ImageNet (see [Common Issues](#common-issues--running-list-))
+- ImageNet
 
 ##### Available Models for Training #####
 
 ---
 **yaml identifier: network**
-All models used can be found in [src/adas/models](src/adas/models) in this repository are copied from [pytorch-cifar](https://github.com/kuangliu/pytorch-cifar). We note that modifications were made to these models to allow variable `num_classes` to be used, relative to the dataset being used for training. The available models are as follows:
-- VGG16
-- ResNet34
-- PreActResNet18
+All models used can be found in [src/autolr/models](src/adas/models). They are a combination of [PyTorch](https://github.com/pytorch/pytorch) and [pytorch-cifar](https://github.com/kuangliu/pytorch-cifar) models.
+- AlexNet
+- DenseNet201 | DenseNet169 | DenseNet161 | DenseNet121 | DenseNet121CIFAR
 - GoogLeNet
-- densenet_cifar
-- ResNeXt29_2x64d
-- MobileNet
+- InceptionV3
+- MNASNet_0_5 | MNASNet_0_75 | MNASNet_1 | MNASNet_1_3
 - MobileNetV2
-- DPN92
-- ShuffleNetG2
-- SENet18
-- ShuffleNetV2
-- EfficientNetB0
+- ResNet18 | ResNet34 | ResNet50 | ResNet101 | ResNet152 | ResNext50 | ResNext101 | ResNet18CIFAR | ResNet34CIFAR
+- ResNeXtCIFAR
+- WideResNet50 | WideResNet101
+- ShuffleNetV2_0_5 | ShuffleNetV2_1 | ShuffleNetV2_1_5 | ShuffleNetV2_2
+- SqueezeNet_1 | SqueezeNet_1_1
+- VGG11 | VGG11_BN | VGG13 | VGG13_BN | VGG16 | VGG16_BN | VGG19 | VGG19_BN
+- VGG16CIFAR
+- EfficientNetB4 | EfficientNetB0CIFAR
+
 
 ##### Optimizer Method #####
 
 ---
-**yaml identifier: optim_method**
+**yaml identifier: optimizer**
 
 Options:
 - SGD
+- NAG
 - AdaM
 - AdaGrad
 - RMSProp
 - AdaDelta
+- AdaBound
+- AMSBound
+- AdaMax
+- AdaMod
+- AdaShift
+- NAdam
+- NosAdam
+- NovoGrad
+- PAdam
+- RAdam
+- SPS
+- SLS
+- LaProp
+- LearningRateDropout
 
 ##### Learning Rate Scheduler #####
 
 ---
-**yaml identifier: lr_scheduler**
+**yaml identifier: scheduler**
 
 Options:
-- AdaS (Note that `SGD` must be specified as the `optim_method`)
+- AdaS (Note that `SGD` must be specified as the `optimizer`)
 - StepLR
 - CosineAnnealingWarmRestarts
 - OneCycleLR
-
-##### Number of Training Trials #####
-
----
-**yaml identifier: n_trials**
-
-Number of full training cycles
-
-##### Beta #####
-
----
-**yaml identifier: beta**
-
-AdaS gain factor. Tunes the AdaS behaviour. Smaller means faster convergence, but lower final testing loss, and vice-versa.
 
 ##### Initial Learning Rate #####
 
 ---
 **yaml identifier: init_lr**
 
-Initial learning rate for the optimizer method
-
-##### Max Epochs #####
-
----
-**yaml identifier: max_epoch**
-
-Maximum number of epochs for one trial
+Initial learning rate for the optimizer method. Note that specifying 'auto' will run the AutoLR algorithm to determine the optimal initial learning rate.
 
 ##### Early Stopping Threshold #####
 
@@ -265,12 +299,34 @@ The threshold for early stopping. The early stopping criterion operates by keepi
 
 To deactivate early_stopping, set this value to `-1`.
 
-##### Early Stopping Patience #####
+##### Optimizer Arguments #####
 
 ---
-**yaml identifier: early_stop_patience**
+**yaml identifier: optimizer_kwargs**
 
-Patience window for early stopping.
+Specific arguments to pass to the selected optimizer. Expecting a dictionary, where keys are the exact argument names. There are certain required arguments for certain optimizers, which can be seen listed in [src/autolr/optim/__init__.py](src/autolr/optim/__init__.py). If not passing any arguments, ensure an empty list is the value.
+
+##### Scheduler Arguments #####
+
+---
+**yaml identifier: scheduler_kwargs**
+
+Same as above, but for scheduler argument.
+
+##### Number of Training Trials #####
+
+---
+**yaml identifier: n_trials**
+
+Number of full training cycles
+
+
+##### Max Epochs #####
+
+---
+**yaml identifier: max_epoch**
+
+Maximum number of epochs for one trial
 
 ##### Mini-Batch Size #####
 
@@ -279,19 +335,12 @@ Patience window for early stopping.
 
 Size of mini-batch for one epoch
 
-##### Minimum Learning Rate #####
+##### Early Stopping Patience #####
 
 ---
-**yaml identifier: mini_batch_size**
+**yaml identifier: early_stop_patience**
 
-Size of mini-batch for one epoch
-
-##### Zeta #####
-
----
-**yaml identifier: zeta**
-
-The knowledge-gain hyper-parameter, another AdaS hyper-parameter. Typically always set to 1.
+Patience window for early stopping.
 
 ##### Power #####
 
@@ -305,7 +354,7 @@ Power value for computing knowledge-gain. Can either be `1` or `2`.
 ##### XLSX Output #####
 Note that training progress is conveyed through console outputs, where per-epoch statements are outputed to indicate epoch time and train/test loss/accuracy.
 
-Note also that a per-epoch updating `.xlsx` file is created for every training session. This file reports performance metrics of the CNN during training. An example is show in Table 2.
+Note also that a per-epoch `.csv` file is created for every training session. This file reports performance metrics of the CNN during training.
 Table 2: Performance metrics of VGG16 trained on CIFAR100 - 1 Epoch
 | Conv Block  | Train_loss_epoch_0 | in_S_epoch_0      | out_S_epoch_0     | fc_S_epoch_0      | in_rank_epoch_0 | out_rank_epoch_0 | fc_rank_epoch_0 | in_condition_epoch_0 | out_condition_epoch_0 | rank_velocity_0 | learning_rate_0 | acc_epoch_0 |
 |----|--------------------|-------------------|-------------------|-------------------|-----------------|------------------|-----------------|----------------------|-----------------------|-----------------|-----------------|-------------|
@@ -339,7 +388,7 @@ Where each row represents a single convolutional block and:
 
 The columns will continue to grow during training, appending each epoch's metrics each time.
 
-The location of the output `.xlsx` file depends on the `-root` and `--output` option during training, and naming of the file is determined by the `config.yaml` file's contents.
+The location of the output `.csv` file depends on the `--root` and `--output` option during training, and naming of the file is determined by the `config.yaml` file's contents.
 
 ##### Checkpoints #####
 Checkpoints are saved to the path specified by the `-root` and `--checkpoint` option. A file or directory may be passed. If a directory path is specified, the filename for the checkpoint defaults to `ckpt.pth`.
