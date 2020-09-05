@@ -299,8 +299,10 @@ class TrainingAgent:
             optimizer_kwargs=self.config['optimizer_kwargs'],
             scheduler_kwargs=self.config['scheduler_kwargs'])
         self.early_stop.reset()
+        self.best_acc1 = -1.
 
     def train(self) -> None:
+        original_check_path = self.checkpoint_path
         if not isinstance(self.config['init_lr'], list):
             list_lr = [self.config['init_lr']]
         else:
@@ -310,6 +312,8 @@ class TrainingAgent:
                 learning_rate = auto_lr(self)
             lr_output_path = self.output_path / f'lr-{learning_rate}'
             lr_output_path.mkdir(exist_ok=True, parents=True)
+            self.checkpoint_path = original_check_path / f'lr-{learning_rate}'
+            self.checkpoint_path.mkdir(exist_ok=True, parents=True)
             for trial in range(self.start_trial,
                                self.config['n_trials']):
                 self.reset(learning_rate)
@@ -319,7 +323,8 @@ class TrainingAgent:
                         self.checkpoint['state_dict_network'])
                     self.optimizer.load_state_dict(
                         self.checkpoint['state_dict_optimizer'])
-                    if not isinstance(self.scheduler, AdaS):
+                    if not isinstance(self.scheduler, AdaS) and \
+                            self.scheduler is not None:
                         self.scheduler.load_state_dict(
                             self.checkpoint['state_dict_scheduler'])
                     else:
@@ -353,6 +358,7 @@ class TrainingAgent:
                 Profiler.stream = None
 
     def run_epochs(self, trial: int, epochs: List[int]) -> None:
+        data = {}
         for epoch in epochs:
             if self.dist:
                 self.train_sampler.set_epoch(epoch)
@@ -394,13 +400,14 @@ class TrainingAgent:
                         'state_dict_network': self.network.state_dict(),
                         'state_dict_optimizer': self.optimizer.state_dict(),
                         'state_dict_scheduler': self.scheduler.state_dict()
-                        if not isinstance(self.scheduler, AdaS) else None,
+                        if not isinstance(self.scheduler, AdaS) and
+                        self.scheduler is not None else None,
                         'best_acc1': self.best_acc1,
                         'performance_statistics': self.performance_statistics,
                         'output_filename': Path(self.output_filename).name,
                         'historical_metrics': self.metrics.historical_metrics}
                 if epoch % self.save_freq == 0:
-                    filename = f'trial_{trial}_epoch_{epoch}.pth.tar'
+                    filename = f'trial_{trial}.pth.tar'
                     torch.save(data, str(self.checkpoint_path / filename))
                 if np.greater(test_acc1, self.best_acc1):
                     self.best_acc1 = test_acc1
