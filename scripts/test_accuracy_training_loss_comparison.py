@@ -48,11 +48,12 @@ evaluation_directory = '/home/mat/playgrounds/cumprod08/iteration-4-final/resnet
 evaluation_directory = '/home/mat/work/U-of-T/summer-research/mml/lr-range-feature/cumprod-08-results/iteration-4-final'
 evaluation_directory = '/home/mat/playgrounds/iteration4/iteration-4-final/resnext-cifar10/'
 evaluation_directory = '/home/mat/playgrounds/steplr-auto//iteration-6-step-95//resnet34-cifar100/'
+evaluation_directory = '/home/mat/work/U-of-T/summer-research/mml/lr-range-feature/final-draft-results/imagenet/resnet34/'
 
 # for net in Path(evaluation_directory).iterdir():
-for net in ['resnext']:
+for net in ['resnet34']:
     print(net)
-    EPOCHS = 250
+    EPOCHS = 150
     optimizers = list()
     global optimizer
     l_sorted_files = sorted(Path(evaluation_directory).iterdir())
@@ -95,7 +96,7 @@ for net in ['resnext']:
         #     files.append(str(excel_file))
         # for d in (optimizer_folder / '.output').iterdir():
         for excel_file in (optimizer_folder).iterdir():
-            if '.csv' == excel_file.suffix:
+            if '.csv' == excel_file.suffix and 'results_' not in str(excel_file.name):
                 continue
             files.append(str(excel_file))
         train_acc_data = np.empty((EPOCHS, len(files)))
@@ -107,19 +108,34 @@ for net in ['resnext']:
         test_loss_data = np.empty((EPOCHS, len(files)))
         test_loss_data[:] = np.nan
         for j, f in enumerate(files):
-            df = pd.read_excel(str(f)).T
-            adas_offset = 1 if 'AdaS' in str(f).split('/')[-1] else 0
-            adas_offset = 0 if 'AdaShift' in str(
-                f).split('/')[-1] else adas_offset
+            if Path(f).suffix == '.xlsx':
+                df = pd.read_excel(str(f)).T
+            else:
+                df = pd.read_csv(str(f)).T
+            # adas_offset = 1 if 'AdaS' in str(f).split('/')[-1] else 0
+            adas_offset = 1 if 'AdaS' in optimizers[s] else 0
+            # adas_offset = 0 if 'AdaShift' in str(
+            #     f).split('/')[-1] else adas_offset
+            adas_offset = 0 if 'AdaShift' in optimizers[s] else adas_offset
 
-            train_acc_vec = np.asarray(
-                df.iloc[1::13 + adas_offset, :])[:EPOCHS, :]
-            train_loss_vec = np.asarray(
-                df.iloc[2::13 + adas_offset, :])[:EPOCHS, :]
-            test_acc_vec = np.asarray(
-                df.iloc[12 + adas_offset::13 + adas_offset, :])[:EPOCHS, :]
-            test_loss_vec = np.asarray(
-                df.iloc[13 + adas_offset::13 + adas_offset, :])[:EPOCHS, :]
+            if 'results_' in str(f):
+                train_acc_vec = np.asarray(
+                    df.iloc[1::15 + adas_offset, :])[:EPOCHS, :]
+                train_loss_vec = np.asarray(
+                    df.iloc[3::15 + adas_offset, :])[:EPOCHS, :]
+                test_acc_vec = np.asarray(
+                    df.iloc[13 + adas_offset::15 + adas_offset, :])[:EPOCHS, :]
+                test_loss_vec = np.asarray(
+                    df.iloc[15 + adas_offset::15 + adas_offset, :])[:EPOCHS, :]
+            else:
+                train_acc_vec = np.asarray(
+                    df.iloc[1::13 + adas_offset, :])[:EPOCHS, :]
+                train_loss_vec = np.asarray(
+                    df.iloc[2::13 + adas_offset, :])[:EPOCHS, :]
+                test_acc_vec = np.asarray(
+                    df.iloc[12 + adas_offset::13 + adas_offset, :])[:EPOCHS, :]
+                test_loss_vec = np.asarray(
+                    df.iloc[13 + adas_offset::13 + adas_offset, :])[:EPOCHS, :]
             train_acc_data[:len(train_acc_vec), j] = train_acc_vec[:, 0]
             train_loss_data[:len(train_loss_vec), j] = train_loss_vec[:, 0]
             test_acc_data[:len(test_acc_vec), j] = test_acc_vec[:, 0]
@@ -133,7 +149,7 @@ for net in ['resnext']:
         nan_locs = np.where(np.isnan(test_acc_data))
         len_ = len(test_acc_data) if len(
             nan_locs[1]) == 0 else nan_locs[0][0]
-        print(f"ACC at 250: {100*test_acc_data[:len_, :].mean(1)[-1]}%")
+        print(f"ACC at 150: {100*test_acc_data[:len_, :].mean(1)[-1]}%")
         print(f"Max ACC : {100*np.max(test_acc_data[:len_, :].mean(1))}%")
         std = 100*test_acc_data[:len_, :].std(1)[-1]
         print(f"STD: {std}%")

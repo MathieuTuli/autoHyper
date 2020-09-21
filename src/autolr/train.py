@@ -338,7 +338,7 @@ class TrainingAgent:
                     epochs = range(0, self.config['max_epochs'])
                     self.output_filename = "results_" +\
                         f"date={datetime.now().strftime('%Y-%m-%d-%H-%M-%S')}_" +\
-                        f"trial=AdaS_trial={trial}_" +\
+                        f"trial={trial}_" +\
                         f"network={self.config['network']}_" +\
                         f"dataset={self.config['dataset']}" +\
                         f"optimizer={self.config['optimizer']}" +\
