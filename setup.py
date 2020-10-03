@@ -2,7 +2,7 @@ from setuptools import setup
 from glob import glob
 
 setup(
-    name='autolr',
+    name='autohyper',
     use_scm_version=True,
     packages=[''],
     package_dir={'': 'src'},

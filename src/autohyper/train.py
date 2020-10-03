@@ -46,7 +46,7 @@ if mod_name is not None:
     from .optim.lr_scheduler import CosineAnnealingWarmRestarts, StepLR, \
         OneCycleLR
     from .optim import get_optimizer_scheduler
-    from .autohyper import auto_lr
+    from .autoHyper import auto_lr
     from .early_stop import EarlyStop
     from .models import get_network
     from .utils import parse_config
@@ -61,7 +61,7 @@ else:
     from optim.lr_scheduler import CosineAnnealingWarmRestarts, StepLR, \
         OneCycleLR
     from optim import get_optimizer_scheduler
-    from autohyper import auto_lr
+    from autoHyper import auto_lr
     from early_stop import EarlyStop
     from models import get_network
     from utils import parse_config
