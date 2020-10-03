@@ -46,7 +46,7 @@ if mod_name is not None:
     from .optim.lr_scheduler import CosineAnnealingWarmRestarts, StepLR, \
         OneCycleLR
     from .optim import get_optimizer_scheduler
-    from .lr_range_test import auto_lr
+    from .autohyper import auto_lr
     from .early_stop import EarlyStop
     from .models import get_network
     from .utils import parse_config
@@ -61,7 +61,7 @@ else:
     from optim.lr_scheduler import CosineAnnealingWarmRestarts, StepLR, \
         OneCycleLR
     from optim import get_optimizer_scheduler
-    from lr_range_test import auto_lr
+    from autohyper import auto_lr
     from early_stop import EarlyStop
     from models import get_network
     from utils import parse_config
@@ -196,6 +196,7 @@ class TrainingAgent:
         self.world_size = world_size
         self.dist_backend = dist_backend
         self.ngpus_per_node = ngpus_per_node
+        self.date = datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
 
         self.data_path = data_path
         self.output_path = output_path
@@ -336,15 +337,16 @@ class TrainingAgent:
                         'performance_statistics']
                 else:
                     epochs = range(0, self.config['max_epochs'])
-                    self.output_filename = "results_" +\
-                        f"date={datetime.now().strftime('%Y-%m-%d-%H-%M-%S')}_" +\
+                    self.output_filename = +\
+                        "results_" +\
+                        f"date={self.date}_" +\
                         f"trial={trial}_" +\
                         f"network={self.config['network']}_" +\
-                        f"dataset={self.config['dataset']}" +\
+                        f"dataset={self.config['dataset']}_" +\
                         f"optimizer={self.config['optimizer']}" +\
                         '_'.join([f"{k}={v}" for k, v in
                                   self.config['optimizer_kwargs'].items()]) +\
-                        f"_scheduler={self.config['scheduler']}" +\
+                        f"_scheduler={self.config['scheduler']}_" +\
                         '_'.join([f"{k}={v}" for k, v in
                                   self.config['scheduler_kwargs'].items()]) +\
                         f"_learning_rate={learning_rate}" +\
