@@ -79,6 +79,7 @@ def auto_lr(training_agent,
     cur_rank = -1
     auto_lr_path = training_agent.output_path / 'auto-lr'
     auto_lr_path.mkdir(exist_ok=True)
+    date = datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
     while True:
         with (training_agent.output_path / 'lrrt.csv').open('w+') as f:
             f.write('lr,rank,msg\n')
@@ -107,14 +108,13 @@ def auto_lr(training_agent,
         training_agent.output_filename.mkdir(exist_ok=True, parents=True)
         string_name = \
             "auto_lr_results_" +\
-            f"date={datetime.now().strftime('%Y-%m-%d-%H-%M-%S')}_" +\
-            f"trial=AdaS_trial={0}_" +\
+            f"date={date}_" +\
             f"network={training_agent.config['network']}_" +\
-            f"dataset={training_agent.config['dataset']}" +\
-            f"optimizer={training_agent.config['optimizer']}" +\
+            f"dataset={training_agent.config['dataset']}_" +\
+            f"optimizer={training_agent.config['optimizer']}_" +\
             '_'.join([f"{k}={v}" for k, v in
                       training_agent.config['optimizer_kwargs'].items()]) +\
-            f"_scheduler={training_agent.config['scheduler']}" +\
+            f"_scheduler={training_agent.config['scheduler']}_" +\
             '_'.join([f"{k}={v}" for k, v in
                       training_agent.config['scheduler_kwargs'].items()]) +\
             f"_learning_rate={learning_rates[lr_idx]}" +\

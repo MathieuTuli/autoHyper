@@ -337,13 +337,13 @@ class TrainingAgent:
                         'performance_statistics']
                 else:
                     epochs = range(0, self.config['max_epochs'])
-                    self.output_filename = +\
-                        "results_" +\
+                    self.output_filename = \
+                        "train_results_" +\
                         f"date={self.date}_" +\
                         f"trial={trial}_" +\
                         f"network={self.config['network']}_" +\
                         f"dataset={self.config['dataset']}_" +\
-                        f"optimizer={self.config['optimizer']}" +\
+                        f"optimizer={self.config['optimizer']}_" +\
                         '_'.join([f"{k}={v}" for k, v in
                                   self.config['optimizer_kwargs'].items()]) +\
                         f"_scheduler={self.config['scheduler']}_" +\
