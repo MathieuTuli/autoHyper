@@ -31,7 +31,7 @@ import torch
 
 mod_name = vars(sys.modules[__name__])['__name__']
 
-if 'autolr.' in mod_name:
+if 'autohyper.' in mod_name:
     from .datasets import ImageNet, TinyImageNet
 else:
     from datasets import ImageNet, TinyImageNet

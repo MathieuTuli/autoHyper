@@ -114,10 +114,10 @@ def auto_lr(training_agent,
             f"optimizer={training_agent.config['optimizer']}_" +\
             '_'.join([f"{k}={v}" for k, v in
                       training_agent.config['optimizer_kwargs'].items()]) +\
-            f"_scheduler={training_agent.config['scheduler']}_" +\
+            f"scheduler={training_agent.config['scheduler']}_" +\
             '_'.join([f"{k}={v}" for k, v in
                       training_agent.config['scheduler_kwargs'].items()]) +\
-            f"_learning_rate={learning_rates[lr_idx]}" +\
+            f"learning_rate={learning_rates[lr_idx]}" +\
             ".csv".replace(' ', '-')
         training_agent.output_filename = str(
             training_agent.output_filename / string_name)

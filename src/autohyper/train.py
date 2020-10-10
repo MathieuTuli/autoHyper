@@ -76,7 +76,7 @@ else:
 
 def args(sub_parser: _SubParsersAction):
     # print("\n---------------------------------")
-    # print("AutoLR Train Args")
+    # print("autoHyper Train Args")
     # print("---------------------------------\n")
     # sub_parser.add_argument(
     #     '-vv', '--very-verbose', action='store_true',
@@ -94,16 +94,16 @@ def args(sub_parser: _SubParsersAction):
         help="Set configuration file path: Default = 'config.yaml'")
     sub_parser.add_argument(
         '--data', dest='data',
-        default='.autolr-data', type=str,
-        help="Set data directory path: Default = '.autolr-data'")
+        default='.autohyper-data', type=str,
+        help="Set data directory path: Default = '.autohyper-data'")
     sub_parser.add_argument(
         '--output', dest='output',
-        default='.autolr-output', type=str,
-        help="Set output directory path: Default = '.autolr-output'")
+        default='.autohyper-output', type=str,
+        help="Set output directory path: Default = '.autohyper-output'")
     sub_parser.add_argument(
         '--checkpoint', dest='checkpoint',
-        default='.autolr-checkpoint', type=str,
-        help="Set checkpoint directory path: Default = '.autolr-checkpoint'")
+        default='.autohyper-checkpoint', type=str,
+        help="Set checkpoint directory path: Default = '.autohyper-checkpoint'")
     sub_parser.add_argument(
         '--resume', dest='resume',
         default=None, type=str,
@@ -203,7 +203,7 @@ class TrainingAgent:
         self.checkpoint_path = checkpoint_path
 
         self.load_config(config_path, data_path)
-        print("AutoLR: Experiment Configuration")
+        print("autoHyper: Experiment Configuration")
         print("-"*45)
         for k, v in self.config.items():
             if isinstance(v, list) or isinstance(v, dict):
@@ -233,12 +233,12 @@ class TrainingAgent:
         self.criterion = torch.nn.CrossEntropyLoss().cuda(self.gpu) if \
             config['loss'] == 'cross_entropy' else None
         if np.less(float(config['early_stop_threshold']), 0):
-            print("AutoLR: Notice: early stop will not be used as it was " +
+            print("autoHyper: Notice: early stop will not be used as it was " +
                   f"set to {config['early_stop_threshold']}, " +
                   "training till completion")
         elif config['optimizer'] != 'SGD' and \
-                config['lr_scheduler'] != 'AdaS':
-            print("AutoLR: Notice: early stop will not be used as it is not " +
+                config['scheduler'] != 'AdaS':
+            print("autoHyper: Notice: early stop will not be used as it is not " +
                   "SGD with AdaS, training till completion")
             config['early_stop_threshold'] = -1.
         self.early_stop = EarlyStop(
@@ -346,10 +346,10 @@ class TrainingAgent:
                         f"optimizer={self.config['optimizer']}_" +\
                         '_'.join([f"{k}={v}" for k, v in
                                   self.config['optimizer_kwargs'].items()]) +\
-                        f"_scheduler={self.config['scheduler']}_" +\
+                        f"scheduler={self.config['scheduler']}_" +\
                         '_'.join([f"{k}={v}" for k, v in
                                   self.config['scheduler_kwargs'].items()]) +\
-                        f"_learning_rate={learning_rate}" +\
+                        f"learning_rate={learning_rate}" +\
                         ".csv".replace(' ', '-')
                 self.output_filename = str(
                     lr_output_path / self.output_filename)
@@ -392,7 +392,7 @@ class TrainingAgent:
 
             df.to_csv(self.output_filename)
             if self.early_stop(train_loss):
-                print("AutoLR: Early stop activated.")
+                print("autoHyper: Early stop activated.")
                 break
             if not self.mpd or \
                     (self.mpd and self.rank % self.ngpus_per_node == 0):
@@ -606,12 +606,13 @@ def setup_dirs(args: APNamespace) -> Tuple[Path, Path, Path, Path]:
     checkpoint_path = root_path / Path(args.checkpoint).expanduser()
 
     if not config_path.exists():
-        raise ValueError(f"AutoLR: Config path {config_path} does not exist")
+        raise ValueError(
+            f"autoHyper: Config path {config_path} does not exist")
     if not data_path.exists():
-        print(f"AutoLR: Data dir {data_path} does not exist, building")
+        print(f"autoHyper: Data dir {data_path} does not exist, building")
         data_path.mkdir(exist_ok=True, parents=True)
     if not output_path.exists():
-        print(f"AutoLR: Output dir {output_path} does not exist, building")
+        print(f"autoHyper: Output dir {output_path} does not exist, building")
         output_path.mkdir(exist_ok=True, parents=True)
     if not checkpoint_path.exists():
         checkpoint_path.mkdir(exist_ok=True, parents=True)
@@ -623,7 +624,7 @@ def setup_dirs(args: APNamespace) -> Tuple[Path, Path, Path, Path]:
 
 
 def main(args: APNamespace):
-    print("AutoLR: Argument Parser Options")
+    print("autoHyper: Argument Parser Options")
     print("-"*45)
     for arg in vars(args):
         attr = getattr(args, arg)
@@ -668,7 +669,7 @@ def main_worker(gpu: int, ngpus_per_node: int, args: APNamespace):
         mpd=args.mpd,
         dist_url=args.dist_url,
         dist_backend=args.dist_backend)
-    print(f"AutoLR: Pytorch device is set to {training_agent.device}")
+    print(f"autoHyper: Pytorch device is set to {training_agent.device}")
     training_agent.train()
 
 
