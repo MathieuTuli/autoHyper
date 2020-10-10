@@ -1,8 +1,8 @@
-To start training, you must first define your training configuration file. An example can be found at [src/autolr/config.yaml](src/autolr/config.yaml). Finally, run
+To start training, you must first define your training configuration file. An example can be found at [src/autohyper/config.yaml](src/autohyper/config.yaml). Finally, run
 ```console
 python -m adas train --config path-to-config.yaml
 ```
-Where you specify the path of your `config.yaml` file. Note the following additional options for autolr:
+Where you specify the path of your `config.yaml` file. Note the following additional options for autoHyper:
 ```console
 usage: __main__.py train [-h] [--config CONFIG] [--data DATA]
                          [--output OUTPUT] [--checkpoint CHECKPOINT]
@@ -15,10 +15,10 @@ usage: __main__.py train [-h] [--config CONFIG] [--data DATA]
 optional arguments:
   -h, --help            show this help message and exit
   --config CONFIG       Set configuration file path: Default = 'config.yaml'
-  --data DATA           Set data directory path: Default = '.autolr-data'
-  --output OUTPUT       Set output directory path: Default = '.autolr-output'
+  --data DATA           Set data directory path: Default = '.autohyper-data'
+  --output OUTPUT       Set output directory path: Default = '.autohyper-output'
   --checkpoint CHECKPOINT
-                        Set checkpoint directory path: Default = '.autolr-checkpoint'
+                        Set checkpoint directory path: Default = '.autohyper-checkpoint'
   --resume RESUME       Set checkpoint resume path: Default = None
   --root ROOT           Set root path of project that parents all others:
                         Default = '.'
@@ -79,7 +79,7 @@ Currently the following datasets are supported:
 
 ---
 **yaml identifier: network**
-All models used can be found in [src/autolr/models](src/adas/models). They are a combination of [PyTorch](https://github.com/pytorch/pytorch) and [pytorch-cifar](https://github.com/kuangliu/pytorch-cifar) models.
+All models used can be found in [src/autohyper/models](src/adas/models). They are a combination of [PyTorch](https://github.com/pytorch/pytorch) and [pytorch-cifar](https://github.com/kuangliu/pytorch-cifar) models.
 - AlexNet
 - DenseNet201 | DenseNet169 | DenseNet161 | DenseNet121 | DenseNet121CIFAR
 - GoogLeNet
@@ -139,7 +139,7 @@ Options:
 ---
 **yaml identifier: init_lr**
 
-Initial learning rate for the optimizer method. Note that specifying 'auto' will run the AutoLR algorithm to determine the optimal initial learning rate.
+Initial learning rate for the optimizer method. Note that specifying 'auto' will run the autoHyper algorithm to determine the optimal initial learning rate.
 
 #### Early Stopping Threshold ####
 
@@ -157,7 +157,7 @@ To deactivate early_stopping, set this value to `-1`.
 ---
 **yaml identifier: optimizer_kwargs**
 
-Specific arguments to pass to the selected optimizer. Expecting a dictionary, where keys are the exact argument names. There are certain required arguments for certain optimizers, which can be seen listed in [src/autolr/optim/__init__.py](src/autolr/optim/__init__.py). If not passing any arguments, ensure an empty list is the value.
+Specific arguments to pass to the selected optimizer. Expecting a dictionary, where keys are the exact argument names. There are certain required arguments for certain optimizers, which can be seen listed in [src/autohyper/optim/__init__.py](src/autohyper/optim/__init__.py). If not passing any arguments, ensure an empty list is the value.
 
 #### Scheduler Arguments ####
 

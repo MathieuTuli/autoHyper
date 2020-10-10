@@ -1,5 +1,5 @@
-There are two versions of the AdaS code contained in this repository.
-1. a python-package version of the AdaS code, which can be `pip`-installed.
+There are two versions of the autoHyper code contained in this repository.
+1. a python-package version of the autoHyper code, which can be `pip`-installed.
 2. a static python module (unpackaged), runable as a script.
 
 #### Python Package ####
@@ -7,7 +7,7 @@ There are two versions of the AdaS code contained in this repository.
 ---
 
 ##### Repository Cloning #####
-After cloning the repository (`git clone https://github.com/MathieuTuli/AutoLR.git`), simply run
+After cloning the repository (`git clone https://github.com/MathieuTuli/autoHyper.git`), simply run
 ```console
 python setup.py build
 python setup.py install
