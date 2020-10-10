@@ -7,18 +7,17 @@
 ![size](https://img.shields.io/github/repo-size/MathieuTuli/autoHyper)
 
 ## Table of Contents ##
-- [autoHyper: Response Modeling of Hyper-Parameters for Deep Convolutional Neural Networks](#autohyper--response-modeling-of-hyper-parameters-for-deep-convolutional-neural-networks)
-  * [Introduction](#introduction)
-  * [License](#license)
-  * [Citing autoHyper](#citing-autohyper)
-  * [Requirements](#requirements)
-    - [Software/Hardware](#software-hardware)
-  * [Installation](#installation)
-  * [Usage](#usage)
-    - [Training Outputs](#training-outputs)
-  * [Common Issues (running list)](#common-issues--running-list-)
-  * [TODO](#todo)
-  * [Pytest](#pytest)
+* [Introduction](#introduction)
+* [License](#license)
+* [Citing autoHyper](#citing-autohyper)
+* [Requirements](#requirements)
+  - [Software/Hardware](#software-hardware)
+* [Installation](#installation)
+* [Usage](#usage)
+  - [Training Outputs](#training-outputs)
+* [Common Issues (running list)](#common-issues--running-list-)
+* [TODO](#todo)
+* [Pytest](#pytest)
 
 <small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
 
