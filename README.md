@@ -9,7 +9,7 @@
 ## Table of Contents ##
 
 ### Introduction ###
-[autoHyper]() is an algorithm to automatically determine the optimal initial learning rate for Neural Networks:
+[autoHyper]() is an algorithm that automatically determines the optimal initial learning rate for Neural Networks:
 - it exhibits rapid convergence (on the order of minutes and hours)
 - it generalizes well to model, dataset, optimizer selection (amoungst other experimental settings)
 
