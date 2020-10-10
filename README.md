@@ -1,4 +1,4 @@
-# autoHyper: Response Modeling of Hyper-Parameters for Deep Convolutional Neural Networks#
+# autoHyper: Response Modeling of Hyper-Parameters for Deep Convolutional Neural Networks #
 [Paper]()
 ## Status ##
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -7,6 +7,20 @@
 ![size](https://img.shields.io/github/repo-size/MathieuTuli/autoHyper)
 
 ## Table of Contents ##
+- [autoHyper: Response Modeling of Hyper-Parameters for Deep Convolutional Neural Networks](#autohyper--response-modeling-of-hyper-parameters-for-deep-convolutional-neural-networks)
+  * [Introduction](#introduction)
+  * [License](#license)
+  * [Citing autoHyper](#citing-autohyper)
+  * [Requirements](#requirements)
+    - [Software/Hardware](#software-hardware)
+  * [Installation](#installation)
+  * [Usage](#usage)
+    - [Training Outputs](#training-outputs)
+  * [Common Issues (running list)](#common-issues--running-list-)
+  * [TODO](#todo)
+  * [Pytest](#pytest)
+
+<small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
 
 ### Introduction ###
 [autoHyper]() is an algorithm that automatically determines the optimal initial learning rate for Neural Networks:
@@ -135,7 +149,7 @@ In addition to console outputs, all information is also logged in `csv` files du
 ### Common Issues (running list) ###
 - NONE :)
 
-## TODO ###
+### TODO ###
 - Extension of AdaS to Deep Neural Networks
 
 ### Pytest ###
