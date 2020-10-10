@@ -12,9 +12,17 @@
 [autoHyper]() is an algorithm that automatically determines the optimal initial learning rate for Neural Networks:
 - it exhibits rapid convergence (on the order of minutes and hours)
 - it generalizes well to model, dataset, optimizer selection (amoungst other experimental settings)
-- in always achieves competitive performance (<1% difference on top-1 testing accuracy) and in some cases, drasticaly improves (such as a 4.93% increase in top-1 testing accuracy for ResNet34 trainined using AdaM applied on ImageNet)
+- it always achieves competitive performance (<1% difference on top-1 testing accuracy) and in some cases, drasticaly improves (such as a 4.93% increase in top-1 testing accuracy for ResNet34 trainined using AdaM applied on ImageNet)
 
 This repository contains a [PyTorch](https://pytorch.org/) implementation of autoHyper.
+
+Figure 1: Top-1 test accuracies for each experiment as well as training loss results for CIFAR10 experiments and top-1 training accuracies for TinyImageNet and ImageNet experiments. Titles below plots indicate what experiment the above plots refers to. Legend labels marked by `*' (opaque lines) show results for autoHyper generated learning rates and translucent lines are the baselines.
+![CIFAR10 Results](figures/cifar10_results.png)
+![CIFAR100 Results](figures/cifar100_results.png)
+![TinyImageNet/ImageNet Results](figures/tiny_imagenet_combined_results.png)
+
+Figure 2: Computational analysis of autoHyper over various setups (number of learning rates autoHyper trialled before converging). ResNet34 trials take 3 minutes, 3 minutes, 18 minutes, and 220 minutes for CIFAR10, CIFAR100, TinyImageNet and, ImageNet, respectively. ResNet18, ResNeXt50, and DenseNet121 trials take 2 minutes, 3 minutes, and 3 minutes respectively for both CIFAR10 and CIFAR100.
+![Computational Complexity](figures/complexity.png)
 
 ### License ###
 autoHyper is released under the MIT License (refer to the [LICENSE](LICENSE) file for more information)
