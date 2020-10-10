@@ -12,6 +12,7 @@
 [autoHyper]() is an algorithm that automatically determines the optimal initial learning rate for Neural Networks:
 - it exhibits rapid convergence (on the order of minutes and hours)
 - it generalizes well to model, dataset, optimizer selection (amoungst other experimental settings)
+- in always achieves competitive performance (<1% difference on top-1 testing accuracy) and in some cases, drasticaly improves (such as a 4.93% increase in top-1 testing accuracy for ResNet34 trainined using AdaM applied on ImageNet)
 
 This repository contains a [PyTorch](https://pytorch.org/) implementation of autoHyper.
 
@@ -38,16 +39,87 @@ Refer [requirements.txt](requirements.txt) for the required Python Packages. Add
 ### Installation ###
 There are two versions of the AdaS code contained in this repository.
 1. a python-package version of the AdaS code, which can be `pip`-installed.
+ - `pip install -e .` or `pip install .` will install the package
 2. a static python module (unpackaged), runable as a script.
 
-All source code can be found in [src/autohyper](src/autohyper). Additional details can be found on the [Installation Wiki](Installation.md)
+All source code can be found in [src/autohyper](src/autohyper).
 
 ### Usage ###
 Moving forward, I will refer to console usage of this library. IDE usage is no different. Training options are split two ways:
 1. First, all environment/infrastructure options (GPU usage, output paths, etc.) is specified using arguments.
 2. Second, all training specific options (network, dataset, hyper-parameters, etc.) is specified using a [YAML](https://yaml.org/) configuration file.
 
-For additional details refers to the [Usage Wiki](Usage.md)
+For the packaged code, after installation, training can be run using the following command: `python -m autohyper train ...`
+
+For the unpackaged code, training can be run using the following command: `python train.py ...` ([src/autohyper/train.py](src/autohyper/train.py))
+
+
+```console
+python -m autohyper train --help
+
+usage: __main__.py train [-h] [--config CONFIG] [--data DATA]
+                         [--output OUTPUT] [--checkpoint CHECKPOINT]
+                         [--resume RESUME] [--root ROOT]
+                         [--save-freq SAVE_FREQ] [--cpu] [--gpu GPU]
+                         [--multiprocessing-distributed] [--dist-url DIST_URL]
+                         [--dist-backend DIST_BACKEND]
+                         [--world-size WORLD_SIZE] [--rank RANK]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --config CONFIG       Set configuration file path: Default = 'config.yaml'
+  --data DATA           Set data directory path: Default = '.autohyper-data'
+  --output OUTPUT       Set output directory path: Default = '.autohyper-
+                        output'
+  --checkpoint CHECKPOINT
+                        Set checkpoint directory path: Default = '.autohyper-
+                        checkpoint'
+  --resume RESUME       Set checkpoint resume path: Default = None
+  --root ROOT           Set root path of project that parents all others:
+                        Default = '.'
+  --save-freq SAVE_FREQ
+                        Checkpoint epoch save frequency: Default = 25
+  --cpu                 Flag: CPU bound training: Default = False
+  --gpu GPU             GPU id to use: Default = 0
+  --multiprocessing-distributed
+                        Use multi-processing distributed training to launch N
+                        processes per node, which has N GPUs. This is the
+                        fastest way to use PyTorch for either single node or
+                        multi node data parallel training: Default = False
+  --dist-url DIST_URL   url used to set up distributed training:Default =
+                        'tcp://127.0.0.1:23456'
+  --dist-backend DIST_BACKEND
+                        distributed backend: Default = 'nccl'
+  --world-size WORLD_SIZE
+                        Number of nodes for distributed training: Default = -1
+  --rank RANK           Node rank for distributed training: Default = -1
+ ```
+The following is an example config file:
+```yaml
+###### Application Specific ######
+dataset: 'CIFAR10'
+network: 'ResNet18CIFAR'
+optimizer: 'AdaM'
+scheduler: 'None'
+
+###### Suggested Tune ######
+init_lr: 0.01
+early_stop_threshold: 0.001
+optimizer_kwargs: {}
+scheduler_kwargs: {}
+
+
+###### Suggested Default ######
+n_trials: 5
+num_workers: 4
+max_epochs: 100
+loss: 'cross_entropy'
+mini_batch_size: 128
+early_stop_patience: 10
+p: 1
+```
+
+Refer to the [Usage Wiki](Usage.md) for additional details.
 
 #### Training Outputs ####
 In addition to console outputs, all information is also logged in `csv` files during training.  Details can be foudn in the [Outputs Wiki](Outputs.md)
