@@ -11,10 +11,9 @@
 * [License](#license)
 * [Citing autoHyper](#citing-autohyper)
 * [Requirements](#requirements)
-  - [Software/Hardware](#software-hardware)
 * [Installation](#installation)
 * [Usage](#usage)
-  - [Training Outputs](#training-outputs)
+* [Training Outputs](#training-outputs)
 * [Common Issues (running list)](#common-issues--running-list-)
 * [TODO](#todo)
 * [Pytest](#pytest)
@@ -142,7 +141,7 @@ p: 1
 
 Refer to the [Usage Wiki](Usage.md) for additional details.
 
-#### Training Outputs ####
+### Training Outputs ###
 In addition to console outputs, all information is also logged in `csv` files during training.  Details can be foudn in the [Outputs Wiki](Outputs.md)
 
 ### Common Issues (running list) ###
