@@ -18,8 +18,6 @@
 * [TODO](#todo)
 * [Pytest](#pytest)
 
-<small><i><a href='http://ecotrust-canada.github.io/markdown-toc/'>Table of contents generated with markdown-toc</a></i></small>
-
 ### Introduction ###
 [autoHyper]() is an algorithm that automatically determines the optimal initial learning rate for Neural Networks:
 - it exhibits rapid convergence (on the order of minutes and hours)
@@ -53,8 +51,10 @@ autoHyper is released under the MIT License (refer to the [LICENSE](LICENSE) fil
 ### Requirements ###
 #### Software/Hardware ####
 We use `Python 3.7` (although compatibility with versions >= 3.7 *should not* pose an issue)
-
-Refer [requirements.txt](requirements.txt) for the required Python Packages. Additional details can be found on the [Requirements Wiki](Requirements.md)
+```console
+pip install -r requirements.txt
+```
+Additional details can be found on the [Requirements Wiki](Requirements.md)
 
 ### Installation ###
 There are two versions of the AdaS code contained in this repository.
