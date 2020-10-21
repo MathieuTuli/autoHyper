@@ -7,9 +7,9 @@
 ![size](https://img.shields.io/github/repo-size/MathieuTuli/autoHyper)
 
 ## Table of Contents ##
-* [Introduction](#introduction)
 * [License](#license)
 * [Citing autoHyper](#citing-autohyper)
+* [Introduction](#introduction)
 * [Requirements](#requirements)
 * [Installation](#installation)
 * [Usage](#usage)
@@ -17,22 +17,6 @@
 * [Common Issues (running list)](#common-issues--running-list-)
 * [TODO](#todo)
 * [Pytest](#pytest)
-
-### Introduction ###
-[autoHyper]() is an algorithm that automatically determines the optimal initial learning rate for Neural Networks:
-- it exhibits rapid convergence (on the order of minutes and hours)
-- it generalizes well to model, dataset, optimizer selection (amoungst other experimental settings)
-- it always achieves competitive performance (<1% difference on top-1 testing accuracy) and in some cases, drasticaly improves (such as a 4.93% increase in top-1 testing accuracy for ResNet34 trainined using AdaM applied on ImageNet)
-
-This repository contains a [PyTorch](https://pytorch.org/) implementation of autoHyper.
-
-Figure 1: Top-1 test accuracies for each experiment as well as training loss results for CIFAR10 experiments and top-1 training accuracies for TinyImageNet and ImageNet experiments. Titles below plots indicate what experiment the above plots refers to. Legend labels marked by `*' (opaque lines) show results for autoHyper generated learning rates and translucent lines are the baselines.
-![CIFAR10 Results](figures/cifar10_results.png)
-![CIFAR100 Results](figures/cifar100_results.png)
-![TinyImageNet/ImageNet Results](figures/tiny_imagenet_combined_results.png)
-
-Figure 2: Computational analysis of autoHyper over various setups (number of learning rates autoHyper trialled before converging). ResNet34 trials take 3 minutes, 3 minutes, 18 minutes, and 220 minutes for CIFAR10, CIFAR100, TinyImageNet and, ImageNet, respectively. ResNet18, ResNeXt50, and DenseNet121 trials take 2 minutes, 3 minutes, and 3 minutes respectively for both CIFAR10 and CIFAR100.
-![Computational Complexity](figures/complexity.png)
 
 ### License ###
 autoHyper is released under the MIT License (refer to the [LICENSE](LICENSE) file for more information)
@@ -48,6 +32,17 @@ autoHyper is released under the MIT License (refer to the [LICENSE](LICENSE) fil
 @misc{
 }
 ```
+
+### Introduction ###
+[autoHyper]() is an algorithm that automatically determines the optimal initial learning rate for Neural Networks without the need to perform time consuming grid searching techniques:
+- it exhibits rapid convergence (on the order of minutes and hours)
+- it generalizes well to model, dataset, optimizer selection (amoungst other experimental settings)
+- it always achieves competitive performance (<1% difference on top-1 testing accuracy) and in some cases, drasticaly improves (such as a 4.93% increase in top-1 testing accuracy for ResNet34 trainined using AdaM applied on ImageNet)
+
+This repository contains a [PyTorch](https://pytorch.org/) implementation of autoHyper.
+
+A comprehensive list of expected results can be found in the paper.
+
 ### Requirements ###
 #### Software/Hardware ####
 We use `Python 3.7` (although compatibility with versions >= 3.7 *should not* pose an issue)
@@ -84,36 +79,7 @@ usage: __main__.py train [-h] [--config CONFIG] [--data DATA]
                          [--multiprocessing-distributed] [--dist-url DIST_URL]
                          [--dist-backend DIST_BACKEND]
                          [--world-size WORLD_SIZE] [--rank RANK]
-
-optional arguments:
-  -h, --help            show this help message and exit
-  --config CONFIG       Set configuration file path: Default = 'config.yaml'
-  --data DATA           Set data directory path: Default = '.autohyper-data'
-  --output OUTPUT       Set output directory path: Default = '.autohyper-
-                        output'
-  --checkpoint CHECKPOINT
-                        Set checkpoint directory path: Default = '.autohyper-
-                        checkpoint'
-  --resume RESUME       Set checkpoint resume path: Default = None
-  --root ROOT           Set root path of project that parents all others:
-                        Default = '.'
-  --save-freq SAVE_FREQ
-                        Checkpoint epoch save frequency: Default = 25
-  --cpu                 Flag: CPU bound training: Default = False
-  --gpu GPU             GPU id to use: Default = 0
-  --multiprocessing-distributed
-                        Use multi-processing distributed training to launch N
-                        processes per node, which has N GPUs. This is the
-                        fastest way to use PyTorch for either single node or
-                        multi node data parallel training: Default = False
-  --dist-url DIST_URL   url used to set up distributed training:Default =
-                        'tcp://127.0.0.1:23456'
-  --dist-backend DIST_BACKEND
-                        distributed backend: Default = 'nccl'
-  --world-size WORLD_SIZE
-                        Number of nodes for distributed training: Default = -1
-  --rank RANK           Node rank for distributed training: Default = -1
- ```
+```
 The following is an example config file:
 ```yaml
 ###### Application Specific ######

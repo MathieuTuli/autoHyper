@@ -1,4 +1,45 @@
 # Usage #
+#### Arguments ####
+```console
+python -m autohyper train --help
+
+usage: __main__.py train [-h] [--config CONFIG] [--data DATA]
+                         [--output OUTPUT] [--checkpoint CHECKPOINT]
+                         [--resume RESUME] [--root ROOT]
+                         [--save-freq SAVE_FREQ] [--cpu] [--gpu GPU]
+                         [--multiprocessing-distributed] [--dist-url DIST_URL]
+                         [--dist-backend DIST_BACKEND]
+                         [--world-size WORLD_SIZE] [--rank RANK]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --config CONFIG       Set configuration file path: Default = 'config.yaml'
+  --data DATA           Set data directory path: Default = '.autohyper-data'
+  --output OUTPUT       Set output directory path: Default = '.autohyper-
+                        output'
+  --checkpoint CHECKPOINT
+                        Set checkpoint directory path: Default = '.autohyper-
+                        checkpoint'
+  --resume RESUME       Set checkpoint resume path: Default = None
+  --root ROOT           Set root path of project that parents all others:
+                        Default = '.'
+  --save-freq SAVE_FREQ
+                        Checkpoint epoch save frequency: Default = 25
+  --cpu                 Flag: CPU bound training: Default = False
+  --gpu GPU             GPU id to use: Default = 0
+  --multiprocessing-distributed
+                        Use multi-processing distributed training to launch N
+                        processes per node, which has N GPUs. This is the
+                        fastest way to use PyTorch for either single node or
+                        multi node data parallel training: Default = False
+  --dist-url DIST_URL   url used to set up distributed training:Default =
+                        'tcp://127.0.0.1:23456'
+  --dist-backend DIST_BACKEND
+                        distributed backend: Default = 'nccl'
+  --world-size WORLD_SIZE
+                        Number of nodes for distributed training: Default = -1
+  --rank RANK           Node rank for distributed training: Default = -1
+ ```
 #### Config File ####
 In the following sections we list the configuration options available to the user. Note that we also classify the configuration options into the following categories:
 - Application Specific
