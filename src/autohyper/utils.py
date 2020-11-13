@@ -1,7 +1,7 @@
 """
 MIT License
 
-Copyright (c) 2020 Mahdi S. Hosseini and Mathieu Tuli
+Copyright (c) 2020
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -118,12 +118,12 @@ def parse_config(
     if not isinstance(config['init_lr'], str):
         if isinstance(config['init_lr'], list):
             for i, lr in enumerate(config['init_lr']):
-                if config['init_lr'][i] != 'auto':
+                if config['init_lr'][i] not in ['auto', 'sota_auto']:
                     config['init_lr'][i] = smart_string_to_float(lr, e=e)
         else:
             config['init_lr'] = smart_string_to_float(config['init_lr'], e=e)
     else:
-        if config['init_lr'] != 'auto':
+        if config['init_lr'] not in ['auto', 'sota_auto']:
             raise ValueError(e)
     config['max_epochs'] = smart_string_to_int(
         config['max_epochs'],
