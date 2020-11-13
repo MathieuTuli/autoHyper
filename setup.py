@@ -8,7 +8,6 @@ setup(
     package_dir={'': 'src'},
     include_package_data=True,
     zip_safe=False,
-    # url='https://github.com/mahdihosseini/AdaS',
     python_requires='~=3.7',
     extras_require={
         'docs': [
@@ -30,7 +29,7 @@ setup(
     # DO NOT do tests_require; just call pytest or python -m pytest.
     license='License :: Other/Proprietary License',
     author='',
-    author_email='mahdi.hosseini@mail.utoronto.ca, tuli.mathieu@gmail.com',
+    author_email='',
     description='Python package for AdaS: Adaptive Scheduling of Stochastic Gradients',
     classifiers=[
         'Development Status :: 4 - Beta',
