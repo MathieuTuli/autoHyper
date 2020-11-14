@@ -195,13 +195,13 @@ def auto_lr(training_agent,
                 continue
         output_history.append((learning_rates[lr_idx],
                                cur_rank, 'nothing'))
-        if exit_counter > 5:
-            print(
-                "LR Range Test Complete: Exit Counter: Final LR Range is " +
-                f"{min_lr}-{max_lr}")
-            output_history.append(
-                (learning_rates[lr_idx], cur_rank, 'exit-counter'))
-            break
+        # if exit_counter > 5:
+        #     print(
+        #         "LR Range Test Complete: Exit Counter: Final LR Range is " +
+        #         f"{min_lr}-{max_lr}")
+        #     output_history.append(
+        #         (learning_rates[lr_idx], cur_rank, 'exit-counter'))
+        #     break
         lr_idx += 1
     with (training_agent.output_path / 'lrrt.csv').open('w+') as f:
         f.write('lr,rank,msg\n')
