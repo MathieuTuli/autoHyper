@@ -21,6 +21,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+from scipy.stats import loguniform
 from typing import Union, List
 from datetime import datetime
 import sys
@@ -74,13 +75,35 @@ def auto_lr(training_agent,
     auto_lr_path.mkdir(exist_ok=True)
     date = datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
     grid = dict()
-    for i, learning_rate in enumerate(learning_rates):
-        if training_agent.config['dataset'] == 'CIFAR100':
-            if i > 9:
-                break
-        else:
-            if i > 12:
-                break
+    if training_agent.config['dataset'] == 'TinyImageNet':
+        if training_agent.config['optimizer'] == 'AdaM':
+            r = 15
+        elif training_agent.config['optimizer'] == 'AdaBound':
+            r = 30
+        elif training_agent.config['optimizer'] == 'AdaGrad':
+            r = 32
+        elif training_agent.config['scheduler'] == 'AdaS':
+            r = 40
+    elif training_agent.config['dataset'] == 'CIFAR10':
+        if training_agent.config['optimizer'] == 'AdaM':
+            r = 15
+        elif training_agent.config['optimizer'] == 'AdaBound':
+            r = 10
+        elif training_agent.config['optimizer'] == 'AdaGrad':
+            r = 25
+        elif training_agent.config['scheduler'] == 'AdaS':
+            r = 34
+    if training_agent.config['network'] == 'DenseNet121CIFAR10':
+        if training_agent.config['optimizer'] == 'AdaM':
+            r = 19
+        elif training_agent.config['optimizer'] == 'AdaBound':
+            r = 24
+        elif training_agent.config['optimizer'] == 'AdaGrad':
+            r = 32
+        elif training_agent.config['scheduler'] == 'AdaS':
+            r = 36
+    for i in range(r):
+        learning_rate = loguniform.rvs(min_lr, max_lr)
         training_agent.reset(learning_rate)
         training_agent.output_filename = training_agent.output_path / 'auto-lr'
         training_agent.output_filename.mkdir(exist_ok=True, parents=True)
@@ -102,8 +125,12 @@ def auto_lr(training_agent,
         training_agent.run_epochs(trial=0, epochs=epochs)
 
         # ###### LR RANGE STUFF #######
-        grid[learning_rate] = \
-            training_agent.performance_statistics['test_acc1_epoch_4']
+        if training_agent.config['metric'] == 'loss':
+            grid[learning_rate] = \
+                training_agent.performance_statistics['test_loss_epoch_4']
+        else:
+            grid[learning_rate] = \
+                training_agent.performance_statistics['test_acc1_epoch_4']
         print(
             f"Learning rate {learning_rate} acc1 {grid[learning_rate]}")
 
@@ -112,4 +139,7 @@ def auto_lr(training_agent,
         for lr, acc in grid.items():
             f.write(f'{lr},{acc},\n')
 
-    return max(grid, key=grid.get)
+    if training_agent.config['metric'] == 'loss':
+        return min(grid, key=grid.get)
+    else:
+        return max(grid, key=grid.get)
