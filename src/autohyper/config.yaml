@@ -12,7 +12,7 @@ scheduler: 'None' # options: AdaS (with SGD), StepLR, CosineAnnealingWarmRestart
 
 
 ###### Suggested Tune ######
-init_lr: 0.01
+init_lr: 'sota_auto'
 early_stop_threshold: 0.001 # set to -1 if you wish not to use early stop, or equally, set to a high value. Set to -1 if not using AdaS
 optimizer_kwargs: {}
 scheduler_kwargs: {}
@@ -26,3 +26,4 @@ max_epochs: 100
 mini_batch_size: 128
 loss: 'cross_entropy' # options: cross_entropy
 early_stop_patience: 10 # epoch window to consider when deciding whether to stop
+metric: 'loss'
