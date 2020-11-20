@@ -51,7 +51,6 @@ if mod_name is not None:
     from .early_stop import EarlyStop
     from .models import get_network
     from .utils import parse_config
-    from .profiler import Profiler
     from .metrics import Metrics
     from .models.vgg import VGG
     from .optim.sls import SLS
@@ -67,7 +66,6 @@ else:
     from early_stop import EarlyStop
     from models import get_network
     from utils import parse_config
-    from profiler import Profiler
     from metrics import Metrics
     from models.vgg import VGG
     from optim.sls import SLS
@@ -357,11 +355,7 @@ class TrainingAgent:
                         ".csv".replace(' ', '-')
                 self.output_filename = str(
                     lr_output_path / self.output_filename)
-                stats_filename = self.output_filename.replace(
-                    'results', 'stats')
-                Profiler.filename = lr_output_path / stats_filename
                 self.run_epochs(trial, epochs)
-                Profiler.stream = None
 
     def run_epochs(self, trial: int, epochs: List[int]) -> None:
         data = {}
@@ -420,8 +414,6 @@ class TrainingAgent:
                     torch.save(
                         data, str(self.checkpoint_path / 'best.pth.tar'))
         torch.save(data, str(self.checkpoint_path / 'last.pth.tar'))
-
-    # @Profiler
 
     def epoch_iteration(self, trial: int, epoch: int):
         # logging.info(f"Adas: Train: Epoch: {epoch}")
