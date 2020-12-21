@@ -21,7 +21,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-from typing import NamedTuple, List
+from typing import NamedTuple, List, Optional, Any
 from enum import Enum
 
 # import logging
@@ -68,3 +68,9 @@ class Statistics(NamedTuple):
     gpu_mem: float
     epoch_time: float
     step_time: float
+
+
+class SearchConstraint(NamedTuple):
+    min_val: Any
+    max_val: Any
+    delta: Optional[Any]

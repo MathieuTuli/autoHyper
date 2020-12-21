@@ -23,7 +23,7 @@ SOFTWARE.
 """
 from argparse import Namespace as APNamespace, _SubParsersAction, \
     ArgumentParser
-from typing import Tuple, Dict, Any, List
+from typing import Tuple, Dict, Any, List, Optional
 from datetime import datetime
 from pathlib import Path
 
@@ -259,12 +259,14 @@ class TrainingAgent:
                   f'epoch {self.start_epoch}')
         # self.reset()
 
-    def reset(self, learning_rate: float) -> None:
+    def reset(self, config: Optional[Dict[str, Any]] = None) -> None:
+        if config is None:
+            config = self.config
         self.performance_statistics = dict()
-        self.network = get_network(name=self.config['network'],
+        self.network = get_network(name=config['network'],
                                    num_classes=self.num_classes)
         self.metrics = Metrics(list(self.network.parameters()),
-                               p=self.config['p'])
+                               p=config['p'])
         # TODO add other parallelisms
         if self.device == 'cpu':
             print("Resetting cpu-based network")
@@ -290,15 +292,15 @@ class TrainingAgent:
             else:
                 self.network = torch.nn.DataParallel(self.network)
         self.optimizer, self.scheduler = get_optimizer_scheduler(
-            optim_method=self.config['optimizer'],
-            lr_scheduler=self.config['scheduler'],
-            init_lr=learning_rate,
+            optim_method=config['optimizer'],
+            lr_scheduler=config['scheduler'],
+            init_lr=config['learning_rate'],
             net_parameters=self.network.parameters(),
             listed_params=list(self.network.parameters()),
             train_loader_len=len(self.train_loader),
-            max_epochs=self.config['max_epochs'],
-            optimizer_kwargs=self.config['optimizer_kwargs'],
-            scheduler_kwargs=self.config['scheduler_kwargs'])
+            max_epochs=config['max_epochs'],
+            optimizer_kwargs=config['optimizer_kwargs'],
+            scheduler_kwargs=config['scheduler_kwargs'])
         self.early_stop.reset()
         self.best_acc1 = -1.
 

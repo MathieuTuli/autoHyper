@@ -21,7 +21,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-from typing import Union, List
+from typing import Union, List, Dict, Any, Tuple
 from datetime import datetime
 import sys
 
@@ -33,8 +33,10 @@ mod_name = vars(sys.modules[__name__])['__package__']
 
 if mod_name:
     from .metrics import Metrics
+    from .components import SearchConstraint
 else:
     from metrics import Metrics
+    from components import SearchConstraint
 
 
 def compute_rank(metrics: Metrics) -> float:
@@ -61,18 +63,19 @@ def compute_rate_of_change(rank_history: List[float]) -> float:
 
 
 def auto_lr(training_agent,
-            min_lr: float = 1e-4,
-            max_lr: float = 0.1,
+            search_constraints: Dict[str, SearchConstraint],
             num_split: int = 20,
-            min_delta: float = 5e-3,
-            lr_delta: float = 3e-5,
+            # min_delta: float = 5e-3,
+            # lr_delta: float = 3e-5,
             epochs: Union[range, List[int]] = range(0, 5),
-            exit_counter_thresh: int = 6,
             power: float = 0.8):
-    # ###### LR RANGE STUFF #######
-    learning_rates = np.geomspace(min_lr, max_lr, num_split)
+    parameters = dict()
+    for hp, constraint in search_constraints.items():
+        parameters[hp] = np.geomspace(
+            constraint.min_val, constraint.max_val, num_split)
+    # learning_rates = np.geomspace(min_lr, max_lr, num_split)
+    config = training_agent.config.deepcopy()
     lr_idx = 0
-    exit_counter = 0
     first_run = True
     output_history = list()
     rank_history = list()
@@ -103,7 +106,7 @@ def auto_lr(training_agent,
             output_history.append(
                 (learning_rates[lr_idx], cur_rank, 'exit-delta'))
             break
-        training_agent.reset(learning_rates[lr_idx])
+        training_agent.reset(config)
         training_agent.output_filename = training_agent.output_path / 'auto-lr'
         training_agent.output_filename.mkdir(exist_ok=True, parents=True)
         string_name = \
@@ -170,15 +173,9 @@ def auto_lr(training_agent,
                 lr_idx = 0
                 cur_rank = -1
                 continue
-            # if len(rate_of_change) > 3 and \
-            #         np.isclose(rate_of_change[-1], rate_of_change[-2],
-            #                    atol=min_delta) and \
-            #         np.isclose(rate_of_change[-2], rate_of_change[-3],
-            #                    atol=min_delta):
             if np.less(rate_of_change[-1], min_delta):
                 output_history.append((learning_rates[lr_idx],
                                        cur_rank, 'plateau'))
-                exit_counter += 1
                 min_lr = learning_rates[max(lr_idx - 2, 0)]
                 max_lr = learning_rates[lr_idx]
                 learning_rates = np.geomspace(min_lr, max_lr, num_split)
@@ -187,21 +184,9 @@ def auto_lr(training_agent,
                       f"{learning_rates}")
                 lr_idx = 0
                 cur_rank = -1
-                if exit_counter > exit_counter_thresh:
-                    output_history.append(
-                        (learning_rates[lr_idx],
-                            cur_rank, 'exit-counter'))
-                    break
                 continue
         output_history.append((learning_rates[lr_idx],
                                cur_rank, 'nothing'))
-        # if exit_counter > 5:
-        #     print(
-        #         "LR Range Test Complete: Exit Counter: Final LR Range is " +
-        #         f"{min_lr}-{max_lr}")
-        #     output_history.append(
-        #         (learning_rates[lr_idx], cur_rank, 'exit-counter'))
-        #     break
         lr_idx += 1
     with (training_agent.output_path / 'lrrt.csv').open('w+') as f:
         f.write('lr,rank,msg\n')
