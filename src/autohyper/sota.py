@@ -102,6 +102,47 @@ def auto_lr(training_agent,
             r = 32
         elif training_agent.config['scheduler'] == 'AdaS':
             r = 36
+    trials = {
+        'ResNet18CIFAR': {
+            'CIFAR10': {
+                'AdaM': 10,
+                'AdaBound': 12,
+                'AdaGrad': 20,
+                'SGD': 28},
+            'CIFAR100': {
+                'AdaM': 16,
+                'AdaBound': 17,
+                'AdaGrad': 27,
+                'SGD': 28}
+        },
+        'ResNeXt50CIFAR': {
+            'CIFAR10': {
+                'AdaM': 17,
+                'AdaBound': 20,
+                'AdaGrad': 32,
+                'SGD': 33},
+            'CIFAR100': {
+                'AdaM': 17,
+                'AdaBound': 19,
+                'AdaGrad': 33,
+                'SGD': 35}
+        },
+        'DenseNet121CIFAR': {
+            'CIFAR10': {
+                'AdaM': 19,
+                'AdaBound': 24,
+                'AdaGrad': 32,
+                'SGD': 36},
+            'CIFAR100': {
+                'AdaM': 19,
+                'AdaBound': 24,
+                'AdaGrad': 33,
+                'SGD': 37}
+        }
+    }
+    r = trials[training_agent.config['network']
+               ][training_agent.config['dataset']
+                 ][training_agent.config['optimizer']]
     for i in range(r):
         learning_rate = loguniform.rvs(min_lr, max_lr)
         training_agent.reset(learning_rate)
