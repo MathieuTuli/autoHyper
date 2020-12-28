@@ -115,7 +115,7 @@ def auto_lr(training_agent,
                 'AdaGrad': 27,
                 'SGD': 28}
         },
-        'ResNeXt50CIFAR': {
+        'ResNeXtCIFAR': {
             'CIFAR10': {
                 'AdaM': 17,
                 'AdaBound': 20,
