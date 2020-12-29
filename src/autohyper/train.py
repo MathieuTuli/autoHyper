@@ -46,7 +46,7 @@ if mod_name is not None:
     from .optim.lr_scheduler import CosineAnnealingWarmRestarts, StepLR, \
         OneCycleLR
     from .optim import get_optimizer_scheduler
-    from .sota import auto_lr as sota_auto_lr
+    from .grid_search import auto_lr as grid_search_lr
     from .autoHyper import auto_lr
     from .early_stop import EarlyStop
     from .models import get_network
@@ -61,7 +61,7 @@ else:
     from optim.lr_scheduler import CosineAnnealingWarmRestarts, StepLR, \
         OneCycleLR
     from optim import get_optimizer_scheduler
-    from sota import auto_lr as sota_auto_lr
+    from grid_search import auto_lr as grid_search_lr
     from autoHyper import auto_lr
     from early_stop import EarlyStop
     from models import get_network
@@ -313,8 +313,8 @@ class TrainingAgent:
         for learning_rate in list_lr:
             if learning_rate == 'auto':
                 learning_rate = auto_lr(self)
-            elif learning_rate == 'sota_auto':
-                learning_rate = sota_auto_lr(self)
+            elif learning_rate == 'grid_search_auto':
+                learning_rate = grid_search_lr(self)
             lr_output_path = self.output_path / f'lr-{learning_rate}'
             lr_output_path.mkdir(exist_ok=True, parents=True)
             self.checkpoint_path = original_check_path / f'lr-{learning_rate}'
