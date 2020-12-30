@@ -28,6 +28,7 @@ import sys
 
 # import logging
 
+from ax.utils.tutorials.cnn_utils import evaluate
 from ax.service.managed_loop import optimize
 import numpy as np
 import torch
@@ -177,5 +178,10 @@ def auto_lr(training_agent,
         total_trials=num_trials
     )
     with open(str(auto_lr_path / 'experiment.pkl'), 'wb') as f:
-        pickle.dump(experiment, f)
+        try:
+            pickle.dump(experiment.fetch_data, f)
+        except Exception:
+            print("FAILED PICKLE")
+            pickle.dump(experiment.fetch_data().df, f)
+    print(best_parameters['lr'])
     return best_parameters['lr']

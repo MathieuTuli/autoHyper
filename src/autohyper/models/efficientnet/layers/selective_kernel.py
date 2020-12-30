@@ -28,10 +28,12 @@ class SelectiveKernelAttn(nn.Module):
         super(SelectiveKernelAttn, self).__init__()
         self.num_paths = num_paths
         self.pool = nn.AdaptiveAvgPool2d(1)
-        self.fc_reduce = nn.Conv2d(channels, attn_channels, kernel_size=1, bias=False)
+        self.fc_reduce = nn.Conv2d(
+            channels, attn_channels, kernel_size=1, bias=False)
         self.bn = norm_layer(attn_channels)
         self.act = act_layer(inplace=True)
-        self.fc_select = nn.Conv2d(attn_channels, channels * num_paths, kernel_size=1, bias=False)
+        self.fc_select = nn.Conv2d(
+            attn_channels, channels * num_paths, kernel_size=1, bias=False)
 
     def forward(self, x):
         assert x.shape[1] == self.num_paths
@@ -42,7 +44,7 @@ class SelectiveKernelAttn(nn.Module):
         x = self.act(x)
         x = self.fc_select(x)
         B, C, H, W = x.shape
-        x = x.view(B, self.num_paths, C // self.num_paths, H, W)
+        x = x.reshape(B, self.num_paths, C // self.num_paths, H, W)
         x = torch.softmax(x, dim=1)
         return x
 
@@ -78,7 +80,8 @@ class SelectiveKernelConv(nn.Module):
             norm_layer (nn.Module): batchnorm/norm layer to use
         """
         super(SelectiveKernelConv, self).__init__()
-        kernel_size = kernel_size or [3, 5]  # default to one 3x3 and one 5x5 branch. 5x5 -> 3x3 + dilation
+        # default to one 3x3 and one 5x5 branch. 5x5 -> 3x3 + dilation
+        kernel_size = kernel_size or [3, 5]
         _kernel_valid(kernel_size)
         if not isinstance(kernel_size, list):
             kernel_size = [kernel_size] * 2
@@ -100,11 +103,14 @@ class SelectiveKernelConv(nn.Module):
             stride=stride, groups=groups, drop_block=drop_block, act_layer=act_layer, norm_layer=norm_layer,
             aa_layer=aa_layer)
         self.paths = nn.ModuleList([
-            ConvBnAct(in_channels, out_channels, kernel_size=k, dilation=d, **conv_kwargs)
+            ConvBnAct(in_channels, out_channels,
+                      kernel_size=k, dilation=d, **conv_kwargs)
             for k, d in zip(kernel_size, dilation)])
 
-        attn_channels = max(int(out_channels / attn_reduction), min_attn_channels)
-        self.attn = SelectiveKernelAttn(out_channels, self.num_paths, attn_channels)
+        attn_channels = max(
+            int(out_channels / attn_reduction), min_attn_channels)
+        self.attn = SelectiveKernelAttn(
+            out_channels, self.num_paths, attn_channels)
         self.drop_block = drop_block
 
     def forward(self, x):

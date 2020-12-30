@@ -93,10 +93,10 @@ class ChannelShuffle(nn.Module):
             g, C
         )
         return (
-            x.view(N, g, int(C / g), H, W)
+            x.reshape(N, g, int(C / g), H, W)
             .permute(0, 2, 1, 3, 4)
             .contiguous()
-            .view(N, C, H, W)
+            .reshape(N, C, H, W)
         )
 
 
@@ -105,7 +105,8 @@ class SqueezeExcite(nn.Module):
                  act_layer=nn.ReLU, gate_fn=sigmoid, divisor=1, **_):
         super(SqueezeExcite, self).__init__()
         self.gate_fn = gate_fn
-        reduced_chs = make_divisible((reduced_base_chs or in_chs) * se_ratio, divisor)
+        reduced_chs = make_divisible(
+            (reduced_base_chs or in_chs) * se_ratio, divisor)
         self.avg_pool = nn.AdaptiveAvgPool2d(1)
         self.conv_reduce = nn.Conv2d(in_chs, reduced_chs, 1, bias=True)
         self.act1 = act_layer(inplace=True)
@@ -126,16 +127,19 @@ class ConvBnAct(nn.Module):
                  norm_layer=nn.BatchNorm2d, norm_kwargs=None):
         super(ConvBnAct, self).__init__()
         norm_kwargs = norm_kwargs or {}
-        self.conv = create_conv2d(in_chs, out_chs, kernel_size, stride=stride, dilation=dilation, padding=pad_type)
+        self.conv = create_conv2d(
+            in_chs, out_chs, kernel_size, stride=stride, dilation=dilation, padding=pad_type)
         self.bn1 = norm_layer(out_chs, **norm_kwargs)
         self.act1 = act_layer(inplace=True)
 
     def feature_info(self, location):
         if location == 'expansion' or location == 'depthwise':
             # no expansion or depthwise this block, use act after conv
-            info = dict(module='act1', hook_type='forward', num_chs=self.conv.out_channels)
+            info = dict(module='act1', hook_type='forward',
+                        num_chs=self.conv.out_channels)
         else:  # location == 'bottleneck'
-            info = dict(module='', hook_type='', num_chs=self.conv.out_channels)
+            info = dict(module='', hook_type='',
+                        num_chs=self.conv.out_channels)
         return info
 
     def forward(self, x):
@@ -150,6 +154,7 @@ class DepthwiseSeparableConv(nn.Module):
     Used for DS convs in MobileNet-V1 and in the place of IR blocks that have no expansion
     (factor of 1.0). This is an alternative to having a IR with an optional first pw conv.
     """
+
     def __init__(self, in_chs, out_chs, dw_kernel_size=3,
                  stride=1, dilation=1, pad_type='', act_layer=nn.ReLU, noskip=False,
                  pw_kernel_size=1, pw_act=False, se_ratio=0., se_kwargs=None,
@@ -173,18 +178,23 @@ class DepthwiseSeparableConv(nn.Module):
         else:
             self.se = None
 
-        self.conv_pw = create_conv2d(in_chs, out_chs, pw_kernel_size, padding=pad_type)
+        self.conv_pw = create_conv2d(
+            in_chs, out_chs, pw_kernel_size, padding=pad_type)
         self.bn2 = norm_layer(out_chs, **norm_kwargs)
-        self.act2 = act_layer(inplace=True) if self.has_pw_act else nn.Identity()
+        self.act2 = act_layer(
+            inplace=True) if self.has_pw_act else nn.Identity()
 
     def feature_info(self, location):
         if location == 'expansion':
             # no expansion in this block, use depthwise, before SE
-            info = dict(module='act1', hook_type='forward', num_chs=self.conv_pw.in_channels)
+            info = dict(module='act1', hook_type='forward',
+                        num_chs=self.conv_pw.in_channels)
         elif location == 'depthwise':  # after SE
-            info = dict(module='conv_pw', hook_type='forward_pre', num_chs=self.conv_pw.in_channels)
+            info = dict(module='conv_pw', hook_type='forward_pre',
+                        num_chs=self.conv_pw.in_channels)
         else:  # location == 'bottleneck'
-            info = dict(module='', hook_type='', num_chs=self.conv_pw.out_channels)
+            info = dict(module='', hook_type='',
+                        num_chs=self.conv_pw.out_channels)
         return info
 
     def forward(self, x):
@@ -225,7 +235,8 @@ class InvertedResidual(nn.Module):
         self.drop_path_rate = drop_path_rate
 
         # Point-wise expansion
-        self.conv_pw = create_conv2d(in_chs, mid_chs, exp_kernel_size, padding=pad_type, **conv_kwargs)
+        self.conv_pw = create_conv2d(
+            in_chs, mid_chs, exp_kernel_size, padding=pad_type, **conv_kwargs)
         self.bn1 = norm_layer(mid_chs, **norm_kwargs)
         self.act1 = act_layer(inplace=True)
 
@@ -244,16 +255,20 @@ class InvertedResidual(nn.Module):
             self.se = None
 
         # Point-wise linear projection
-        self.conv_pwl = create_conv2d(mid_chs, out_chs, pw_kernel_size, padding=pad_type, **conv_kwargs)
+        self.conv_pwl = create_conv2d(
+            mid_chs, out_chs, pw_kernel_size, padding=pad_type, **conv_kwargs)
         self.bn3 = norm_layer(out_chs, **norm_kwargs)
 
     def feature_info(self, location):
         if location == 'expansion':
-            info = dict(module='act1', hook_type='forward', num_chs=self.conv_pw.in_channels)
+            info = dict(module='act1', hook_type='forward',
+                        num_chs=self.conv_pw.in_channels)
         elif location == 'depthwise':  # after SE
-            info = dict(module='conv_pwl', hook_type='forward_pre', num_chs=self.conv_pwl.in_channels)
+            info = dict(module='conv_pwl', hook_type='forward_pre',
+                        num_chs=self.conv_pwl.in_channels)
         else:  # location == 'bottleneck'
-            info = dict(module='', hook_type='', num_chs=self.conv_pwl.out_channels)
+            info = dict(module='', hook_type='',
+                        num_chs=self.conv_pwl.out_channels)
         return info
 
     def forward(self, x):
@@ -356,7 +371,8 @@ class EdgeResidual(nn.Module):
         self.drop_path_rate = drop_path_rate
 
         # Expansion convolution
-        self.conv_exp = create_conv2d(in_chs, mid_chs, exp_kernel_size, padding=pad_type)
+        self.conv_exp = create_conv2d(
+            in_chs, mid_chs, exp_kernel_size, padding=pad_type)
         self.bn1 = norm_layer(mid_chs, **norm_kwargs)
         self.act1 = act_layer(inplace=True)
 
@@ -374,12 +390,15 @@ class EdgeResidual(nn.Module):
 
     def feature_info(self, location):
         if location == 'expansion':
-            info = dict(module='act1', hook_type='forward', num_chs=self.conv_exp.out_channels)
+            info = dict(module='act1', hook_type='forward',
+                        num_chs=self.conv_exp.out_channels)
         elif location == 'depthwise':
             # there is no depthwise, take after SE, before PWL
-            info = dict(module='conv_pwl', hook_type='forward_pre', num_chs=self.conv_pwl.in_channels)
+            info = dict(module='conv_pwl', hook_type='forward_pre',
+                        num_chs=self.conv_pwl.in_channels)
         else:  # location == 'bottleneck'
-            info = dict(module='', hook_type='', num_chs=self.conv_pwl.out_channels)
+            info = dict(module='', hook_type='',
+                        num_chs=self.conv_pwl.out_channels)
         return info
 
     def forward(self, x):

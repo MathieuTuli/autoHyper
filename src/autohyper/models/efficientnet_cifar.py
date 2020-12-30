@@ -147,7 +147,7 @@ class EfficientNet(nn.Module):
         out = swish(self.bn1(self.conv1(x)))
         out = self.layers(out)
         out = self.avgpool(out)
-        out = out.view(out.size(0), -1)
+        out = out.reshape(out.size(0), -1)
         if self.training and self.dropout_rate > 0:
             out = self.dropout(out)
         out = self.linear(out)

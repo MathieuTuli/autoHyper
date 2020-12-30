@@ -53,13 +53,13 @@ def channel_shuffle(x, groups):
     channels_per_group = num_channels // groups
 
     # reshape
-    x = x.view(batchsize, groups,
-               channels_per_group, height, width)
+    x = x.reshape(batchsize, groups,
+                  channels_per_group, height, width)
 
     x = torch.transpose(x, 1, 2).contiguous()
 
     # flatten
-    x = x.view(batchsize, -1, height, width)
+    x = x.reshape(batchsize, -1, height, width)
 
     return x
 
@@ -77,9 +77,11 @@ class InvertedResidual(nn.Module):
 
         if self.stride > 1:
             self.branch1 = nn.Sequential(
-                self.depthwise_conv(inp, inp, kernel_size=3, stride=self.stride, padding=1),
+                self.depthwise_conv(inp, inp, kernel_size=3,
+                                    stride=self.stride, padding=1),
                 nn.BatchNorm2d(inp),
-                nn.Conv2d(inp, branch_features, kernel_size=1, stride=1, padding=0, bias=False),
+                nn.Conv2d(inp, branch_features, kernel_size=1,
+                          stride=1, padding=0, bias=False),
                 nn.BatchNorm2d(branch_features),
                 nn.ReLU(inplace=True),
             )
@@ -91,9 +93,11 @@ class InvertedResidual(nn.Module):
                       branch_features, kernel_size=1, stride=1, padding=0, bias=False),
             nn.BatchNorm2d(branch_features),
             nn.ReLU(inplace=True),
-            self.depthwise_conv(branch_features, branch_features, kernel_size=3, stride=self.stride, padding=1),
+            self.depthwise_conv(branch_features, branch_features,
+                                kernel_size=3, stride=self.stride, padding=1),
             nn.BatchNorm2d(branch_features),
-            nn.Conv2d(branch_features, branch_features, kernel_size=1, stride=1, padding=0, bias=False),
+            nn.Conv2d(branch_features, branch_features,
+                      kernel_size=1, stride=1, padding=0, bias=False),
             nn.BatchNorm2d(branch_features),
             nn.ReLU(inplace=True),
         )
@@ -119,9 +123,11 @@ class ShuffleNetV2(nn.Module):
         super(ShuffleNetV2, self).__init__()
 
         if len(stages_repeats) != 3:
-            raise ValueError('expected stages_repeats as list of 3 positive ints')
+            raise ValueError(
+                'expected stages_repeats as list of 3 positive ints')
         if len(stages_out_channels) != 5:
-            raise ValueError('expected stages_out_channels as list of 5 positive ints')
+            raise ValueError(
+                'expected stages_out_channels as list of 5 positive ints')
         self._stage_out_channels = stages_out_channels
 
         input_channels = 3
@@ -140,7 +146,8 @@ class ShuffleNetV2(nn.Module):
                 stage_names, stages_repeats, self._stage_out_channels[1:]):
             seq = [inverted_residual(input_channels, output_channels, 2)]
             for i in range(repeats - 1):
-                seq.append(inverted_residual(output_channels, output_channels, 1))
+                seq.append(inverted_residual(
+                    output_channels, output_channels, 1))
             setattr(self, name, nn.Sequential(*seq))
             input_channels = output_channels
 
@@ -175,7 +182,8 @@ def _shufflenetv2(arch, pretrained, progress, *args, **kwargs):
     if pretrained:
         model_url = model_urls[arch]
         if model_url is None:
-            raise NotImplementedError('pretrained {} is not supported as of now'.format(arch))
+            raise NotImplementedError(
+                'pretrained {} is not supported as of now'.format(arch))
         else:
             state_dict = load_state_dict_from_url(model_url, progress=progress)
             model.load_state_dict(state_dict)

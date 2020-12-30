@@ -49,6 +49,7 @@ class EcaModule(nn.Module):
             (default=None. if channel size not given, use k_size given for kernel size.)
         kernel_size: Adaptive selection of kernel size (default=3)
     """
+
     def __init__(self, channels=None, kernel_size=3, gamma=2, beta=1):
         super(EcaModule, self).__init__()
         assert kernel_size % 2 == 1
@@ -58,17 +59,18 @@ class EcaModule(nn.Module):
             kernel_size = max(t if t % 2 else t + 1, 3)
 
         self.avg_pool = nn.AdaptiveAvgPool2d(1)
-        self.conv = nn.Conv1d(1, 1, kernel_size=kernel_size, padding=(kernel_size - 1) // 2, bias=False)
+        self.conv = nn.Conv1d(1, 1, kernel_size=kernel_size, padding=(
+            kernel_size - 1) // 2, bias=False)
 
     def forward(self, x):
         # Feature descriptor on the global spatial information
         y = self.avg_pool(x)
         # Reshape for convolution
-        y = y.view(x.shape[0], 1, -1)
+        y = y.reshape(x.shape[0], 1, -1)
         # Two different branches of ECA module
         y = self.conv(y)
         # Multi-scale information fusion
-        y = y.view(x.shape[0], -1, 1, 1).sigmoid()
+        y = y.reshape(x.shape[0], -1, 1, 1).sigmoid()
         return x * y.expand_as(x)
 
 
@@ -101,11 +103,12 @@ class CecaModule(nn.Module):
             kernel_size = max(t if t % 2 else t + 1, 3)
 
         self.avg_pool = nn.AdaptiveAvgPool2d(1)
-        #pytorch circular padding mode is buggy as of pytorch 1.4
-        #see https://github.com/pytorch/pytorch/pull/17240
+        # pytorch circular padding mode is buggy as of pytorch 1.4
+        # see https://github.com/pytorch/pytorch/pull/17240
 
-        #implement manual circular padding
-        self.conv = nn.Conv1d(1, 1, kernel_size=kernel_size, padding=0, bias=False)
+        # implement manual circular padding
+        self.conv = nn.Conv1d(
+            1, 1, kernel_size=kernel_size, padding=0, bias=False)
         self.padding = (kernel_size - 1) // 2
 
     def forward(self, x):
@@ -113,12 +116,13 @@ class CecaModule(nn.Module):
         y = self.avg_pool(x)
 
         # Manually implement circular padding, F.pad does not seemed to be bugged
-        y = F.pad(y.view(x.shape[0], 1, -1), (self.padding, self.padding), mode='circular')
+        y = F.pad(y.reshape(x.shape[0], 1, -1),
+                  (self.padding, self.padding), mode='circular')
 
         # Two different branches of ECA module
         y = self.conv(y)
 
         # Multi-scale information fusion
-        y = y.view(x.shape[0], -1, 1, 1).sigmoid()
+        y = y.reshape(x.shape[0], -1, 1, 1).sigmoid()
 
         return x * y.expand_as(x)

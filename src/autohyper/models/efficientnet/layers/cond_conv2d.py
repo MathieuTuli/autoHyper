@@ -27,7 +27,7 @@ def get_condconv_initializer(initializer, num_experts, expert_shape):
             raise (ValueError(
                 'CondConv variables must have shape [num_experts, num_params]'))
         for i in range(num_experts):
-            initializer(weight[i].view(expert_shape))
+            initializer(weight[i].reshape(expert_shape))
     return condconv_initializer
 
 
@@ -50,21 +50,25 @@ class CondConv2d(nn.Module):
         self.stride = tup_pair(stride)
         padding_val, is_padding_dynamic = get_padding_value(
             padding, kernel_size, stride=stride, dilation=dilation)
-        self.dynamic_padding = is_padding_dynamic  # if in forward to work with torchscript
+        # if in forward to work with torchscript
+        self.dynamic_padding = is_padding_dynamic
         self.padding = tup_pair(padding_val)
         self.dilation = tup_pair(dilation)
         self.groups = groups
         self.num_experts = num_experts
 
-        self.weight_shape = (self.out_channels, self.in_channels // self.groups) + self.kernel_size
+        self.weight_shape = (
+            self.out_channels, self.in_channels // self.groups) + self.kernel_size
         weight_num_param = 1
         for wd in self.weight_shape:
             weight_num_param *= wd
-        self.weight = torch.nn.Parameter(torch.Tensor(self.num_experts, weight_num_param))
+        self.weight = torch.nn.Parameter(
+            torch.Tensor(self.num_experts, weight_num_param))
 
         if bias:
             self.bias_shape = (self.out_channels,)
-            self.bias = torch.nn.Parameter(torch.Tensor(self.num_experts, self.out_channels))
+            self.bias = torch.nn.Parameter(
+                torch.Tensor(self.num_experts, self.out_channels))
         else:
             self.register_parameter('bias', None)
 
@@ -84,14 +88,15 @@ class CondConv2d(nn.Module):
     def forward(self, x, routing_weights):
         B, C, H, W = x.shape
         weight = torch.matmul(routing_weights, self.weight)
-        new_weight_shape = (B * self.out_channels, self.in_channels // self.groups) + self.kernel_size
-        weight = weight.view(new_weight_shape)
+        new_weight_shape = (B * self.out_channels,
+                            self.in_channels // self.groups) + self.kernel_size
+        weight = weight.reshape(new_weight_shape)
         bias = None
         if self.bias is not None:
             bias = torch.matmul(routing_weights, self.bias)
-            bias = bias.view(B * self.out_channels)
+            bias = bias.reshape(B * self.out_channels)
         # move batch elements with channels so each batch element can be efficiently convolved with separate kernel
-        x = x.view(1, B * C, H, W)
+        x = x.reshape(1, B * C, H, W)
         if self.dynamic_padding:
             out = conv2d_same(
                 x, weight, bias, stride=self.stride, padding=self.padding,
@@ -100,7 +105,8 @@ class CondConv2d(nn.Module):
             out = F.conv2d(
                 x, weight, bias, stride=self.stride, padding=self.padding,
                 dilation=self.dilation, groups=self.groups * B)
-        out = out.permute([1, 0, 2, 3]).view(B, self.out_channels, out.shape[-2], out.shape[-1])
+        out = out.permute([1, 0, 2, 3]).reshape(
+            B, self.out_channels, out.shape[-2], out.shape[-1])
 
         # Literal port (from TF definition)
         # x = torch.split(x, 1, 0)
@@ -112,9 +118,9 @@ class CondConv2d(nn.Module):
         #     bias = [None] * B
         # out = []
         # for xi, wi, bi in zip(x, weight, bias):
-        #     wi = wi.view(*self.weight_shape)
+        #     wi = wi.reshape(*self.weight_shape)
         #     if bi is not None:
-        #         bi = bi.view(*self.bias_shape)
+        #         bi = bi.reshape(*self.bias_shape)
         #     out.append(self.conv_fn(
         #         xi, wi, bi, stride=self.stride, padding=self.padding,
         #         dilation=self.dilation, groups=self.groups))

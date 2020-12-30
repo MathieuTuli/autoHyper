@@ -39,7 +39,7 @@ class ShuffleBlock(nn.Module):
         '''Channel shuffle: [N,C,H,W] -> [N,g,C/g,H,W] -> [N,C/g,g,H,w] -> [N,C,H,W]'''
         N, C, H, W = x.size()
         g = self.groups
-        return x.view(N, g, C//g, H, W).permute(0, 2, 1, 3, 4).reshape(N, C, H, W)
+        return x.reshape(N, g, C//g, H, W).permute(0, 2, 1, 3, 4).reshape(N, C, H, W)
 
 
 class Bottleneck(nn.Module):
@@ -106,7 +106,7 @@ class ShuffleNet(nn.Module):
         out = self.layer2(out)
         out = self.layer3(out)
         out = F.avg_pool2d(out, 4)
-        out = out.view(out.size(0), -1)
+        out = out.reshape(out.size(0), -1)
         out = self.linear(out)
         return out
 

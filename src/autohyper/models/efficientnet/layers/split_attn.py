@@ -20,7 +20,8 @@ class RadixSoftmax(nn.Module):
     def forward(self, x):
         batch = x.size(0)
         if self.radix > 1:
-            x = x.view(batch, self.cardinality, self.radix, -1).transpose(1, 2)
+            x = x.reshape(batch, self.cardinality,
+                          self.radix, -1).transpose(1, 2)
             x = F.softmax(x, dim=1)
             x = x.reshape(batch, -1)
         else:
@@ -31,6 +32,7 @@ class RadixSoftmax(nn.Module):
 class SplitAttnConv2d(nn.Module):
     """Split-Attention Conv2d
     """
+
     def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0,
                  dilation=1, groups=1, bias=False, radix=2, reduction_factor=4,
                  act_layer=nn.ReLU, norm_layer=None, drop_block=None, **kwargs):
@@ -72,9 +74,10 @@ class SplitAttnConv2d(nn.Module):
         x_gap = self.act1(x_gap)
         x_attn = self.fc2(x_gap)
 
-        x_attn = self.rsoftmax(x_attn).view(B, -1, 1, 1)
+        x_attn = self.rsoftmax(x_attn).reshape(B, -1, 1, 1)
         if self.radix > 1:
-            out = (x * x_attn.reshape((B, self.radix, RC // self.radix, 1, 1))).sum(dim=1)
+            out = (x * x_attn.reshape((B, self.radix,
+                                       RC // self.radix, 1, 1))).sum(dim=1)
         else:
             out = x * x_attn
         return out.contiguous()

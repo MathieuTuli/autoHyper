@@ -319,13 +319,14 @@ class TrainingAgent:
                 learning_rate = grid_search_lr(self)
             elif learning_rate == 'bo_auto':
                 learning_rate = bo_lr(self)
+            self.config['init_lr'] = learning_rate
             lr_output_path = self.output_path / f'lr-{learning_rate}'
             lr_output_path.mkdir(exist_ok=True, parents=True)
             self.checkpoint_path = original_check_path / f'lr-{learning_rate}'
             self.checkpoint_path.mkdir(exist_ok=True, parents=True)
             for trial in range(self.start_trial,
                                self.config['n_trials']):
-                self.reset(learning_rate)
+                self.reset(self.config)
                 if trial == self.start_trial and self.resume is not None:
                     print("Resuming Network/Optimizer")
                     self.network.load_state_dict(
@@ -591,11 +592,11 @@ def accuracy(outputs, targets, topk=(1,)):
 
         _, pred = outputs.topk(maxk, 1, True, True)
         pred = pred.t()
-        correct = pred.eq(targets.view(1, -1).expand_as(pred))
+        correct = pred.eq(targets.reshape(1, -1).expand_as(pred))
 
         res = []
         for k in topk:
-            correct_k = correct[:k].view(-1).float().sum(0, keepdim=True)
+            correct_k = correct[:k].reshape(-1).float().sum(0, keepdim=True)
             res.append(correct_k.mul_(100.0 / batch_size))
         return res
 

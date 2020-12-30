@@ -14,6 +14,7 @@ class MedianPool2d(nn.Module):
          padding: pool padding, int or 4-tuple (l, r, t, b) as in pytorch F.pad
          same: override padding and enforce same padding, boolean
     """
+
     def __init__(self, kernel_size=3, stride=1, padding=0, same=False):
         super(MedianPool2d, self).__init__()
         self.k = _pair(kernel_size)
@@ -43,6 +44,7 @@ class MedianPool2d(nn.Module):
 
     def forward(self, x):
         x = F.pad(x, self._padding(x), mode='reflect')
-        x = x.unfold(2, self.k[0], self.stride[0]).unfold(3, self.k[1], self.stride[1])
-        x = x.contiguous().view(x.size()[:4] + (-1,)).median(dim=-1)[0]
+        x = x.unfold(2, self.k[0], self.stride[0]).unfold(
+            3, self.k[1], self.stride[1])
+        x = x.contiguous().reshape(x.size()[:4] + (-1,)).median(dim=-1)[0]
         return x
