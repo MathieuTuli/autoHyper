@@ -45,8 +45,9 @@ mod_name = vars(sys.modules[__name__])['__package__']
 if mod_name is not None:
     from .optim.lr_scheduler import CosineAnnealingWarmRestarts, StepLR, \
         OneCycleLR
-    from .optim import get_optimizer_scheduler
     from .grid_search import auto_lr as grid_search_lr
+    from .optim import get_optimizer_scheduler
+    from .bayesian import auto_lr as bo_lr
     from .autoHyper import auto_lr
     from .early_stop import EarlyStop
     from .models import get_network
@@ -60,8 +61,9 @@ if mod_name is not None:
 else:
     from optim.lr_scheduler import CosineAnnealingWarmRestarts, StepLR, \
         OneCycleLR
-    from optim import get_optimizer_scheduler
     from grid_search import auto_lr as grid_search_lr
+    from optim import get_optimizer_scheduler
+    from bayesian import auto_lr as bo_lr
     from autoHyper import auto_lr
     from early_stop import EarlyStop
     from models import get_network
@@ -294,7 +296,7 @@ class TrainingAgent:
         self.optimizer, self.scheduler = get_optimizer_scheduler(
             optim_method=config['optimizer'],
             lr_scheduler=config['scheduler'],
-            init_lr=config['learning_rate'],
+            init_lr=config['init_lr'],
             net_parameters=self.network.parameters(),
             listed_params=list(self.network.parameters()),
             train_loader_len=len(self.train_loader),
@@ -315,6 +317,8 @@ class TrainingAgent:
                 learning_rate = auto_lr(self)
             elif learning_rate == 'grid_search_auto':
                 learning_rate = grid_search_lr(self)
+            elif learning_rate == 'bo_auto':
+                learning_rate = bo_lr(self)
             lr_output_path = self.output_path / f'lr-{learning_rate}'
             lr_output_path.mkdir(exist_ok=True, parents=True)
             self.checkpoint_path = original_check_path / f'lr-{learning_rate}'

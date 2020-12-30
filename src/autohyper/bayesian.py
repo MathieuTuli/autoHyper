@@ -21,14 +21,16 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-from scipy.stats import loguniform
-from typing import Union, List
+from typing import Union, List, Dict, Any
 from datetime import datetime
+import pickle
 import sys
 
 # import logging
 
+from ax.service.managed_loop import optimize
 import numpy as np
+import torch
 
 mod_name = vars(sys.modules[__name__])['__package__']
 
@@ -73,8 +75,6 @@ def auto_lr(training_agent,
     # learning_rates = np.geomspace(min_lr, max_lr, num_split)
     auto_lr_path = training_agent.output_path / 'auto-lr'
     auto_lr_path.mkdir(exist_ok=True)
-    date = datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
-    grid = dict()
     trials = {
         'ResNet18CIFAR': {
             'CIFAR10': {
@@ -130,14 +130,17 @@ def auto_lr(training_agent,
                 'SGD': 30}
         }
     }
-    r = trials[training_agent.config['network']
+    num_trials = \
+        trials[training_agent.config['network']
                ][training_agent.config['dataset']
                  ][training_agent.config['optimizer']]
-    for i in range(r):
-        learning_rate = loguniform.rvs(min_lr, max_lr)
-        training_agent.reset(learning_rate)
+
+    def train_eval(bo_parameters: Dict[str, Any]):
+        training_agent.config['init_lr'] = bo_parameters.get('lr')
+        training_agent.reset(training_agent.config)
         training_agent.output_filename = training_agent.output_path / 'auto-lr'
         training_agent.output_filename.mkdir(exist_ok=True, parents=True)
+        date = datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
         string_name = \
             "auto_lr_results_" +\
             f"date={date}_" +\
@@ -149,28 +152,30 @@ def auto_lr(training_agent,
             f"scheduler={training_agent.config['scheduler']}_" +\
             '_'.join([f"{k}={v}" for k, v in
                       training_agent.config['scheduler_kwargs'].items()]) +\
-            f"learning_rate={learning_rate}" +\
+            f"learning_rate={bo_parameters.get('lr')}" +\
             ".csv".replace(' ', '-')
         training_agent.output_filename = str(
             training_agent.output_filename / string_name)
         training_agent.run_epochs(trial=0, epochs=epochs)
 
-        # ###### LR RANGE STUFF #######
-        if training_agent.config['metric'] == 'loss':
-            grid[learning_rate] = \
-                training_agent.performance_statistics['test_loss_epoch_4']
-        else:
-            grid[learning_rate] = \
-                training_agent.performance_statistics['test_acc1_epoch_4']
-        print(
-            f"Learning rate {learning_rate} acc1 {grid[learning_rate]}")
+        return evaluate(net=training_agent.network,
+                        data_loader=training_agent.test_loader,
+                        dtype=torch.float,
+                        device=training_agent.device)
 
-    with (training_agent.output_path / 'lrrt.csv').open('w+') as f:
-        f.write('lr,acc1\n')
-        for lr, acc in grid.items():
-            f.write(f'{lr},{acc},\n')
-
-    if training_agent.config['metric'] == 'loss':
-        return min(grid, key=grid.get)
-    else:
-        return max(grid, key=grid.get)
+    best_parameters, values, experiment, model = optimize(
+        parameters=[
+            {"name": "lr", "type": "range", "bounds": [
+                1e-4, 0.1], "log_scale": True}
+            # {"name": "batchsize", "type": "range", "bounds": [16, 128]},
+            # {"name": "momentum", "type": "range", "bounds": [0.0, 1.0]},
+            # {"name": "max_epoch", "type": "range", "bounds": [1, 30]},
+            # {"name": "stepsize", "type": "range", "bounds": [20, 40]},
+        ],
+        evaluation_function=train_eval,
+        objective_name='accuracy',
+        total_trials=num_trials
+    )
+    with open(str(auto_lr_path / 'experiment.pkl'), 'wb') as f:
+        pickle.dump(experiment, f)
+    return best_parameters['lr']
