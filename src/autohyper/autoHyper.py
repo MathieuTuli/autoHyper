@@ -33,10 +33,10 @@ mod_name = vars(sys.modules[__name__])['__package__']
 
 if mod_name:
     from .metrics import Metrics
-    from .components import SearchConstraint
+    from .components import HyperParameters
 else:
     from metrics import Metrics
-    from components import SearchConstraint
+    from components import HyperParameters
 
 
 def compute_rank(metrics: Metrics) -> float:
@@ -47,32 +47,13 @@ def compute_rank(metrics: Metrics) -> float:
     return per_S_zero
 
 
-def compute_rate_of_change(rank_history: List[float]) -> float:
-    if len(rank_history) == 1:
-        return [1.]
-    cumprod = np.cumprod(rank_history)
-    output = list()
-    for i in range(len(rank_history)):
-        temp = cumprod[:i+1] - (rank_history[i] * (i+1)) + 1e-7
-        if i == 0:
-            output.append(1.0)
-        else:
-            temp = (temp[i] - temp[i-1])/temp[i]
-            output.append(temp)
-    return output
-
-
 def auto_lr(training_agent,
-            search_constraints: Dict[str, SearchConstraint],
+            hyper_parameters: HyperParameters,
             num_split: int = 20,
             # min_delta: float = 5e-3,
             # lr_delta: float = 3e-5,
             epochs: Union[range, List[int]] = range(0, 5),
             power: float = 0.8):
-    parameters = dict()
-    for hp, constraint in search_constraints.items():
-        parameters[hp] = np.geomspace(
-            constraint.min_val, constraint.max_val, num_split)
     # learning_rates = np.geomspace(min_lr, max_lr, num_split)
     config = training_agent.config.deepcopy()
     lr_idx = 0
@@ -88,17 +69,7 @@ def auto_lr(training_agent,
             f.write('lr,rank,msg\n')
             for (lr, rank, msg) in output_history:
                 f.write(f'{lr},{rank},{msg}\n')
-        if lr_idx == len(learning_rates):
-            min_lr = learning_rates[-2]
-            max_lr = float(learning_rates[-1]) * 1.5
-            print("LR Range Test: Reached End of Grid: Expanding.")
-            learning_rates = np.geomspace(min_lr, max_lr, num_split)
-            # rank_history = list()
-            output_history.append(
-                (learning_rates[lr_idx - 1], -1, 'end-reached'))
-            lr_idx = 0
-            cur_rank = -1
-            continue
+    while True:
         if np.less(np.abs(np.subtract(min_lr, max_lr)), lr_delta):
             print(
                 "LR Range Test Complete: LR Delta: Final LR Range is "

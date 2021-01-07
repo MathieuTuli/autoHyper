@@ -22,6 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 from typing import NamedTuple, List, Optional, Any
+from dataclasses import dataclass
 from enum import Enum
 
 # import logging
@@ -70,7 +71,11 @@ class Statistics(NamedTuple):
     step_time: float
 
 
-class SearchConstraint(NamedTuple):
-    min_val: Any
-    max_val: Any
-    delta: Optional[Any]
+@dataclass
+class HyperParameters():
+    init_lr: bool = False
+    weight_decay: bool = False
+    config = {
+        'init_lr': {'start': 1e-4, 'step': 5e-5},
+        'weight_decay': {'start': 0, 'step': 2e-5}
+    }
