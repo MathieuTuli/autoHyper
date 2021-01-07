@@ -50,33 +50,27 @@ def compute_rank(metrics: Metrics) -> float:
 def auto_lr(training_agent,
             hyper_parameters: HyperParameters,
             num_split: int = 20,
-            # min_delta: float = 5e-3,
+            min_delta: float = 5e-3,
             # lr_delta: float = 3e-5,
             epochs: Union[range, List[int]] = range(0, 5),
             power: float = 0.8):
     # learning_rates = np.geomspace(min_lr, max_lr, num_split)
     config = training_agent.config.deepcopy()
-    lr_idx = 0
+    delta = min_delta
     first_run = True
     output_history = list()
     rank_history = list()
     cur_rank = -1
+    param = 'init_lr'
     auto_lr_path = training_agent.output_path / 'auto-lr'
     auto_lr_path.mkdir(exist_ok=True)
     date = datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
+    buffer = list()
     while True:
         with (training_agent.output_path / 'lrrt.csv').open('w+') as f:
             f.write('lr,rank,msg\n')
             for (lr, rank, msg) in output_history:
                 f.write(f'{lr},{rank},{msg}\n')
-    while True:
-        if np.less(np.abs(np.subtract(min_lr, max_lr)), lr_delta):
-            print(
-                "LR Range Test Complete: LR Delta: Final LR Range is "
-                f"{min_lr}-{max_lr}")
-            output_history.append(
-                (learning_rates[lr_idx], cur_rank, 'exit-delta'))
-            break
         training_agent.reset(config)
         training_agent.output_filename = training_agent.output_path / 'auto-lr'
         training_agent.output_filename.mkdir(exist_ok=True, parents=True)
@@ -91,7 +85,7 @@ def auto_lr(training_agent,
             f"scheduler={training_agent.config['scheduler']}_" +\
             '_'.join([f"{k}={v}" for k, v in
                       training_agent.config['scheduler_kwargs'].items()]) +\
-            f"learning_rate={learning_rates[lr_idx]}" +\
+            f"learning_rate={config['init_lr']}" +\
             ".csv".replace(' ', '-')
         training_agent.output_filename = str(
             training_agent.output_filename / string_name)
@@ -101,66 +95,23 @@ def auto_lr(training_agent,
         cur_rank = compute_rank(training_agent.metrics)
         rank_history.append(cur_rank)
         rate_of_change = np.cumprod(rank_history) ** power
-        print(f"LR Range Test: Cur. Grid Space: {learning_rates}")
-        print(f"LR Range Test: Cur. LR: {learning_rates[lr_idx]}")
-        print(f"LR Range Test: Cur. Rank: {cur_rank}")
-        if np.isclose(cur_rank, 1.):
-            output_history.append((learning_rates[lr_idx],
-                                   cur_rank, 'all-zero'))
-            min_lr *= 5
-            if np.greater(min_lr, max_lr):
-                max_lr = min_lr*1.5
-            learning_rates = np.geomspace(min_lr, max_lr, num_split)
-            rank_history = list()
-            print("LR Range Test: All zero, new range: " +
-                  f"{learning_rates}")
-            lr_idx = 0
-            cur_rank = -1
+        # print(f"LR Range Test: Cur. Grid Space: {learning_rates}")
+        # print(f"LR Range Test: Cur. LR: {learning_rates[lr_idx]}")
+        # print(f"LR Range Test: Cur. Rank: {cur_rank}")
+        if first_run and np.less(cur_rank, 0.5):
+            hyper_parameters.config['init_lr'] /= 10
             continue
-        if lr_idx == 0:
-            if first_run and np.less(cur_rank, 0.5):
-                output_history.append((learning_rates[lr_idx],
-                                       cur_rank, 'early-cross'))
-                min_lr /= 10
-                learning_rates = np.geomspace(min_lr, max_lr, num_split)
-                rank_history = list()
-                print("LR Range Test: Crossed thresh early, new range: " +
-                      f"{learning_rates}")
-                cur_rank = -1
-                continue
         else:
             first_run = False
             if np.isclose(cur_rank, 0.0):
-                output_history.append((learning_rates[lr_idx],
-                                       cur_rank, 'reach-100'))
-                min_lr = learning_rates[max(lr_idx - 2, 0)]
-                max_lr = learning_rates[lr_idx - 1] if \
-                    learning_rates[lr_idx - 1] != min_lr else \
-                    (min_lr + learning_rates[lr_idx]) / 2.
-                learning_rates = np.geomspace(min_lr, max_lr, num_split)
-                rank_history = list()
-                print("LR Range Test: Reached 100% non zero, new range: " +
-                      f"{learning_rates}")
-                lr_idx = 0
-                cur_rank = -1
+                hyper_parameters.config[param]['current'] -= 2 * \
+                    hyper_parameters.config[param]['step']
+            if np.less(rate_of_change[-1], delta):
+                hyper_parameters.config[param]['step'] /= 2
+                delta = max(delta / 2, min_delta)
                 continue
-            if np.less(rate_of_change[-1], min_delta):
-                output_history.append((learning_rates[lr_idx],
-                                       cur_rank, 'plateau'))
-                min_lr = learning_rates[max(lr_idx - 2, 0)]
-                max_lr = learning_rates[lr_idx]
-                learning_rates = np.geomspace(min_lr, max_lr, num_split)
-                rank_history = list()
-                print("LR Range Test: Hit Plateau, new range: " +
-                      f"{learning_rates}")
-                lr_idx = 0
-                cur_rank = -1
-                continue
-        output_history.append((learning_rates[lr_idx],
-                               cur_rank, 'nothing'))
-        lr_idx += 1
     with (training_agent.output_path / 'lrrt.csv').open('w+') as f:
         f.write('lr,rank,msg\n')
         for (lr, rank, msg) in output_history:
             f.write(f'{lr},{rank},{msg}\n')
-    return learning_rates[-1]
+    return hyper_parameters

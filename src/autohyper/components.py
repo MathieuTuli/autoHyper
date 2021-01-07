@@ -76,6 +76,6 @@ class HyperParameters():
     init_lr: bool = False
     weight_decay: bool = False
     config = {
-        'init_lr': {'start': 1e-4, 'step': 5e-5},
-        'weight_decay': {'start': 0, 'step': 2e-5}
+        'init_lr': {'current': 1e-4, 'step': 5e-5},
+        'weight_decay': {'current': 0, 'step': 2e-5}
     }
