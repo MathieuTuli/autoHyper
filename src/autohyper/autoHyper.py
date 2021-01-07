@@ -59,18 +59,11 @@ def auto_lr(training_agent,
     delta = min_delta
     first_run = True
     output_history = list()
-    rank_history = list()
     cur_rank = -1
-    param = 'init_lr'
     auto_lr_path = training_agent.output_path / 'auto-lr'
     auto_lr_path.mkdir(exist_ok=True)
     date = datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
-    buffer = list()
     while True:
-        with (training_agent.output_path / 'lrrt.csv').open('w+') as f:
-            f.write('lr,rank,msg\n')
-            for (lr, rank, msg) in output_history:
-                f.write(f'{lr},{rank},{msg}\n')
         training_agent.reset(config)
         training_agent.output_filename = training_agent.output_path / 'auto-lr'
         training_agent.output_filename.mkdir(exist_ok=True, parents=True)
@@ -93,23 +86,40 @@ def auto_lr(training_agent,
 
         # ###### LR RANGE STUFF #######
         cur_rank = compute_rank(training_agent.metrics)
-        rank_history.append(cur_rank)
-        rate_of_change = np.cumprod(rank_history) ** power
         # print(f"LR Range Test: Cur. Grid Space: {learning_rates}")
         # print(f"LR Range Test: Cur. LR: {learning_rates[lr_idx]}")
         # print(f"LR Range Test: Cur. Rank: {cur_rank}")
-        if first_run and np.less(cur_rank, 0.5):
-            hyper_parameters.config['init_lr'] /= 10
-            continue
-        else:
-            first_run = False
-            if np.isclose(cur_rank, 0.0):
-                hyper_parameters.config[param]['current'] -= 2 * \
-                    hyper_parameters.config[param]['step']
-            if np.less(rate_of_change[-1], delta):
-                hyper_parameters.config[param]['step'] /= 2
-                delta = max(delta / 2, min_delta)
+        for param in hyper_parameters.config.keys():
+            if hyper_parameters[param]['stop']:
                 continue
+            if first_run and np.less(cur_rank, 0.5):
+                hyper_parameters.config[param]['current'] /= 10
+                continue
+            else:
+                first_run = False
+                if np.isclose(cur_rank, 0.0):
+                    hyper_parameters.config[param]['current'] -= 2 * \
+                        hyper_parameters.config[param]['step']
+                    continue
+                hyper_parameters.config[param]['buffer'].append(cur_rank)
+                zeta = np.cumprod(
+                    hyper_parameters.config[param]['buffer']) ** power
+                if np.less(zeta[-1], delta):
+                    hyper_parameters.config[param]['step'] /= 2
+                    delta = max(delta / 2, min_delta)
+                    continue
+                if delta == min_delta:
+                    hyper_parameters.config[param]['stop'] = True
+                    continue
+            hyper_parameters.config[param]['current'] += \
+                hyper_parameters.config[param]['step']
+            if param == 'init_lr':
+                config['init_lr'] = hyper_parameters.config[param]['current']
+            elif param == 'weight_decay':
+                config['optimizer_kwargs']['weight_decay'] = \
+                    hyper_parameters.config[param]['current']
+        if all([config['stop'] for _, config in hyper_parameters.items()]):
+            break
     with (training_agent.output_path / 'lrrt.csv').open('w+') as f:
         f.write('lr,rank,msg\n')
         for (lr, rank, msg) in output_history:

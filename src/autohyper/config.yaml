@@ -12,8 +12,8 @@ scheduler: 'AdaS' # options: AdaS (with SGD), StepLR, CosineAnnealingWarmRestart
 
 
 ###### Suggested Tune ######
-init_lr: 'bo_auto'
-early_stop_threshold: -1 # set to -1 if you wish not to use early stop, or equally, set to a high value. Set to -1 if not using AdaS
+init_lr: 'auto'
+early_stop_threshold: 0.001 # set to -1 if you wish not to use early stop, or equally, set to a high value. Set to -1 if not using AdaS
 optimizer_kwargs:
   momentum: 0.9
   weight_decay: 5e-4
