@@ -51,18 +51,25 @@ def auto_lr(training_agent,
             hyper_parameters: HyperParameters,
             num_split: int = 20,
             min_delta: float = 5e-3,
-            # lr_delta: float = 3e-5,
+            scale_delta: float = 3e-5,
             epochs: Union[range, List[int]] = range(0, 5),
             power: float = 0.8):
     # learning_rates = np.geomspace(min_lr, max_lr, num_split)
-    config = training_agent.config.deepcopy()
-    delta = min_delta
+    config = training_agent.config
     first_run = True
     output_history = list()
     cur_rank = -1
     auto_lr_path = training_agent.output_path / 'auto-lr'
     auto_lr_path.mkdir(exist_ok=True)
     date = datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
+    delta = dict()
+    for param in hyper_parameters.config.keys():
+        delta[param] = .1
+        if param == 'init_lr':
+            config['init_lr'] = hyper_parameters.config[param]['current']
+        elif param == 'weight_decay':
+            config['optimizer_kwargs']['weight_decay'] = \
+                hyper_parameters.config[param]['current']
     while True:
         training_agent.reset(config)
         training_agent.output_filename = training_agent.output_path / 'auto-lr'
@@ -90,35 +97,51 @@ def auto_lr(training_agent,
         # print(f"LR Range Test: Cur. LR: {learning_rates[lr_idx]}")
         # print(f"LR Range Test: Cur. Rank: {cur_rank}")
         for param in hyper_parameters.config.keys():
-            if hyper_parameters[param]['stop']:
+            if hyper_parameters.config[param]['stop']:
                 continue
             if first_run and np.less(cur_rank, 0.5):
+                print("FIRST RUN LESS THAN 50")
                 hyper_parameters.config[param]['current'] /= 10
                 continue
             else:
                 first_run = False
                 if np.isclose(cur_rank, 0.0):
-                    hyper_parameters.config[param]['current'] -= 2 * \
-                        hyper_parameters.config[param]['step']
+                    print("RANK ZERO BACK UP")
+                    hyper_parameters.config[param]['current'] *= \
+                        hyper_parameters.config[param]['scale'] ** 2
                     continue
                 hyper_parameters.config[param]['buffer'].append(cur_rank)
                 zeta = np.cumprod(
                     hyper_parameters.config[param]['buffer']) ** power
-                if np.less(zeta[-1], delta):
-                    hyper_parameters.config[param]['step'] /= 2
-                    delta = max(delta / 2, min_delta)
-                    continue
-                if delta == min_delta:
-                    hyper_parameters.config[param]['stop'] = True
-                    continue
-            hyper_parameters.config[param]['current'] += \
-                hyper_parameters.config[param]['step']
+                # hyper_parameters.config[param]['current'] *= \
+                #     hyper_parameters.config[param]['scale']
+                # if all(np.less(zeta[-3:], delta[param])) and len(zeta) > 2:
+                if np.less(zeta[-1], min_delta):
+                    print("LESS THAN DELTA")
+                    if np.isclose(hyper_parameters.config[param]['scale'], 1.,
+                                  atol=scale_delta):
+                        hyper_parameters.config[param]['stop'] = True
+                    hyper_parameters.config[param]['count'] += 1
+                    hyper_parameters.config[param]['scale'] = .5 * \
+                        np.exp(-hyper_parameters.config[param]
+                               ['count'] * 2) + 1
+                    # delta[param] = max(delta[param] / 2, min_delta)
+                    hyper_parameters.config[param]['buffer'].clear()
+                    # continue
+                    hyper_parameters.config[param]['current'] /= \
+                        hyper_parameters.config[param]['scale'] ** 3
+
+            hyper_parameters.config[param]['current'] *= \
+                hyper_parameters.config[param]['scale']
             if param == 'init_lr':
                 config['init_lr'] = hyper_parameters.config[param]['current']
             elif param == 'weight_decay':
                 config['optimizer_kwargs']['weight_decay'] = \
                     hyper_parameters.config[param]['current']
-        if all([config['stop'] for _, config in hyper_parameters.items()]):
+        for param, conf in hyper_parameters.config.items():
+            print(param)
+            print(conf)
+        if all([config['stop'] for _, config in hyper_parameters.config.items()]):
             break
     with (training_agent.output_path / 'lrrt.csv').open('w+') as f:
         f.write('lr,rank,msg\n')

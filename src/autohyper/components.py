@@ -25,6 +25,8 @@ from typing import NamedTuple, List, Optional, Any
 from dataclasses import dataclass
 from enum import Enum
 
+import numpy as np
+
 # import logging
 
 
@@ -76,8 +78,10 @@ class HyperParameters():
     init_lr: bool = False
     weight_decay: bool = False
     config = {
-        'init_lr': {'current': 1e-4, 'step': 5e-5,
-                    'buffer': list(), 'stop': False},
-        'weight_decay': {'current': 0, 'step': 2e-5,
-                         'buffer': list(), 'stop': False}
+        'init_lr': {'current': 1e-4, 'scale': 1.5,
+                    'buffer': list(), 'stop': False,
+                    'count': 0},
+        'weight_decay': {'current': 1e-6, 'scale': 1.5,
+                         'buffer': list(), 'stop': False,
+                         'count': 0}
     }
