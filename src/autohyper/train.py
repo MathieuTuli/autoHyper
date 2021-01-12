@@ -38,6 +38,7 @@ import torch.distributed as dist
 import pandas as pd
 import numpy as np
 import torch
+import tqdm
 import yaml
 
 mod_name = vars(sys.modules[__name__])['__package__']
@@ -443,7 +444,7 @@ class TrainingAgent:
         # total = 0
 
         """train CNN architecture"""
-        for batch_idx, (inputs, targets) in enumerate(self.train_loader):
+        for batch_idx, (inputs, targets) in enumerate(tqdm.tqdm(self.train_loader)):
             # start = time.time()
             # print(f'{batch_idx} / {len(train_loader)}')
             if self.gpu is not None:
