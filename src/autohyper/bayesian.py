@@ -115,9 +115,9 @@ def auto_lr(training_agent,
         },
         'ResNet34CIFAR': {
             'CIFAR10': {
-                'AdaM': 20,  # 10 for 1d, 20 for 2d
+                'AdaM': 10,  # 10 for 1d, 20 for 2d
                 'AdaBound': 11,
-                'AdaGrad': 25,  # 20 for 1d, 25 for 2d
+                'AdaGrad': 20,  # 20 for 1d, 25 for 2d
                 'SGD': 27},
             'CIFAR100': {
                 'AdaM': 10,
@@ -138,8 +138,8 @@ def auto_lr(training_agent,
 
     def train_eval(bo_parameters: Dict[str, Any]):
         training_agent.config['init_lr'] = bo_parameters.get('lr')
-        training_agent.config['optimizer_kwargs']['weight_decay'] = \
-            bo_parameters.get('weight_decay')
+        # training_agent.config['optimizer_kwargs']['weight_decay'] = \
+        #     bo_parameters.get('weight_decay')
         training_agent.reset(training_agent.config)
         training_agent.output_filename = training_agent.output_path / 'auto-lr'
         training_agent.output_filename.mkdir(exist_ok=True, parents=True)
@@ -170,8 +170,8 @@ def auto_lr(training_agent,
         parameters=[
             {"name": "lr", "type": "range", "bounds": [
                 1e-4, 0.1], "log_scale": True, "value_type":'float'},
-            {"name": "weight_decay", "type": "range", "bounds": [
-                1e-6, 0.1], "log_scale": True, "value_type":'float'}
+            # {"name": "weight_decay", "type": "range", "bounds": [
+            #     1e-6, 0.1], "log_scale": True, "value_type":'float'}
             # {"name": "batchsize", "type": "range", "bounds": [16, 128]},
             # {"name": "momentum", "type": "range", "bounds": [0.0, 1.0]},
             # {"name": "max_epoch", "type": "range", "bounds": [1, 30]},
@@ -188,4 +188,4 @@ def auto_lr(training_agent,
             print("FAILED PICKLE")
             pickle.dump(experiment.fetch_data().df, f)
     print(best_parameters['lr'])
-    return best_parameters['lr'], best_parameters['weight_decay']
+    return best_parameters['lr']
