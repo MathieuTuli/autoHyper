@@ -117,7 +117,7 @@ def auto_lr(training_agent,
             'CIFAR10': {
                 'AdaM': 20,  # 10 for 1d, 20 for 2d
                 'AdaBound': 11,
-                'AdaGrad': 20,
+                'AdaGrad': 25,  # 20 for 1d, 25 for 2d
                 'SGD': 27},
             'CIFAR100': {
                 'AdaM': 10,
