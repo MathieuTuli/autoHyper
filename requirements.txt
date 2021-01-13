@@ -1,4 +1,4 @@
--e git+https://github.com/MathieuTuli/AutoLR@2e307fae975ab469a7d4dbfe081372f2902621ad#egg=autohyper
+-e .
 ax-platform==0.1.19
 botorch==0.3.3
 future==0.18.2

@@ -316,20 +316,17 @@ class TrainingAgent:
             list_lr = self.config['init_lr']
         for learning_rate in list_lr:
             if learning_rate == 'auto':
-                hyper_parameters = auto_lr(self, HyperParameters(
+                self.config = auto_lr(self, HyperParameters(
                     init_lr=True, weight_decay=True))
                 learning_rate =  \
-                    hyper_parameters.config['init_lr']['current']
-                self.config['init_lr'] = learning_rate
-                self.config['optimizer_kwargs']['weight_decay'] = \
-                    hyper_parameters.config['weight_decay']['current']
+                    self.config['init_lr']
             elif learning_rate == 'grid_search_auto':
                 learning_rate = grid_search_lr(self)
                 self.config['init_lr'] = learning_rate
             elif learning_rate == 'bo_auto':
-                learning_rate, weight_decay = bo_lr(self)
-                self.config['init_lr'] = learning_rate
-                self.config['optimizer_kwargs']['weight_decay'] = weight_decay
+                self.config = bo_lr(self)
+                learning_rate = \
+                    self.config['init_lr']
             lr_output_path = self.output_path / f'lr-{learning_rate}'
             lr_output_path.mkdir(exist_ok=True, parents=True)
             self.checkpoint_path = original_check_path / f'lr-{learning_rate}'

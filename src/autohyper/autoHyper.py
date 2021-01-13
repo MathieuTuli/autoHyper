@@ -21,7 +21,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-from typing import Union, List, Dict, Any, Tuple
+from typing import Union, List
 from datetime import datetime
 import sys
 
@@ -54,9 +54,7 @@ def auto_lr(training_agent,
             scale_delta: float = 3e-5,
             epochs: Union[range, List[int]] = range(0, 5),
             power: float = 0.8):
-    # learning_rates = np.geomspace(min_lr, max_lr, num_split)
-    config = training_agent.config
-    first_run = True
+    establish_start = True
     output_history = list()
     cur_rank = -1
     auto_lr_path = training_agent.output_path / 'auto-lr'
@@ -66,12 +64,14 @@ def auto_lr(training_agent,
     for param in hyper_parameters.config.keys():
         delta[param] = .1
         if param == 'init_lr':
-            config['init_lr'] = hyper_parameters.config[param]['current']
-        elif param == 'weight_decay':
-            config['optimizer_kwargs']['weight_decay'] = \
+            training_agent.config['init_lr'] = \
                 hyper_parameters.config[param]['current']
-    while True:
-        training_agent.reset(config)
+        elif param == 'weight_decay':
+            training_agent.config['optimizer_kwargs']['weight_decay'] = \
+                hyper_parameters.config[param]['current']
+
+    def reset():
+        training_agent.reset(training_agent.config)
         training_agent.output_filename = training_agent.output_path / 'auto-lr'
         training_agent.output_filename.mkdir(exist_ok=True, parents=True)
         string_name = \
@@ -85,26 +85,38 @@ def auto_lr(training_agent,
             f"scheduler={training_agent.config['scheduler']}_" +\
             '_'.join([f"{k}={v}" for k, v in
                       training_agent.config['scheduler_kwargs'].items()]) +\
-            f"learning_rate={config['init_lr']}" +\
+            f"learning_rate={training_agent.config['init_lr']}" +\
             ".csv".replace(' ', '-')
         training_agent.output_filename = str(
             training_agent.output_filename / string_name)
-        training_agent.run_epochs(trial=0, epochs=epochs)
-
-        # ###### LR RANGE STUFF #######
-        cur_rank = compute_rank(training_agent.metrics)
-        # print(f"LR Range Test: Cur. Grid Space: {learning_rates}")
-        # print(f"LR Range Test: Cur. LR: {learning_rates[lr_idx]}")
-        # print(f"LR Range Test: Cur. Rank: {cur_rank}")
-        for param in hyper_parameters.config.keys():
-            if hyper_parameters.config[param]['stop']:
-                continue
-            if first_run and np.less(cur_rank, 0.5):
-                print("FIRST RUN LESS THAN 50")
+    rank_buffer = np.full_like(3 ** len(hyper_parameters.config.keys()), -1)
+    rank_memory = list()
+    while True:
+        if establish_start and not(np.isclose(cur_rank, 1.0, atol=.1)):
+            reset()
+            training_agent.run_epochs(trial=0, epochs=epochs)
+            cur_rank = compute_rank(training_agent.metrics)
+            print("FIRST RUN LESS THAN 90%")
+            for param in hyper_parameters.config.keys():
                 hyper_parameters.config[param]['current'] /= 10
-                continue
-            else:
-                first_run = False
+                if param == 'init_lr':
+                    training_agent.config['init_lr'] = \
+                        hyper_parameters.config[param]['current']
+                elif param == 'weight_decay':
+                    training_agent.config['optimizer_kwargs']['weight_decay'
+                                                              ] = \
+                        hyper_parameters.config[param]['current']
+            continue
+        establish_start = False
+        for i, param in enumerate(hyper_parameters.config.keys()):
+            for scale in [0, 1, -1]:
+                # if hyper_parameters.config[param]['stop']:
+                #     continue
+                if np.all(rank_buffer < 0):
+                    reset()
+                    training_agent.run_epochs(trial=0, epochs=epochs)
+                    cur_rank = compute_rank(training_agent.metrics)
+                    rank_buffer
                 if np.isclose(cur_rank, 0.0):
                     print("RANK ZERO BACK UP")
                     hyper_parameters.config[param]['current'] *= \
@@ -113,9 +125,6 @@ def auto_lr(training_agent,
                 hyper_parameters.config[param]['buffer'].append(cur_rank)
                 zeta = np.cumprod(
                     hyper_parameters.config[param]['buffer']) ** power
-                # hyper_parameters.config[param]['current'] *= \
-                #     hyper_parameters.config[param]['scale']
-                # if all(np.less(zeta[-3:], delta[param])) and len(zeta) > 2:
                 if np.less(zeta[-1], min_delta):
                     print("LESS THAN DELTA")
                     if np.isclose(hyper_parameters.config[param]['scale'], 1.,
@@ -131,17 +140,20 @@ def auto_lr(training_agent,
                     hyper_parameters.config[param]['current'] /= \
                         hyper_parameters.config[param]['scale'] ** 3
 
-            hyper_parameters.config[param]['current'] *= \
-                hyper_parameters.config[param]['scale']
-            if param == 'init_lr':
-                config['init_lr'] = hyper_parameters.config[param]['current']
-            elif param == 'weight_decay':
-                config['optimizer_kwargs']['weight_decay'] = \
-                    hyper_parameters.config[param]['current']
+                hyper_parameters.config[param]['current'] *= \
+                    hyper_parameters.config[param]['scale']
+                if param == 'init_lr':
+                    training_agent.config['init_lr'] = \
+                        hyper_parameters.config[param]['current']
+                elif param == 'weight_decay':
+                    training_agent.config['optimizer_kwargs']['weight_decay'
+                                                              ] = \
+                        hyper_parameters.config[param]['current']
         for param, conf in hyper_parameters.config.items():
             print(param)
             print(conf)
-        if all([config['stop'] for _, config in hyper_parameters.config.items()]):
+        if all([config['stop'] for _, config in
+                hyper_parameters.config.items()]):
             break
     with (training_agent.output_path / 'lrrt.csv').open('w+') as f:
         f.write('lr,rank,msg\n')

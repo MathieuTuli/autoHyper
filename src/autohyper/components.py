@@ -21,11 +21,11 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-from typing import NamedTuple, List, Optional, Any
+from typing import NamedTuple, List, Union
 from dataclasses import dataclass
 from enum import Enum
 
-import numpy as np
+# import numpy as np
 
 # import logging
 
@@ -74,14 +74,18 @@ class Statistics(NamedTuple):
 
 
 @dataclass
+class HyperParameter():
+    current: Union[float, int] = None
+    scale: float = None
+    stop: bool = False
+    count: int = 0
+
+
+@dataclass
 class HyperParameters():
     init_lr: bool = False
     weight_decay: bool = False
     config = {
-        'init_lr': {'current': 1e-4, 'scale': 1.5,
-                    'buffer': list(), 'stop': False,
-                    'count': 0},
-        'weight_decay': {'current': 1e-6, 'scale': 1.5,
-                         'buffer': list(), 'stop': False,
-                         'count': 0}
+        'init_lr': HyperParameter(current=1e-4, scale=1.5),
+        'weight_decay': HyperParameter(current=1e-6, scale=1.5)
     }
