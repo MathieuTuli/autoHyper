@@ -138,6 +138,23 @@ def auto_lr(training_agent,
                 'AdaBound': 24,
                 'AdaGrad': 33,
                 'SGD': 37}
+        },
+        'ResNet34CIFAR': {
+            'CIFAR10': {
+                'AdaM': 10,  # 10 for 1d, 20 for 2d
+                'AdaBound': 11,
+                'AdaGrad': 20,  # 20 for 1d, 25 for 2d
+                'SGD': 27},
+            'CIFAR100': {
+                'AdaM': 10,
+                'AdaBound': 13,
+                'AdaGrad': 32,
+                'SGD': 26},
+            'TinyImageNet': {
+                'AdaM': 14,
+                'AdaBound': 15,
+                'AdaGrad': 22,
+                'SGD': 30}
         }
     }
     r = trials[training_agent.config['network']
