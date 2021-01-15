@@ -153,11 +153,9 @@ def auto_lr(training_agent,
             # if np.less(trust_buffer, 0.).any():  # not done populating buffer
             #     continue
         # TODO only works for 2D cse
-        if np.equal(trust_buffer, 1.).all():
-            min_index = (2, 2)
-        else:
-            min_index = np.unravel_index(
-                np.argmin(trust_buffer), trust_buffer.shape)
+        # Will handle duplicates and take the last index
+        min_index = tuple(np.argwhere(
+            trust_buffer == np.min(trust_buffer))[-1])
         print(f'min_index: {min_index}')
         rank_history.append(np.min(trust_buffer))
         for axis, i in enumerate(min_index):

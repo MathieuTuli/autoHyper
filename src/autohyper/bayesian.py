@@ -69,7 +69,7 @@ def auto_lr(training_agent,
             num_split: int = 25,
             min_delta: float = 5e-3,
             lr_delta: float = 3e-5,
-            epochs: Union[range, List[int]] = range(0, 5),
+            epochs: Union[range, List[int]] = range(0, 1),
             exit_counter_thresh: int = 6,
             power: float = 0.8):
     # ###### LR RANGE STUFF #######
@@ -115,9 +115,9 @@ def auto_lr(training_agent,
         },
         'ResNet34CIFAR': {
             'CIFAR10': {
-                'AdaM': 20,  # 10 for 1d, 20 for 2d
+                'AdaM': 80,  # 10 for 1d
                 'AdaBound': 11,
-                'AdaGrad': 25,  # 20 for 1d, 25 for 2d
+                'AdaGrad': 20,  # 20 for 1d
                 'SGD': 27},
             'CIFAR100': {
                 'AdaM': 10,
@@ -169,7 +169,7 @@ def auto_lr(training_agent,
     best_parameters, values, experiment, model = optimize(
         parameters=[
             {"name": "lr", "type": "range", "bounds": [
-                1e-4, 0.1], "log_scale": True, "value_type":'float'},
+                1e-6, 0.1], "log_scale": True, "value_type":'float'},
             {"name": "weight_decay", "type": "range", "bounds": [
                 1e-6, 0.1], "log_scale": True, "value_type":'float'}
             # {"name": "batchsize", "type": "range", "bounds": [16, 128]},
@@ -188,4 +188,4 @@ def auto_lr(training_agent,
             print("FAILED PICKLE")
             pickle.dump(experiment.fetch_data().df, f)
     print(best_parameters['lr'])
-    return best_parameters['lr'], best_parameters['weight_decay']
+    return training_agent.config
