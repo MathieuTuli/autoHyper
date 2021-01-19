@@ -69,7 +69,7 @@ def auto_lr(training_agent,
             num_split: int = 25,
             min_delta: float = 5e-3,
             lr_delta: float = 3e-5,
-            epochs: Union[range, List[int]] = range(0, 1),
+            epochs: Union[range, List[int]] = range(0, 5),
             exit_counter_thresh: int = 6,
             power: float = 0.8):
     # ###### LR RANGE STUFF #######
@@ -115,7 +115,7 @@ def auto_lr(training_agent,
         },
         'ResNet34CIFAR': {
             'CIFAR10': {
-                'AdaM': 80,  # 10 for 1d
+                'AdaM': 50,  # 10 for 1d
                 'AdaBound': 11,
                 'AdaGrad': 20,  # 20 for 1d
                 'SGD': 27},
@@ -169,9 +169,9 @@ def auto_lr(training_agent,
     best_parameters, values, experiment, model = optimize(
         parameters=[
             {"name": "lr", "type": "range", "bounds": [
-                1e-6, 0.1], "log_scale": True, "value_type":'float'},
+                1e-7, 0.1], "log_scale": True, "value_type":'float'},
             {"name": "weight_decay", "type": "range", "bounds": [
-                1e-6, 0.1], "log_scale": True, "value_type":'float'}
+                1e-7, 0.1], "log_scale": True, "value_type":'float'}
             # {"name": "batchsize", "type": "range", "bounds": [16, 128]},
             # {"name": "momentum", "type": "range", "bounds": [0.0, 1.0]},
             # {"name": "max_epoch", "type": "range", "bounds": [1, 30]},
