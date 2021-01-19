@@ -75,6 +75,7 @@ def auto_lr(training_agent,
     trust_buffer = np.full([3] * num_hp, -1., dtype=float)
     rank_history = list()
     scale_powers = [-1, 0, 1]  # defines the trust region
+    scale_powers = [0, 1]  # defines the trust region
     trust_region = list(itertools.product(
         *[scale_powers for i in range(num_hp)]))
 
