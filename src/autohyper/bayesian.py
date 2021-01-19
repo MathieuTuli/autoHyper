@@ -169,7 +169,7 @@ def auto_lr(training_agent,
     best_parameters, values, experiment, model = optimize(
         parameters=[
             {"name": "lr", "type": "range", "bounds": [
-                1e-7, 0.1], "log_scale": True, "value_type":'float'},
+                1e-6, 0.1], "log_scale": True, "value_type":'float'},
             {"name": "weight_decay", "type": "range", "bounds": [
                 1e-7, 0.1], "log_scale": True, "value_type":'float'}
             # {"name": "batchsize", "type": "range", "bounds": [16, 128]},
