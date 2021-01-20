@@ -54,7 +54,7 @@ def auto_lr(training_agent,
             num_split: int = 20,
             min_delta: float = 5e-3,
             scale_delta: float = 3e-5,
-            epochs: Union[range, List[int]] = range(0, 5),
+            epochs: Union[range, List[int]] = range(0, 1),
             power: float = 0.8):
     establish_start = True
     cur_rank = -1
