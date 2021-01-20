@@ -104,10 +104,9 @@ def auto_lr(training_agent,
     while True:
         print('--')
         print("Current settings:")
-        print(f"trust_buffer: {trust_buffer}")
+        print(f"trust_buffer:\n{trust_buffer}")
         print(f"rank_history: {rank_history}")
         print(f"params: {hyper_parameters.config}")
-        print('--')
 
         if establish_start:
             reset()
@@ -132,8 +131,10 @@ def auto_lr(training_agent,
             print('--')
             print("Doing TR")
             print(f"params: {hyper_parameters.config}")
-            print(f"trust_region: {trust_buffer}")
-            print(f"params: {training_agent.config}")
+            print(f"trust_region:\n{trust_buffer}")
+            print(f"init_lr: {training_agent.config['init_lr']}")
+            print(
+                f"wd: {training_agent.config['optimizer_kwargs']['weight_decay']}")
             # index = tuple(np.array(scale_power) + 1)
             index = tuple(np.array(scale_power))
             if np.less(trust_buffer[index], 0.):
@@ -150,36 +151,33 @@ def auto_lr(training_agent,
                 training_agent.run_epochs(trial=0, epochs=epochs)
                 cur_rank = compute_rank(training_agent.metrics)
                 print(f"Rank was {cur_rank}")
-                print('--')
                 trust_buffer[index] = cur_rank
             # if np.less(trust_buffer, 0.).any():  # not done populating buffer
             #     continue
         # TODO only works for 2D cse
         # Will handle duplicates and take the last index
+        print("Done TR")
         min_index = tuple(np.argwhere(
             trust_buffer == np.min(trust_buffer))[-1])
         print(f'min_index: {min_index}')
         rank_history.append(np.min(trust_buffer))
-        for axis, i in enumerate(min_index):
-            mid = int(trust_buffer.shape[axis] / 2)
-            trust_buffer = np.roll(trust_buffer, (i - mid) * -1, axis=axis)
-        # TODO THIS ONLY WORKS FOR 2D MATRIX
-        if min_index[0] == 0 or min_index[0] == trust_buffer.shape[0] - 1:
-            trust_buffer[min_index[0], :] = -1.
-        if min_index[1] == 0 or min_index[1] == trust_buffer.shape[1] - 1:
-            trust_buffer[:, min_index[1]] = -1.
-        print(f'trust_buffer: {trust_buffer}')
-        scale_power = list(np.array(min_index) - 1)
+        # for axis, i in enumerate(min_index):
+        #     mid = int(trust_buffer.shape[axis] / 2)
+        #     trust_buffer = np.roll(trust_buffer, (i - mid) * -1, axis=axis)
+        # # TODO THIS ONLY WORKS FOR 2D MATRIX
+        # if min_index[0] == 0 or min_index[0] == trust_buffer.shape[0] - 1:
+        #     trust_buffer[min_index[0], :] = -1.
+        # if min_index[1] == 0 or min_index[1] == trust_buffer.shape[1] - 1:
+        #     trust_buffer[:, min_index[1]] = -1.
+        trust_buffer = np.ones_like(trust_buffer, dtype=float) * -1.
+        trust_buffer[0, 0] = rank_history[-1]
+        print(f'trust_buffer:\n{trust_buffer}')
+        # scale_power = list(np.array(min_index) - 1)
+        scale_power = list(np.array(min_index))
         for i, param in enumerate(hyper_parameters.config.keys()):
             current = hyper_parameters.config[param].current * (
                 hyper_parameters.config[param].scale ** scale_power[i])
             hyper_parameters.config[param].current = current
-            # if np.isclose(cur_rank, 0.0):
-            #     print("RANK ZERO BACK UP")
-            #     hyper_parameters.config[param]['current'] *= \
-            #         hyper_parameters.config[param]['scale'] ** 2
-            #     continue
-            # hyper_parameters.config[param]['buffer'].append(cur_rank)
         zeta = np.cumprod(rank_history) ** power
         if np.less(zeta[-1], min_delta):
             for param in hyper_parameters.config.keys():
