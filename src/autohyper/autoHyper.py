@@ -134,7 +134,8 @@ def auto_lr(training_agent,
             print(f"params: {hyper_parameters.config}")
             print(f"trust_region: {trust_buffer}")
             print(f"params: {training_agent.config}")
-            index = tuple(np.array(scale_power) + 1)
+            # index = tuple(np.array(scale_power) + 1)
+            index = tuple(np.array(scale_power))
             if np.less(trust_buffer[index], 0.):
                 for i, param in enumerate(hyper_parameters.config.keys()):
                     current = hyper_parameters.config[param].current * \
