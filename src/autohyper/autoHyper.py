@@ -72,12 +72,12 @@ def auto_lr(training_agent,
                 hyper_parameters.config[param].current
 
     num_hp = len(hyper_parameters.config.keys())
-    trust_buffer = np.full([3] * num_hp, -1., dtype=float)
     rank_history = list()
     scale_powers = [-1, 0, 1]  # defines the trust region
     scale_powers = [0, 1]  # defines the trust region
     trust_region = list(itertools.product(
         *[scale_powers for i in range(num_hp)]))
+    trust_buffer = np.full([len(scale_powers)] * num_hp, -1., dtype=float)
 
     def reset():
         training_agent.reset(training_agent.config)
