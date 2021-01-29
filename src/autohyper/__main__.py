@@ -67,7 +67,6 @@ args = parser.parse_args()
 # logging.info(f"AdaS: Log Level set to {str(args.log_level)}")
 
 # logging.info("AdaS: Main")
-
 if str(args.command) == 'train':
     train_main(args)
 # if str(args.command) == 'lrrt':
