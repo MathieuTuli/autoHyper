@@ -54,7 +54,7 @@ def auto_lr(training_agent,
             num_split: int = 20,
             min_delta: float = 5e-3,
             scale_delta: float = 5e-3,
-            epochs: Union[range, List[int]] = range(0, 1),
+            epochs: Union[range, List[int]] = range(0, 5),
             power: float = 0.8):
     establish_start = True
     cur_rank = -1
@@ -163,6 +163,8 @@ def auto_lr(training_agent,
             trust_buffer == np.min(trust_buffer))[-1])
         print(f'min_index: {min_index}')
         rank_history.append(np.min(trust_buffer))
+        if min_index == (1, 1):
+            min_index = (2, 2)
         for axis, i in enumerate(min_index):
             mid = int(trust_buffer.shape[axis] / 2)
             trust_buffer = np.roll(trust_buffer, (i - mid) * -1, axis=axis)

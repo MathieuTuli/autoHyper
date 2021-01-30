@@ -115,20 +115,21 @@ def auto_lr(training_agent,
         },
         'ResNet34CIFAR': {
             'CIFAR10': {
-                'AdaM': 50,  # 10 for 1d
-                'AdaBound': 11,
-                'AdaGrad': 20,  # 20 for 1d
-                'SGD': 27},
+                'AdaM': 58,  # 10 for 1d
+                'AdaBound': 48,
+                'AdaGrad': 65,  # 20 for 1d
+                'SGD': 79},
             'CIFAR100': {
-                'AdaM': 10,
-                'AdaBound': 13,
-                'AdaGrad': 32,
-                'SGD': 26},
+                'AdaM': 58,  # 10 for 1d
+                'AdaBound': 48,
+                'AdaGrad': 65,  # 20 for 1d
+                'SGD': 79},
             'TinyImageNet': {
-                'AdaM': 14,
-                'AdaBound': 15,
-                'AdaGrad': 22,
-                'SGD': 30}
+                'AdaM': 52,
+                'AdaBound': 52,
+                'AdaGrad': 62,
+                'SGD': 81}
+
         }
     }
     num_trials = \
