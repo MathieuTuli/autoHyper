@@ -54,7 +54,7 @@ def auto_lr(training_agent,
             num_split: int = 20,
             min_delta: float = 5e-3,
             scale_delta: float = 5e-3,
-            epochs: Union[range, List[int]] = range(0, 5),
+            epochs: Union[range, List[int]] = range(0, 1),
             power: float = 0.8):
     establish_start = True
     cur_rank = -1
@@ -108,27 +108,27 @@ def auto_lr(training_agent,
         print(f"rank_history: {rank_history}")
         print(f"params: {hyper_parameters.config}")
 
-        if establish_start:
-            reset()
-            training_agent.run_epochs(trial=0, epochs=epochs)
-            cur_rank = compute_rank(training_agent.metrics)
-            if np.less(cur_rank, .9) and all(
-                np.greater(hp.current, 1e-8)
-                    for k, hp in hyper_parameters.config.items()):
-                print("FIRST RUN LESS THAN 90%")
-                print(f"Rank was {cur_rank}")
-                for param in hyper_parameters.config.keys():
-                    hyper_parameters.config[param].current /= \
-                        hyper_parameters.config[param].scale ** 2
-                    if param == 'init_lr':
-                        training_agent.config['init_lr'] = \
-                            hyper_parameters.config[param].current
-                    elif param == 'weight_decay':
-                        training_agent.config['optimizer_kwargs']['weight_decay'
-                                                                  ] = \
-                            hyper_parameters.config[param].current
-                continue
-        establish_start = False
+        # if establish_start:
+        #     reset()
+        #     training_agent.run_epochs(trial=0, epochs=epochs)
+        #     cur_rank = compute_rank(training_agent.metrics)
+        #     if np.less(cur_rank, .9) and all(
+        #         np.greater(hp.current, 1e-8)
+        #             for k, hp in hyper_parameters.config.items()):
+        #         print("FIRST RUN LESS THAN 90%")
+        #         print(f"Rank was {cur_rank}")
+        #         for param in hyper_parameters.config.keys():
+        #             hyper_parameters.config[param].current /= \
+        #                 hyper_parameters.config[param].scale ** 2
+        #             if param == 'init_lr':
+        #                 training_agent.config['init_lr'] = \
+        #                     hyper_parameters.config[param].current
+        #             elif param == 'weight_decay':
+        #                 training_agent.config['optimizer_kwargs']['weight_decay'
+        #                                                           ] = \
+        #                     hyper_parameters.config[param].current
+        #         continue
+        # establish_start = False
         for scale_power in trust_region:
             print('--')
             print("Doing TR")
@@ -141,9 +141,13 @@ def auto_lr(training_agent,
             # index = tuple(np.array(scale_power))
             if np.less(trust_buffer[index], 0.):
                 for i, param in enumerate(hyper_parameters.config.keys()):
-                    current = hyper_parameters.config[param].current * \
-                        (hyper_parameters.config[param].scale **
-                         scale_power[i])
+                    if scale_power[i] == 1 and np.equal(
+                            hyper_parameters.config[param].current, 0.):
+                        current = 1e-6
+                    else:
+                        current = hyper_parameters.config[param].current * \
+                            (hyper_parameters.config[param].scale **
+                             scale_power[i])
                     if param == 'init_lr':
                         training_agent.config['init_lr'] = current
                     elif param == 'weight_decay':
@@ -159,28 +163,37 @@ def auto_lr(training_agent,
         # TODO only works for 2D cse
         # Will handle duplicates and take the last index
         print("Done TR")
-        min_index = tuple(np.argwhere(
-            trust_buffer == np.min(trust_buffer))[-1])
-        print(f'min_index: {min_index}')
+        if (trust_buffer < .85).all() and all(
+            np.greater_equal(hp.current, hp.minimum)
+                for k, hp in hyper_parameters.config.items()):
+            index = tuple(np.argwhere(
+                trust_buffer == np.max(trust_buffer))[0])
+        else:
+            index = tuple(np.argwhere(
+                trust_buffer == np.min(trust_buffer))[-1])
+        print(f'index: {index}')
         rank_history.append(np.min(trust_buffer))
-        if min_index == (1, 1):
-            min_index = (2, 2)
-        for axis, i in enumerate(min_index):
+        if index == (1, 1):
+            index = (2, 2)
+        for axis, i in enumerate(index):
             mid = int(trust_buffer.shape[axis] / 2)
             trust_buffer = np.roll(trust_buffer, (i - mid) * -1, axis=axis)
         # TODO THIS ONLY WORKS FOR 2D MATRIX
-        if min_index[0] == 0 or min_index[0] == trust_buffer.shape[0] - 1:
-            trust_buffer[min_index[0], :] = -1.
-        if min_index[1] == 0 or min_index[1] == trust_buffer.shape[1] - 1:
-            trust_buffer[:, min_index[1]] = -1.
+        if index[0] == 0 or index[0] == trust_buffer.shape[0] - 1:
+            trust_buffer[index[0], :] = -1.
+        if index[1] == 0 or index[1] == trust_buffer.shape[1] - 1:
+            trust_buffer[:, index[1]] = -1.
         # trust_buffer = np.ones_like(trust_buffer, dtype=float) * -1.
         # trust_buffer[0, 0] = rank_history[-1]
         print(f'trust_buffer:\n{trust_buffer}')
-        scale_power = list(np.array(min_index) - 1)
-        # scale_power = list(np.array(min_index))
+        scale_power = list(np.array(index) - 1)
+        # scale_power = list(np.array(index))
         for i, param in enumerate(hyper_parameters.config.keys()):
-            current = hyper_parameters.config[param].current * (
-                hyper_parameters.config[param].scale ** scale_power[i])
+            if scale_power[i] == 1 and np.equal(hyper_parameters.config[param].current, 0.):
+                current = 1e-6
+            else:
+                current = hyper_parameters.config[param].current * (
+                    hyper_parameters.config[param].scale ** scale_power[i])
             hyper_parameters.config[param].current = current
         zeta = np.cumprod(rank_history) ** power
         if np.less(zeta[-1], min_delta):
