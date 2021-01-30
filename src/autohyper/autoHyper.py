@@ -201,9 +201,10 @@ def auto_lr(training_agent,
                 if np.isclose(hyper_parameters.config[param].scale, 1.,
                               atol=scale_delta):
                     hyper_parameters.config[param].stop = True
-                hyper_parameters.config[param].count += 1
-                hyper_parameters.config[param].scale = .5 * \
-                    np.exp(-hyper_parameters.config[param].count * 2) + 1
+                # hyper_parameters.config[param].count += 1
+                hyper_parameters.config[param].scale = \
+                    (hyper_parameters.config[param].scale - 1.) * \
+                    np.exp(-2.5) + 1
 
             # hyper_parameters.config[param]['current'] *= \
             #     hyper_parameters.config[param]['scale']
