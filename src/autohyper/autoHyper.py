@@ -54,7 +54,7 @@ def auto_lr(training_agent,
             num_split: int = 20,
             min_delta: float = 5e-3,
             scale_delta: float = 5e-3,
-            epochs: Union[range, List[int]] = range(0, 1),
+            epochs: Union[range, List[int]] = range(0, 5),
             power: float = 0.8):
     establish_start = True
     cur_rank = -1
@@ -143,7 +143,7 @@ def auto_lr(training_agent,
                 for i, param in enumerate(hyper_parameters.config.keys()):
                     if scale_power[i] == 1 and np.equal(
                             hyper_parameters.config[param].current, 0.):
-                        current = 1e-6
+                        current = 1e-7
                     else:
                         current = hyper_parameters.config[param].current * \
                             (hyper_parameters.config[param].scale **
@@ -163,7 +163,7 @@ def auto_lr(training_agent,
         # TODO only works for 2D cse
         # Will handle duplicates and take the last index
         print("Done TR")
-        if (trust_buffer < .85).all() and all(
+        if establish_start and (trust_buffer < .85).all() and all(
             np.greater_equal(hp.current, hp.minimum)
                 for k, hp in hyper_parameters.config.items()):
             index = tuple(np.argwhere(
@@ -171,6 +171,7 @@ def auto_lr(training_agent,
             if index == (1, 1):
                 index = (0, 0)
         else:
+            establish_start = False
             index = tuple(np.argwhere(
                 trust_buffer == np.min(trust_buffer))[-1])
             rank_history.append(np.min(trust_buffer))
@@ -192,7 +193,7 @@ def auto_lr(training_agent,
         # scale_power = list(np.array(index))
         for i, param in enumerate(hyper_parameters.config.keys()):
             if scale_power[i] == 1 and np.equal(hyper_parameters.config[param].current, 0.):
-                current = 1e-6
+                current = 1e-7
             else:
                 current = hyper_parameters.config[param].current * (
                     hyper_parameters.config[param].scale ** scale_power[i])

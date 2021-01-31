@@ -115,12 +115,12 @@ def auto_lr(training_agent,
         },
         'ResNet34CIFAR': {
             'CIFAR10': {
-                'AdaM': 58,  # 10 for 1d
+                'AdaM': 30,  # 10 for 1d
                 'AdaBound': 48,
                 'AdaGrad': 65,  # 20 for 1d
                 'SGD': 79},
             'CIFAR100': {
-                'AdaM': 58,  # 10 for 1d
+                'AdaM': 30,  # 10 for 1d
                 'AdaBound': 48,
                 'AdaGrad': 65,  # 20 for 1d
                 'SGD': 79},
@@ -172,7 +172,7 @@ def auto_lr(training_agent,
             {"name": "lr", "type": "range", "bounds": [
                 1e-6, 0.1], "log_scale": True, "value_type":'float'},
             {"name": "weight_decay", "type": "range", "bounds": [
-                1e-7, 0.1], "log_scale": True, "value_type":'float'}
+                1e-8, 0.1], "log_scale": True, "value_type":'float'}
             # {"name": "batchsize", "type": "range", "bounds": [16, 128]},
             # {"name": "momentum", "type": "range", "bounds": [0.0, 1.0]},
             # {"name": "max_epoch", "type": "range", "bounds": [1, 30]},
