@@ -168,13 +168,15 @@ def auto_lr(training_agent,
                 for k, hp in hyper_parameters.config.items()):
             index = tuple(np.argwhere(
                 trust_buffer == np.max(trust_buffer))[0])
+            if index == (1, 1):
+                index = (0, 0)
         else:
             index = tuple(np.argwhere(
                 trust_buffer == np.min(trust_buffer))[-1])
+            rank_history.append(np.min(trust_buffer))
+            if index == (1, 1):
+                index = (2, 2)
         print(f'index: {index}')
-        rank_history.append(np.min(trust_buffer))
-        if index == (1, 1):
-            index = (2, 2)
         for axis, i in enumerate(index):
             mid = int(trust_buffer.shape[axis] / 2)
             trust_buffer = np.roll(trust_buffer, (i - mid) * -1, axis=axis)
