@@ -88,5 +88,5 @@ class HyperParameters():
     weight_decay: bool = False
     config = {
         'init_lr': HyperParameter(current=1e-4, scale=1.45, minimum=1e-6),
-        'weight_decay': HyperParameter(current=0, scale=1.45, minimum=0)
+        'weight_decay': HyperParameter(current=0, scale=2., minimum=0)
     }

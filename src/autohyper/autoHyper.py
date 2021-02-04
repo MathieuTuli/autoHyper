@@ -198,6 +198,8 @@ def auto_lr(training_agent,
                 current = hyper_parameters.config[param].current * (
                     hyper_parameters.config[param].scale ** scale_power[i])
             hyper_parameters.config[param].current = current
+        if establish_start:
+            continue
         zeta = np.cumprod(rank_history) ** power
         if np.less(zeta[-1], min_delta):
             for param in hyper_parameters.config.keys():
