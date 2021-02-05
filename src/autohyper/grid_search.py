@@ -63,6 +63,8 @@ def compute_rate_of_change(rank_history: List[float]) -> float:
 def auto_lr(training_agent,
             min_lr: float = 1e-4,
             max_lr: float = 0.1,
+            min_wd: float = 1e-7,
+            max_wd: float = 0.1,
             num_split: int = 25,
             min_delta: float = 5e-3,
             lr_delta: float = 3e-5,
@@ -140,12 +142,16 @@ def auto_lr(training_agent,
                 'SGD': 37}
         }
     }
-    r = trials[training_agent.config['network']
-               ][training_agent.config['dataset']
-                 ][training_agent.config['optimizer']]
+    # r = trials[training_agent.config['network']
+    #            ][training_agent.config['dataset']
+    #              ][training_agent.config['optimizer']]
+    r = 52
     for i in range(r):
         learning_rate = loguniform.rvs(min_lr, max_lr)
-        training_agent.reset(learning_rate)
+        weight_decay = loguniform.rvs(min_wd, max_wd)
+        training_agent.config['init_lr'] = learning_rate
+        training_agent.config['optimizer_kwargs']['weight_decay'] = weight_decay
+        training_agent.reset(training_agent.config)
         training_agent.output_filename = training_agent.output_path / 'auto-lr'
         training_agent.output_filename.mkdir(exist_ok=True, parents=True)
         string_name = \
@@ -167,20 +173,25 @@ def auto_lr(training_agent,
 
         # ###### LR RANGE STUFF #######
         if training_agent.config['metric'] == 'loss':
-            grid[learning_rate] = \
+            grid[(learning_rate, weight_decay)] = \
                 training_agent.performance_statistics['test_loss_epoch_4']
         else:
-            grid[learning_rate] = \
+            grid[(learning_rate, weight_decay)] = \
                 training_agent.performance_statistics['test_acc1_epoch_4']
         print(
-            f"Learning rate {learning_rate} acc1 {grid[learning_rate]}")
+            f"LR {learning_rate} WD {weight_decay} acc1 {grid[(learning_rate, weight_decay)]}")
 
-    with (training_agent.output_path / 'lrrt.csv').open('w+') as f:
-        f.write('lr,acc1\n')
-        for lr, acc in grid.items():
-            f.write(f'{lr},{acc},\n')
+    # with (training_agent.output_path / 'lrrt.csv').open('w+') as f:
+    #     f.write('lr,acc1\n')
+    #     for lr, acc in grid.items():
+    #         f.write(f'{lr},{acc},\n')
 
     if training_agent.config['metric'] == 'loss':
-        return min(grid, key=grid.get)
+        lr, wd = min(grid, key=grid.get)
     else:
-        return max(grid, key=grid.get)
+        lr, wd = max(grid, key=grid.get)
+    print(grid)
+    print(f'LR: {lr}')
+    print(f'WD: {wd}')
+    training_agent.config['init_lr'] = lr
+    training_agent.config['optimizer_kwargs']['weight_decay'] = wd
