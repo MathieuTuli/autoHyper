@@ -27,21 +27,21 @@ from enum import Enum
 
 # import numpy as np
 
-# import logging
+import logging
 
 
-# class LogLevel(Enum):
-#     '''
-#     What the stdlib did not provide!
-#     '''
-#     DEBUG = logging.DEBUG
-#     INFO = logging.INFO
-#     WARNING = logging.WARNING
-#     ERROR = logging.ERROR
-#     CRITICAL = logging.CRITICAL
-#
-#     def __str__(self):
-#         return self.name
+class LogLevel(Enum):
+    '''
+    What the stdlib did not provide!
+    '''
+    DEBUG = logging.DEBUG
+    INFO = logging.INFO
+    WARNING = logging.WARNING
+    ERROR = logging.ERROR
+    CRITICAL = logging.CRITICAL
+
+    def __str__(self):
+        return self.name
 
 
 class LayerType(Enum):

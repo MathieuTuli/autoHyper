@@ -27,7 +27,7 @@ from typing import Tuple, Dict, Any, List, Optional
 from datetime import datetime
 from pathlib import Path
 
-# import logging
+import logging
 import warnings
 import time
 import sys
@@ -47,13 +47,14 @@ if mod_name is not None:
         OneCycleLR
     from .grid_search import auto_lr as grid_search_lr
     from .optim import get_optimizer_scheduler
-    from .components import HyperParameters
+    from .components import HyperParameters, LogLevel
     from .bayesian import auto_lr as bo_lr
     from .early_stop import EarlyStop
     from .models import get_network
     from .utils import parse_config
     from .autoHyper import auto_lr
     from .metrics import Metrics
+    from .args import train_args
     from .models.vgg import VGG
     from .optim.sls import SLS
     from .optim.sps import SPS
@@ -64,95 +65,19 @@ else:
         OneCycleLR
     from grid_search import auto_lr as grid_search_lr
     from optim import get_optimizer_scheduler
-    from components import HyperParameters
+    from components import HyperParameters, LogLevel
     from bayesian import auto_lr as bo_lr
     from early_stop import EarlyStop
     from models import get_network
     from utils import parse_config
     from autoHyper import auto_lr
     from metrics import Metrics
+    from args import train_args
     from models.vgg import VGG
     from optim.sls import SLS
     from optim.sps import SPS
     from data import get_data
     from AdaS import AdaS
-
-
-def args(sub_parser: _SubParsersAction):
-    # print("\n---------------------------------")
-    # print("autoHyper Train Args")
-    # print("---------------------------------\n")
-    # sub_parser.add_argument(
-    #     '-vv', '--very-verbose', action='store_true',
-    #     dest='very_verbose',
-    #     help="Set flask debug mode")
-    # sub_parser.add_argument(
-    #     '-v', '--verbose', action='store_true',
-    #     dest='verbose',
-    #     help="Set flask debug mode")
-    # sub_parser.set_defaults(verbose=False)
-    # sub_parser.set_defaults(very_verbose=False)
-    sub_parser.add_argument(
-        '--config', dest='config',
-        default='config.yaml', type=str,
-        help="Set configuration file path: Default = 'config.yaml'")
-    sub_parser.add_argument(
-        '--data', dest='data',
-        default='.autohyper-data', type=str,
-        help="Set data directory path: Default = '.autohyper-data'")
-    sub_parser.add_argument(
-        '--output', dest='output',
-        default='.autohyper-output', type=str,
-        help="Set output directory path: Default = '.autohyper-output'")
-    sub_parser.add_argument(
-        '--checkpoint', dest='checkpoint',
-        default='.autohyper-checkpoint', type=str,
-        help="Set checkpoint directory path: Default = '.autohyper-checkpoint'")
-    sub_parser.add_argument(
-        '--resume', dest='resume',
-        default=None, type=str,
-        help="Set checkpoint resume path: Default = None")
-    # sub_parser.add_argument(
-    #     '-r', '--resume', action='store_true',
-    #     dest='resume',
-    #     help="Flag: resume training from checkpoint")
-    sub_parser.add_argument(
-        '--root', dest='root',
-        default='.', type=str,
-        help="Set root path of project that parents all others: Default = '.'")
-    sub_parser.add_argument(
-        '--save-freq', default=25, type=int,
-        help='Checkpoint epoch save frequency: Default = 25')
-    # sub_parser.set_defaults(resume=False)
-    sub_parser.add_argument(
-        '--cpu', action='store_true',
-        dest='cpu',
-        help="Flag: CPU bound training: Default = False")
-    sub_parser.set_defaults(cpu=False)
-    sub_parser.add_argument(
-        '--gpu', default=0, type=int,
-        help='GPU id to use: Default = 0')
-    sub_parser.add_argument(
-        '--multiprocessing-distributed', action='store_true',
-        dest='mpd',
-        help='Use multi-processing distributed training to launch '
-        'N processes per node, which has N GPUs. This is the '
-        'fastest way to use PyTorch for either single node or '
-        'multi node data parallel training: Default = False')
-    sub_parser.set_defaults(mpd=False)
-    sub_parser.add_argument(
-        '--dist-url', default='tcp://127.0.0.1:23456', type=str,
-        help="url used to set up distributed training:" +
-             "Default = 'tcp://127.0.0.1:23456'")
-    sub_parser.add_argument(
-        '--dist-backend', default='nccl', type=str,
-        help="distributed backend: Default = 'nccl'")
-    sub_parser.add_argument(
-        '--world-size', default=-1, type=int,
-        help='Number of nodes for distributed training: Default = -1')
-    sub_parser.add_argument(
-        '--rank', default=-1, type=int,
-        help='Node rank for distributed training: Default = -1')
 
 
 class TrainingAgent:
@@ -685,6 +610,6 @@ def main_worker(gpu: int, ngpus_per_node: int, args: APNamespace):
 
 if __name__ == "__main__":
     parser = ArgumentParser(description=__doc__)
-    args(parser)
+    train_args(parser)
     args = parser.parse_args()
     main(args)
