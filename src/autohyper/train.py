@@ -48,6 +48,7 @@ if mod_name is not None:
     from .grid_search import auto_lr as grid_search_lr
     from .optim import get_optimizer_scheduler
     from .components import HyperParameters, LogLevel
+    from .band import auto_lr as hyperband_lr
     from .bayesian import auto_lr as bo_lr
     from .early_stop import EarlyStop
     from .models import get_network
@@ -66,6 +67,7 @@ else:
     from grid_search import auto_lr as grid_search_lr
     from optim import get_optimizer_scheduler
     from components import HyperParameters, LogLevel
+    from band import auto_lr as hyperband_lr
     from bayesian import auto_lr as bo_lr
     from early_stop import EarlyStop
     from models import get_network
@@ -250,6 +252,10 @@ class TrainingAgent:
                 self.config['init_lr'] = learning_rate
             elif learning_rate == 'bo_auto':
                 self.config = bo_lr(self)
+                learning_rate = \
+                    self.config['init_lr']
+            elif learning_rate == 'hyperband_auto':
+                self.config = hyperband_lr(self)
                 learning_rate = \
                     self.config['init_lr']
             lr_output_path = self.output_path / f'lr-{learning_rate}'

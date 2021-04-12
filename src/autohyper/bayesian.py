@@ -28,8 +28,8 @@ import sys
 
 # import logging
 
-from ax.utils.tutorials.cnn_utils import evaluate
-from ax.service.managed_loop import optimize
+# from ax.utils.tutorials.cnn_utils import evaluate
+# from ax.service.managed_loop import optimize
 import numpy as np
 import torch
 
