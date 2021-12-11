@@ -21,7 +21,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
-from typing import NamedTuple, List, Union
+from typing import NamedTuple, List, Union, Dict
 from dataclasses import dataclass
 from enum import Enum
 
@@ -82,11 +82,35 @@ class HyperParameter():
     count: int = 0
 
 
-@dataclass
 class HyperParameters():
     init_lr: bool = False
     weight_decay: bool = False
-    config = {
-        'init_lr': HyperParameter(current=1e-4, scale=1.45, minimum=1e-6),
+    parameters = {
+        'lr': HyperParameter(current=1e-4, scale=1.45, minimum=1e-6),
         'weight_decay': HyperParameter(current=0, scale=2., minimum=0)
     }
+
+    def __getitem__(self, key: str) -> HyperParameter:
+        return self.parameters[key]
+
+    def __setitem__(self, key: str, value: HyperParameter):
+        if not isinstance(key, str):
+            raise ValueError("Key must be of type 'str'")
+        if not isinstance(value, HyperParameter):
+            raise ValueError("Value must be of type 'HyperParameter'")
+        self.parameters[key] = value
+
+    def __iter__(self):
+        return iter(self.parameters)
+
+    def keys(self):
+        return self.parameters.keys()
+
+    def values(self):
+        return self.parameters.values()
+
+    def items(self):
+        return self.parameters.items()
+
+    def final(self) -> Dict[str, HyperParameter]:
+        return {param: val.current for param, val in self.parameters}
