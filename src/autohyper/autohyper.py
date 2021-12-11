@@ -23,7 +23,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 from typing import Union, List
-from datetime import datetime
 from pathlib import Path
 import itertools
 
@@ -92,8 +91,8 @@ def run(epoch_trainer: callable,
                             (hyper_parameters[param].scale **
                              scale_power[i])
                     cur_train_params[param] = current
-                epoch_trainer(hyper_parameters=cur_train_params,
-                              epochs=epochs,)
+                metrics = epoch_trainer(hyper_parameters=cur_train_params,
+                                        epochs=epochs,)
                 cur_rank = compute_rank(training_agent.metrics)
                 trust_buffer[index] = cur_rank
         # TODO only works for 2D cse
