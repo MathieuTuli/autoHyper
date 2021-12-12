@@ -43,12 +43,12 @@ def compute_rank(metrics: Metrics) -> float:
 
 
 def optimize(epoch_trainer: callable,
-        hyper_parameters: HyperParameters,
-        min_delta: float = 5e-3,
-        scale_delta: float = 5e-3,
-        epochs: Union[range, List[int]] = range(0, 5),
-        power: float = 0.8,
-        output_path: str = 'autohyper-output'):
+             hyper_parameters: HyperParameters,
+             min_delta: float = 5e-3,
+             scale_delta: float = 5e-3,
+             epochs: Union[range, List[int]] = range(0, 5),
+             power: float = 0.8,
+             output_path: str = 'autohyper-output'):
     """
     @arguments:
         epoch_trainer: callable
