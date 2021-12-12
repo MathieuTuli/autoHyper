@@ -30,11 +30,11 @@ import itertools
 
 import numpy as np
 
-from .metrics import Metrics
+from .metrics import LowRankMetrics
 from .components import HyperParameters
 
 
-def compute_rank(metrics: Metrics) -> float:
+def compute_rank(metrics: LowRankMetrics) -> float:
     per_S_zero = np.mean([np.mean(np.isclose(
         metric.input_channel_S + metric.output_channel_S,
         0).astype(np.float16)) for
@@ -56,7 +56,7 @@ def optimize(epoch_trainer: callable,
                 hyper_parameters: Dict[str, float],
                 epochs: iter(int),
             )
-            must also return Metrics, computed using metrics.py:Metrics
+            must also return LowRankMetrics, computed using metrics.py:LowRankMetrics
 
         hyper_parameters: HyperParameters
             starting hyper-parameter config object. See components.py
