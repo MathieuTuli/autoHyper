@@ -46,16 +46,39 @@ There are a few versions to consider:
 
 All source code can be found in [src/autohyper](src/autohyper).
 
-To install the autoHyper algorithm then, you can simply run `pip install autohyper` or clone this repository and run `pip install -e .`.
+To install the autoHyper algorithm, you can simply run `pip install autohyper` or clone this repository and run `pip install -e .`.
 
 ### Usage ###
 For the packaged code, after installation, training can be run using the following command: `python -m autohyper train ...`
 
 For the unpackaged code, training can be run using the following command: `python train.py ...` ([src/autohyper/train.py](src/autohyper/train.py))
 
-To use autoHyper is quite simpler and follow similar HPO packages. See below for a skeleton of what needs to happen:
+To use autoHyper is quite simpler and follow similar HPO packages. See below for a skeleton.
 
 ```python
+from autohyper import optimize, LowRankMetrics, HyperParameters
+from torch.optim import Adam
 def main():
+    # indicate which hyper-parameters to optimize
+    model = torch.nn.Linear(...) # load model
+    metrics = LowRankMetrics(model.parameters())
     hyper_parameters = HyperParameters(lr=True, weight_decay=True)
+    final_hp = optimize(epoch_trainer=epoch_trainer,
+                        hyper_parameters=hyper_parameters)
+    final_hyper_parameters_dict = final_hp.final()
+    # do your final training will optimized hyper parameters
+    epoch_trainer(final_hyper_parameters_dict, epochs=range(250))
+    
+    def epoch_trainer(hyper_parameters: Dict[str, float], epochs: iterable) -> LowRankMetrics:
+        # update model/optimizer parameters based on values in @argument: hyper_parameters
+        optimizer = Adam(model.parameters(),
+                         lr=hyper_parameters['lr'],
+                         weight_decay=hyper_parameters['weight_decay'],
+                         ...)
+        for epoch in epochs:
+            # run epoch training...
+            # at every epoch, evaluate low_rank metrics
+            ...
+            metrics.evaluate(epoch)
+        return metrics
 ```
