@@ -31,7 +31,7 @@ from .components import LayerType, IOMetrics
 from .low_rank_factorization import EVBMF
 
 
-class Metrics():
+class LowRankMetrics():
     def __init__(self, parameters: List[Any]) -> None:
         '''
         parameters: list of torch.nn.Module.parameters()

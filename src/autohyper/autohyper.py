@@ -42,7 +42,7 @@ def compute_rank(metrics: Metrics) -> float:
     return per_S_zero
 
 
-def run(epoch_trainer: callable,
+def optimize(epoch_trainer: callable,
         hyper_parameters: HyperParameters,
         min_delta: float = 5e-3,
         scale_delta: float = 5e-3,
