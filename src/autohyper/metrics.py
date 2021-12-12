@@ -27,13 +27,8 @@ import sys
 import numpy as np
 import torch
 
-mod_name = vars(sys.modules[__name__])['__package__']
-if mod_name:
-    from .components import LayerType, IOMetrics
-    from .VBMF import EVBMF
-else:
-    from components import LayerType, IOMetrics
-    from VBMF import EVBMF
+from .components import LayerType, IOMetrics
+from .low_rank_factorization import EVBMF
 
 
 class Metrics():
