@@ -53,7 +53,7 @@ For the packaged code, after installation, training can be run using the followi
 
 For the unpackaged code, training can be run using the following command: `python train.py ...` ([src/autohyper/train.py](src/autohyper/train.py))
 
-To use autoHyper is quite simpler and follow similar HPO packages. See below for a skeleton.
+To use autoHyper is quite simpler and follow similar HPO packages. See below for a skeleton and [scripts/train.py](scripts/train.py) for an example usage
 
 ```python
 from autohyper import optimize, LowRankMetrics, HyperParameters
@@ -61,15 +61,10 @@ from torch.optim import Adam
 def main():
     # indicate which hyper-parameters to optimize
     model = torch.nn.Linear(...) # load model
-    metrics = LowRankMetrics(model.parameters())
-    hyper_parameters = HyperParameters(lr=True, weight_decay=True)
-    final_hp = optimize(epoch_trainer=epoch_trainer,
-                        hyper_parameters=hyper_parameters)
-    final_hyper_parameters_dict = final_hp.final()
-    # do your final training will optimized hyper parameters
-    epoch_trainer(final_hyper_parameters_dict, epochs=range(250))
     
     def epoch_trainer(hyper_parameters: Dict[str, float], epochs: iterable) -> LowRankMetrics:
+        # reset the metrics
+        metrics = LowRankMetrics(model.parameters())
         # update model/optimizer parameters based on values in @argument: hyper_parameters
         optimizer = Adam(model.parameters(),
                          lr=hyper_parameters['lr'],
@@ -81,4 +76,11 @@ def main():
             ...
             metrics.evaluate(epoch)
         return metrics
+
+    hyper_parameters = HyperParameters(lr=True, weight_decay=True)
+    final_hp = optimize(epoch_trainer=epoch_trainer,
+                        hyper_parameters=hyper_parameters)
+    final_hyper_parameters_dict = final_hp.final()
+    # do your final training will optimized hyper parameters
+    epoch_trainer(final_hyper_parameters_dict, epochs=range(250))
 ```
