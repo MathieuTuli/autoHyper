@@ -37,7 +37,7 @@ else:
 
 
 class Metrics():
-    def __init__(self, parameters: List[Any], p: int) -> None:
+    def __init__(self, parameters: List[Any]) -> None:
         '''
         parameters: list of torch.nn.Module.parameters()
         '''
@@ -46,7 +46,7 @@ class Metrics():
         self.layers_info = list()
         self.number_of_conv = 0
         self.number_of_fc = 0
-        self.p = p
+        self.p = 1
         self.historical_metrics = list()
         for iteration_block in range(len(net_blocks)):
             block_shape = net_blocks[iteration_block].shape
