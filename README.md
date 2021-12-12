@@ -40,36 +40,22 @@ pip install -r requirements.txt
 Additional details can be found on the [Requirements Wiki](Requirements.md)
 
 ### Installation ###
-There are two versions of the AdaS code contained in this repository.
-1. a python-package version of the AdaS code, which can be `pip`-installed.
- - `pip install -e .` or `pip install .` will install the package
-2. a static python module (unpackaged), runable as a script.
+There are a few versions to consider:
+1. The algorithm itself can be found in the `main` branch of this repository
+2. The `single-hp-bayesian` and `multi-hp` branches provide code for experiments in our paper. The `multi-hp` branch is the latest branch for the current paper, while `single-hp-bayesian` has an earlier version, that shows another method for single-hp optimization.
 
 All source code can be found in [src/autohyper](src/autohyper).
+
+To install the autoHyper algorithm then, you can simply run `pip install autohyper` or clone this repository and run `pip install -e .`.
 
 ### Usage ###
 For the packaged code, after installation, training can be run using the following command: `python -m autohyper train ...`
 
 For the unpackaged code, training can be run using the following command: `python train.py ...` ([src/autohyper/train.py](src/autohyper/train.py))
 
+To use autoHyper is quite simpler and follow similar HPO packages. See below for a skeleton of what needs to happen:
 
-```console
-python -m autohyper train --help
-
-usage: __main__.py train [-h] [--config CONFIG] [--data DATA]
-                         [--output OUTPUT] [--checkpoint CHECKPOINT]
-                         [--resume RESUME] [--root ROOT]
-                         [--save-freq SAVE_FREQ] [--cpu] [--gpu GPU]
-                         [--multiprocessing-distributed] [--dist-url DIST_URL]
-                         [--dist-backend DIST_BACKEND]
-                         [--world-size WORLD_SIZE] [--rank RANK]
+```python
+def main():
+    hyper_parameters = HyperParameters(lr=True, weight_decay=True)
 ```
-
-Refer to the [Usage Wiki](Usage.md) for additional details.
-
-### Training Outputs ###
-In addition to console outputs, all information is also logged in `csv` files during training.  Details can be foudn in the [Outputs Wiki](Outputs.md)
-
-### Pytest ###
-Note the following:
-- Our Pytests write/download data/files etc. to `/tmp`, so if you don't have a `/tmp` folder (i.e. you're on Windows), then correct this if you wish to run the tests yourself
