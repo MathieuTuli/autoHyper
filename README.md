@@ -59,10 +59,9 @@ To use autoHyper is quite simpler and follow similar HPO packages. See below for
 from autohyper import optimize, LowRankMetrics, HyperParameters
 from torch.optim import Adam
 def main():
-    # indicate which hyper-parameters to optimize
-    model = torch.nn.Linear(...) # load model
-    
     def epoch_trainer(hyper_parameters: Dict[str, float], epochs: iterable) -> LowRankMetrics:
+        # initialize random model
+        model = torch.nn.Linear(...) # load model
         # reset the metrics
         metrics = LowRankMetrics(model.parameters())
         # update model/optimizer parameters based on values in @argument: hyper_parameters
@@ -77,6 +76,7 @@ def main():
             metrics.evaluate(epoch)
         return metrics
 
+    # indicate which hyper-parameters to optimize
     hyper_parameters = HyperParameters(lr=True, weight_decay=True)
     final_hp = optimize(epoch_trainer=epoch_trainer,
                         hyper_parameters=hyper_parameters)
