@@ -44,12 +44,35 @@ def compute_rank(metrics: Metrics) -> float:
 
 def run(epoch_trainer: callable,
         hyper_parameters: HyperParameters,
-        num_split: int = 20,
         min_delta: float = 5e-3,
         scale_delta: float = 5e-3,
         epochs: Union[range, List[int]] = range(0, 5),
         power: float = 0.8,
         output_path: str = 'autohyper-output'):
+    """
+    @arguments:
+        epoch_trainer: callable
+            required arguments (
+                hyper_parameters: Dict[str, float],
+                epochs: iter(int),
+            )
+            must also return Metrics, computed using metrics.py:Metrics
+
+        hyper_parameters: HyperParameters
+            starting hyper-parameter config object. See components.py
+                for default
+        min_delta: float
+            delta between successive ranks that defines plateauing
+        scale_delta:
+            delta absolute tolerance
+        epochs: iter[int]
+            integer iterable for number of epochs per trial. (fixed)
+                to range(5)
+        power: float
+            regularization power for cummulative product
+        output_path: str
+            string path  of output directory for logging and results
+    """
     cur_rank = -1
     establish_start = True
     auto_lr_path = Path(output_path)
