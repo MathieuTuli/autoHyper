@@ -36,6 +36,8 @@ class LowRankMetrics():
         '''
         parameters: list of torch.nn.Module.parameters()
         '''
+        if not isinstance(parameters, list):
+            parameters = list(parameters)
         self.net_blocks = net_blocks = parameters
         self.layers_index_todo = np.ones(shape=len(net_blocks), dtype='bool')
         self.layers_info = list()
@@ -64,11 +66,14 @@ class LowRankMetrics():
                            self.layers_info[i] == LayerType.FC]
         self.non_conv_indices = [i for i in range(len(self.layers_info)) if
                                  self.layers_info[i] == LayerType.NON_CONV]
+        self.epoch = -1
 
-    def evaluate(self, epoch: int) -> IOMetrics:
+    def evaluate(self) -> IOMetrics:
         '''
         Computes the knowledge gain (S) and mapping condition (condition)
         '''
+        self.epoch += 1
+        epoch = self.epoch
         input_channel_rank = list()
         output_channel_rank = list()
         input_channel_S = list()

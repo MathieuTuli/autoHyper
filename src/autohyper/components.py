@@ -82,13 +82,17 @@ class HyperParameter():
     count: int = 0
 
 
+@dataclass
 class HyperParameters():
-    init_lr: bool = False
+    lr: bool = False
     weight_decay: bool = False
     parameters = {
         'lr': HyperParameter(current=1e-4, scale=1.45, minimum=1e-6),
         'weight_decay': HyperParameter(current=0, scale=2., minimum=0)
     }
+
+    def __len__(self) -> int:
+        return len(self.parameters)
 
     def __getitem__(self, key: str) -> HyperParameter:
         return self.parameters[key]

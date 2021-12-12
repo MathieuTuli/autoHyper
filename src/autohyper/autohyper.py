@@ -26,12 +26,14 @@ from typing import Union, List
 from pathlib import Path
 import itertools
 
-# import logging
+import logging
 
 import numpy as np
 
 from .metrics import LowRankMetrics
 from .components import HyperParameters
+
+logger = logging.getLogger()
 
 
 def compute_rank(metrics: LowRankMetrics) -> float:
@@ -74,6 +76,7 @@ def optimize(epoch_trainer: callable,
             string path  of output directory for logging and results
     """
     cur_rank = -1
+    tr_count, trial_count = -1, -1
     establish_start = True
     auto_lr_path = Path(output_path)
     auto_lr_path.mkdir(exist_ok=True)
@@ -102,6 +105,8 @@ def optimize(epoch_trainer: callable,
 
     cur_train_params = {p: v.current for p, v in hyper_parameters.items()}
     while True:
+        tr_count += 1
+        logger.info(f'autoHyper: Trust Region #{tr_count}')
         for scale_power in trust_region:
             index = tuple(np.array(scale_power) + 1)
             if np.less(trust_buffer[index], 0.):
@@ -114,9 +119,15 @@ def optimize(epoch_trainer: callable,
                             (hyper_parameters[param].scale **
                              scale_power[i])
                     cur_train_params[param] = current
+                trial_count += 1
+                logger.info(f'autoHyper: Trial #{trial_count}')
+                logger.info('autoHyper: HP Config:')
+                for k, v in cur_train_params.items():
+                    logger.info(' ' * 25 + f'{k}: {v}')
                 metrics = epoch_trainer(hyper_parameters=cur_train_params,
                                         epochs=epochs,)
-                cur_rank = compute_rank(training_agent.metrics)
+                cur_rank = compute_rank(metrics)
+                logger.info(f'autoHyper: Trial Rank #{cur_rank}')
                 trust_buffer[index] = cur_rank
         # TODO only works for 2D cse
         # Will handle duplicates and take the last index
@@ -166,4 +177,5 @@ def optimize(epoch_trainer: callable,
         if all([param.stop for param in
                 hyper_parameters.values()]):
             break
+    logger.info('autoHyper Done. Final config: {hyper_parameters.final()}')
     return hyper_parameters
