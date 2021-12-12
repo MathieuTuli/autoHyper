@@ -123,7 +123,7 @@ def optimize(epoch_trainer: callable,
                 logger.info(f'autoHyper: Trial #{trial_count}')
                 logger.info('autoHyper: HP Config:')
                 for k, v in cur_train_params.items():
-                    logger.info(' ' * 25 + f'{k}: {v}')
+                    logger.info(' ' * 4 + f'{k}: {v}')
                 metrics = epoch_trainer(hyper_parameters=cur_train_params,
                                         epochs=epochs,)
                 cur_rank = compute_rank(metrics)

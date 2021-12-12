@@ -35,9 +35,6 @@ import torch
 
 def main():
     # indicate which hyper-parameters to optimize
-    model = models.resnet18()
-    model.train()
-    model = model.cuda()
     dataset = torch.utils.data.DataLoader(
         datasets.CIFAR10('.', download=True, transform=transforms.ToTensor()),
         batch_size=128)
@@ -47,6 +44,9 @@ def main():
         # update model/optimizer parameters based on values in @argument:
         #     hyper_parameters
         print('Run epochs:', hyper_parameters)
+        model = models.resnet18()
+        model.train()
+        model = model.cuda()
         metrics = LowRankMetrics(list(model.parameters()))
         optimizer = Adam(model.parameters(),
                          lr=hyper_parameters['lr'],
