@@ -177,5 +177,5 @@ def optimize(epoch_trainer: callable,
         if all([param.stop for param in
                 hyper_parameters.values()]):
             break
-    logger.info('autoHyper Done. Final config: {hyper_parameters.final()}')
+    logger.info(f'autoHyper Done. Final config: {hyper_parameters.final()}')
     return hyper_parameters

@@ -117,4 +117,4 @@ class HyperParameters():
         return self.parameters.items()
 
     def final(self) -> Dict[str, HyperParameter]:
-        return {param: val.current for param, val in self.parameters}
+        return {param: val.current for param, val in self.parameters.items()}
